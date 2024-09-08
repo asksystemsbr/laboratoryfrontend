@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* O layout geral não precisa ter lógica de autenticação */}
         <div className="flex h-screen">
-          <div className="flex-1 bg-gray-100 p-6 overflow-y-auto">
+          <div  id="__next" className="flex-1 bg-gray-100 p-6 overflow-y-auto">
             <AuthProvider> {/* Envolva os componentes no AuthProvider */}
               {children}
             </AuthProvider>
