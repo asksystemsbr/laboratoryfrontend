@@ -1,16 +1,18 @@
 
 // src/app/dashboard/page.tsx
-// "use client";
-import ClientAuthWrapper from '../ClientAuthWrapper'; // Adjust path as necessary
- import Layout from '../layout';
+import Menu from '../../components/menu'; // Importa o menu
 
 export default function Dashboard() {
   return (
-    <Layout>
-      <ClientAuthWrapper>
+    <div className="flex h-screen">
+      {/* Inclui o menu no lado esquerdo */}
+      <Menu />
+      
+      {/* Conteúdo principal */}
+      <div className="flex-1 bg-gray-100 p-6">
         <h1 className="text-4xl font-bold">Bem-vindo ao Dashboard!</h1>
         <p className="mt-4">Selecione uma opção no menu para navegar.</p>
-      </ClientAuthWrapper>
-    </Layout>
+      </div>
+    </div>
   );
 }
