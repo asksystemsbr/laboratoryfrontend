@@ -81,9 +81,9 @@
 // };
 
 
-// src/app/login/auth.tsx
+// src/app/auth.tsx
 import { useEffect, useState, createContext, useContext } from 'react';
-import axios from '../axiosConfig'; // Usa o axios configurado
+import axios from './axiosConfig'; // Usa o axios configurado
 
 // Define o tipo do usuário
 type User = {

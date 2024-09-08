@@ -1,8 +1,12 @@
+//src/app/layout.tsx
 // import type { Metadata } from "next";
+"use client";
 import localFont from "next/font/local";
 import "./globals.css";
 import './axiosConfig.js'; 
-import { AuthProvider } from './login/auth';
+import { AuthProvider,useAuth } from './auth';
+import { usePathname,useRouter   } from 'next/navigation'; 
+import { useState,useEffect  } from 'react';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,15 +29,109 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) { 
+  const [drawerOpen, setDrawerOpen] = useState(true); // Controla o estado do drawer
+  const [isMounted, setIsMounted] = useState(false); // Ensure it's only mounted once
+  const [isLoggingOut, setIsLoggingOut] = useState(false); 
+
+  const pathname = usePathname(); // Obtém o pathname atual da rota
+  const router = useRouter(); // Hook do Next.js para navegação
+  const authContext = useAuth(); // Obtenha o contexto de autenticação
+  const user = authContext?.user; // Protege o acesso ao contexto
+  const loading = authContext?.loading; // Protege o acesso ao contexto  
+
+   // Debug de inicialização
+   console.debug("RootLayout rendered. Pathname:", pathname);
+   console.debug("User:", user, "Loading:", loading, "isMounted:", isMounted, "isLoggingOut:", isLoggingOut);
+
+   
+  const logout = async () => {
+    console.debug("Logout function called");
+    setIsLoggingOut(true); // Indica que o logout está em andamento
+    try {
+      console.debug("Logging out...");
+      await authContext?.logout(); // Executa o logout do contexto
+      console.debug("Logout successful, redirecting to login");
+      router.push("/login"); // Redireciona para a página de login
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      setIsLoggingOut(false); // Reseta o estado de logout
+      console.debug("Finished logout process");
+    }
+  };
+
+    // useEffect para garantir que o componente só renderize uma vez
+    useEffect(() => {
+      // if (!hasRendered) {
+      //   setHasRendered(true);
+      // }
+      console.debug("Mounting RootLayout...");
+      setIsMounted(true); // Mark that the component is mounted
+    },[]);
+
+      // Debugging the loading state
+  useEffect(() => {
+    console.debug(`Loading state: ${loading}`);
+  }, [loading]);
+  
+    // Se ainda estiver carregando, exibe uma tela de loading
+    //if (loading && !hasRendered) {
+    //if ((loading === true || loading === undefined) && !hasRendered) {
+      if ((loading === true || loading === undefined || isLoggingOut) && !isMounted) {
+        console.debug("Component is still loading, rendering loading screen...");
+      return <div>Carregando...</div>;
+    }
+
+    
+  // Verifica se estamos na página de login
+  const isLoginPage = pathname === '/login';
+
+    console.debug("Rendering RootLayout...");
+
   return (
+    <AuthProvider>
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      > 
-        <AuthProvider>
-          {children}{/* Render the client-side auth logic in children */}
-        </AuthProvider>
-      </body>
-    </html>
+    <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>      
+        <div className="flex h-screen">
+          {/* Renderiza o sidebar apenas se o usuário estiver autenticado e não estiver na página de login */}
+          {user && !isLoginPage && (
+            <div className={`bg-gray-800 text-white ${drawerOpen ? 'w-64' : 'w-20'} transition-all duration-300`}>
+              <div className="p-4">
+                <button onClick={() => setDrawerOpen(!drawerOpen)} className="focus:outline-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Menu Items */}
+              <nav className="mt-2">
+                <ul>
+                  <li className="mb-6">
+                    <button className="flex items-center px-4 py-2 hover:bg-gray-700 w-full">
+                      <span className={`ml-4 ${!drawerOpen && 'hidden'}`}>Início</span>                      
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={logout} 
+                      className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
+                    >
+                      <span className={`ml-4 ${!drawerOpen && 'hidden'}`}>Sair</span>                      
+                    </button>
+                  </li>                      
+                </ul>
+              </nav>
+            </div>
+          )}
+
+          {/* Main content */}
+          <div className="flex-1 bg-gray-100 p-6 overflow-y-auto">
+            {children} {/* Renderiza o conteúdo da página */}
+          </div>
+        </div>      
+    </body>
+  </html>
+  </AuthProvider>
   );
 }

@@ -1,7 +1,7 @@
 "use client"; // <-- Certifique-se de que isso está no topo do arquivo
 import { useState,useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../login/auth';  // Importa o hook de autenticação
+import { useAuth } from '../auth';  // Importa o hook de autenticação
 import axios from '../axiosConfig';
 
 
@@ -18,7 +18,6 @@ export default function Login() {
   const [snackbar, setSnackbar] = useState({ show: false, message: '', color: '' , duration: 5000 });
   const [progress, setProgress] = useState(100);  // Inicializa a progress bar em 100%
   const router = useRouter();
-  //const { login } = useAuth(); 
   const authContext = useAuth(); // Pega o contexto de autenticação
 
   useEffect(() => {

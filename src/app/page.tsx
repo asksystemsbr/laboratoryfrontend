@@ -17,7 +17,7 @@
 // src/app/page.tsx
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Certifique-se de usar o Router correto para App Router
-import { useAuth } from './login/auth';
+import { useAuth } from './auth';
 
 export default function Home() {
   const router = useRouter();

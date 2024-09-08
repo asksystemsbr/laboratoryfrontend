@@ -1,7 +1,8 @@
+//src/app/ClientAuthWrapper.tsx
 "use client"; // This is required for using hooks in Next.js 13
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useAuth } from './login/auth'; // Adjust the path as needed
+import { useAuth } from './auth'; // Adjust the path as needed
 
 export default function ClientAuthWrapper({ children }: { children: React.ReactNode }) {
   const authContext = useAuth();
@@ -13,7 +14,8 @@ export default function ClientAuthWrapper({ children }: { children: React.ReactN
     }
   }, [authContext?.loading, authContext?.user, router]);
 
-  if (authContext?.loading) {
+  //if (authContext?.loading) {
+  if (authContext?.loading === undefined || authContext?.loading === true) {  
     return <p>Carregando...</p>; // Show loading until auth is determined
   }
 
