@@ -18,7 +18,8 @@ export default function Login() {
   const [snackbar, setSnackbar] = useState({ show: false, message: '', color: '' , duration: 5000 });
   const [progress, setProgress] = useState(100);  // Inicializa a progress bar em 100%
   const router = useRouter();
-  const { login } = useAuth();  // Agora `login` é garantido
+  //const { login } = useAuth(); 
+  const authContext = useAuth(); // Pega o contexto de autenticação
 
   useEffect(() => {
     if (snackbar.show) {
@@ -42,11 +43,12 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/Usuarios/authenticate', credentials);
-      const userData = response.data;
+      // const response = await axios.post('/api/Usuarios/authenticate', credentials);
+      // const userData = response.data;
 
       // Chama a função login do contexto de autenticação
-      login(userData);
+      //login(userData);
+      await authContext?.login(credentials.Nome,credentials.Senha);
 
       // Redireciona para o dashboard após o login
       router.push('/dashboard');
