@@ -23,6 +23,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt">
+      <head>
+        {/* Inclui o link para os ícones do Material Design */}
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+      </head>      
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* O layout geral não precisa ter lógica de autenticação */}
         <div className="flex h-screen">

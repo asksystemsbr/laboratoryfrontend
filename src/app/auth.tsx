@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
     //const savedToken = localStorage.getItem('token');
     const savedToken = getCookie('token');
-    const savedPermissions = JSON.parse(localStorage.getItem('permissions') || 'null');
+    const savedPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
 
     if (savedUser && savedToken) {
       // Reconstrói o objeto user
@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setCookie('token', data.token);
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);
-      localStorage.setItem('permissions', data.permissions);
+      localStorage.setItem('permissions', JSON.stringify(data.permissions));
       setUser(user); // Armazena o usuário autenticado
     } catch (error) {
       console.error('Erro no login', error);
@@ -101,7 +101,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Verifica as permissões do usuário
   const userCan = (permissions: string[]) => {
     if (!user || !user.permissions) return false;
-    return permissions.some((permission) => user.permissions.includes(permission));
+    const userPermissionsLower = user.permissions.map((perm) => perm.toLowerCase());
+    const requiredPermissionsLower = permissions.map((perm) => perm.toLowerCase());
+    return requiredPermissionsLower.some((permission) => userPermissionsLower.includes(permission));
   };
 
   return (
