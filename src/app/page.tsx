@@ -1,15 +1,27 @@
-"use client";
-
+ // src/app/page.tsx
+ "use client";
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // Certifique-se de usar o Router correto para App Router
+import { useAuth } from './auth';
 
 export default function Home() {
   const router = useRouter();
+  const authContext = useAuth(); // Verifica o contexto de autenticação
 
-  // Redireciona para /login ao carregar
   useEffect(() => {
-    router.push('/login');
-  }, [router]);
+    if (!authContext?.loading) {
+      if (authContext?.user) {
+        //router.push('/dashboard'); // Redireciona para o dashboard se estiver autenticado
+        router.push('/dashboard'); // Redireciona para o dashboard se estiver autenticado
+      } else {
+        router.push('/login'); // Redireciona para o login se não estiver autenticado
+      }
+    }
+  }, [authContext, router]);
 
-  return null; // Não renderiza nada, já que estamos redirecionando
+  if (authContext?.loading) {
+    return <p>Carregando...</p>;
+  }
+
+  return null; // Retorna null porque a página será redirecionada
 }
