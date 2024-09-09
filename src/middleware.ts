@@ -29,5 +29,6 @@ export const config = {
   matcher: [
     '/dashboard', 
     '/teste', 
+    '/grupousuario', 
     '/someOtherPrivateRoute'], // Defina as rotas privadas que precisam de proteção
 };
