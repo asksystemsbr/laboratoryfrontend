@@ -61,6 +61,11 @@ export default function Menu() {
     router.push('/grupousuario');
   };
 
+  const goToClientes = () => {
+    router.push('/cliente');
+  };
+  
+
   return (
     <div className="flex">
       {/* Botão de abrir/fechar menu - visível apenas em telas pequenas */}
@@ -104,13 +109,17 @@ export default function Menu() {
             </li>
 
             <li>
-              <button
-                onClick={() => setIsCadastrosOpen(!isCadastrosOpen)}
+            <button
+                onClick={() => {
+                  console.log("Abrindo/fechando Cadastros");
+                  setIsCadastrosOpen(!isCadastrosOpen);
+                }}
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
               >
                 <span className="material-icons">list_alt</span>
                 <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Cadastros</span>
               </button>
+
 
               {isCadastrosOpen && (
                 <ul className="ml-6 mt-2">
@@ -123,6 +132,19 @@ export default function Menu() {
                         <span className="material-icons">group</span>
                         <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
                           Grupo de Usuários
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                  {userCan(['cliente.Read', 'cliente.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToClientes}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">person</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Cliente
                         </span>
                       </button>
                     </li>
