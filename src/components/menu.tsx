@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'; // Importa o hook de navegação do
 import { useAuth } from '../app/auth'; // Importa o hook de autenticação
 import ConfirmationModal from './confirmationModal'; // Importa a modal de confirmação
 
-import { ReactNode } from 'react'; // Importa o tipo ReactNode
+//import { ReactNode } from 'react'; // Importa o tipo ReactNode
 
-interface MenuProps {
-  children: ReactNode; // Define o tipo de children como ReactNode
-}
+// interface MenuProps {
+//   children: ReactNode; // Define o tipo de children como ReactNode
+// }
 
 export default function Menu() {
   const [drawerOpen, setDrawerOpen] = useState(true); // O menu começa expandido por padrão no desktop

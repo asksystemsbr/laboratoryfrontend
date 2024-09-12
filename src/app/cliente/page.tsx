@@ -1,3 +1,4 @@
+//src/app/cliente/page.tsx
 "use client";
 import { useState, useEffect } from 'react';
 import { ClienteCreateForm } from './clientecreate';
@@ -9,6 +10,8 @@ import { Cliente } from '../../models/cliente';
 import { SnackbarState } from '../../models/snackbarState';
 import Menu from '../../components/menu';
 import ConfirmationModal from '../../components/confirmationModal';
+
+Modal.setAppElement('#__next');
 
 export default function ClienteList() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -148,7 +151,7 @@ export default function ClienteList() {
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
           {isEditing ? (
-            <ClienteEditForm cliente={editingCliente!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <ClienteEditForm clienteId={editingCliente!.id!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           ) : (
             <ClienteCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           )}

@@ -11,6 +11,8 @@ import { SnackbarState } from '../../models/snackbarState'; // Importa a classe
 import Menu from '../../components/menu'; // Importa o menu
 import ConfirmationModal from '../../components/confirmationModal'; // Importa a modal genérica
 
+Modal.setAppElement('#__next');
+
 export default function GrupoUsuarioList() {
   const [grupoUsuarios, setGrupoUsuarios] = useState<GrupoUsuario[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);

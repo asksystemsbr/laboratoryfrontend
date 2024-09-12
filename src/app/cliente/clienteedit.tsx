@@ -1,10 +1,10 @@
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useState,useCallback  } from 'react';
 import { Cliente } from '../../models/cliente';
 import { SnackbarState } from '@/models/snackbarState';
-import InputMask from 'react-input-mask';
+import InputMask from 'react-input-mask-next';
 
 interface ClienteEditFormProps {
   clienteId: number; // ID do cliente que está sendo editado
@@ -14,75 +14,97 @@ interface ClienteEditFormProps {
 }
 
 export const ClienteEditForm = ({ clienteId, onSave, onClose, setSnackbar }: ClienteEditFormProps) => {
-  const { register, handleSubmit, reset, setValue } = useForm<Cliente>();
+  const { register, handleSubmit, setValue,formState: { errors } } = useForm<Cliente>();
   const [isCNPJ, setIsCNPJ] = useState(false); // Estado para controlar máscara CPF/CNPJ
 
-  useEffect(() => {
-    // Carregar os dados do cliente para edição
-    const fetchCliente = async () => {
-      try {
-        const response = await axios.get(`/api/Cliente/${clienteId}`);
-        const cliente = response.data;
 
-        // Preencher o formulário com os dados do cliente
-        setValue('nome', cliente.nome);
-        setValue('email', cliente.email);
-        setValue('cpfCnpj', cliente.cpfCnpj);
-        setValue('endereco', cliente.endereco);
-        setValue('telefone', cliente.telefone);
-        setValue('dataCadastro', cliente.dataCadastro);
+  const loadCliente = useCallback(async () => {
+    try {
+      const { data } = await axios.get<Cliente>(`/api/Cliente/${clienteId}`);
 
-        // Ajusta a máscara do CPF/CNPJ baseado no tamanho do valor
-        setIsCNPJ(cliente.cpfCnpj.length > 14);
-      } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao carregar o cliente!', 'error', true));
+      // Format 'dataCadastro' to 'YYYY-MM-DD' format
+      if (data.dataCadastro) {
+        const validDate = new Date(data.dataCadastro);
+        if (!isNaN(validDate.getTime())) {
+          const formattedDate = new Date(data.dataCadastro).toISOString().split('T')[0]; // Extract only the date part
+          setValue('dataCadastro', formattedDate);
+        }
       }
-    };
-
-    fetchCliente();
+      // Pre-fill the form with data from the API
+      Object.keys(data).forEach((key) => {
+        if (key !== 'dataCadastro') {
+          setValue(key as keyof Cliente, data[key as keyof Cliente]);
+        }
+      })
+      
+      if (data.cpfCnpj) {
+        setIsCNPJ(data.cpfCnpj.length > 14);
+      }
+    } catch (error) {
+      setSnackbar(new SnackbarState('Erro ao carregar o cliente!', 'error', true));
+    }
   }, [clienteId, setValue, setSnackbar]);
 
-  const toggleMask = () => {
-    setIsCNPJ(!isCNPJ); // Alterna entre CPF e CNPJ
-  };
+  useEffect(() => {
+    loadCliente();
+  }, [loadCliente]);
+
+  const toggleMask = () => setIsCNPJ((prev) => !prev);
+
 
   const onSubmit = async (data: Cliente) => {
     try {
+      if (typeof data.dataCadastro === 'string') {
+        data.dataCadastro = new Date(data.dataCadastro); 
+      }
       await axios.put(`/api/Cliente/${clienteId}`, data);
+      setSnackbar(new SnackbarState('Cliente editado com sucesso!', 'success', true));
       onSave();
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao editar o cliente!', 'error', true));
     }
   };
 
+  // Styles
+  const inputStyle = 'border rounded w-full py-2 px-3 mt-1';
+  const textColor = { color: '#333' };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-      <h2 className="text-xl font-bold mb-4" style={{ color: '#333' }}>Editar Cliente</h2>
+       <h2 className="text-xl font-bold mb-4" style={textColor}>Editar Cliente</h2>
 
       <div className="mb-4">
-        <label className="block" style={{ color: '#333' }}>Nome</label>
-        <input {...register('nome', { required: true })} 
-               className="border rounded w-full py-2 px-3 mt-1" 
-               style={{ color: '#333' }} // Define a cor da fonte
+        <label className="block" style={textColor}>Nome</label>
+        <input {...register('nome', { required: 'O nome é obrigatório' })} 
+              className={inputStyle} 
+              style={textColor} 
         />
+         {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
       </div>
 
       <div className="mb-4">
         <label className="block" style={{ color: '#333' }}>Email</label>
-        <input {...register('email', { required: true })} 
-               className="border rounded w-full py-2 px-3 mt-1" 
-               style={{ color: '#333' }} // Define a cor da fonte
+        <input {...register('email', {             
+            required: 'O e-mail é obrigatório',
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: 'E-mail inválido'
+            } 
+          })} 
+              className={inputStyle} 
+              style={textColor} 
         />
+        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
       </div>
 
       <div className="mb-4">
-        <label className="block" style={{ color: '#333' }}>CPF/CNPJ</label>
+        <label className="block" style={textColor}>CPF/CNPJ</label>
         <div className="flex">
           <InputMask
-            {...register('cpfCnpj', { required: true })}
+            {...register('cpfCnpj', { required: 'CPF/CNPJ é obrigatório'  })}
             mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
-            className="border rounded w-full py-2 px-3 mt-1"
-            style={{ color: '#333' }} // Define a cor da fonte
+            className={inputStyle}
+            style={textColor}// Define a cor da fonte
             placeholder={isCNPJ ? 'CNPJ' : 'CPF'}
           />
           <button
@@ -93,34 +115,38 @@ export const ClienteEditForm = ({ clienteId, onSave, onClose, setSnackbar }: Cli
             {isCNPJ ? 'Usar CPF' : 'Usar CNPJ'}
           </button>
         </div>
+        {errors.cpfCnpj && <p className="text-red-500 text-sm">{errors.cpfCnpj?.message}</p>}
       </div>
 
       <div className="mb-4">
-        <label className="block" style={{ color: '#333' }}>Endereço</label>
-        <input {...register('endereco')} 
-               className="border rounded w-full py-2 px-3 mt-1" 
-               style={{ color: '#333' }} // Define a cor da fonte
+      <label className="block" style={textColor}>Endereço</label>
+        <input {...register('endereco',{required: 'O endereço é obrigatório'})} 
+               className={inputStyle} 
+               style={textColor} // Define a cor da fonte
         />
+        {errors.endereco && <p className="text-red-500 text-sm">{errors.endereco?.message}</p>}
       </div>
 
       <div className="mb-4">
-        <label className="block" style={{ color: '#333' }}>Telefone</label>
+        <label className="block" style={textColor}>Telefone</label>
         <InputMask
-          {...register('telefone')}
+          {...register('telefone', { required: 'O telefone é obrigatório' })}
           mask="(99) 99999-9999"
-          className="border rounded w-full py-2 px-3 mt-1"
-          style={{ color: '#333' }} // Define a cor da fonte
+          className={inputStyle}
+          style={textColor} // Define a cor da fonte
         />
+        {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
       </div>
 
       <div className="mb-4">
-        <label className="block" style={{ color: '#333' }}>Data de Cadastro</label>
+        <label className="block" style={textColor}>Data de Cadastro</label>
         <input
-          {...register('dataCadastro', { required: true })}
+          {...register('dataCadastro', { required: 'A data de cadastro é obrigatória' })}
           type="date"
-          className="border rounded w-full py-2 px-3 mt-1"
-          style={{ color: '#333' }} // Define a cor da fonte
+          className={inputStyle}
+          style={textColor} // Define a cor da fonte
         />
+        {errors.dataCadastro && <p className="text-red-500 text-sm">{errors.dataCadastro?.message}</p>}
       </div>
 
       <div className="flex justify-end">
