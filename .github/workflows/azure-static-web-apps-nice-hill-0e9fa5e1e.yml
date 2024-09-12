@@ -1,0 +1,63 @@
+name: Azure Static Web Apps CI/CD
+
+on:
+  push:
+    branches:
+      - Main # Certifique-se de que o nome da branch está correto
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - Main
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+
+      # Configurar o Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x' # Certifique-se de usar a versão correta do Node.js
+
+      # Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # Construir a aplicação Next.js
+      - name: Build Next.js app
+        run: npm run build
+
+      # Listar os arquivos gerados (para depuração)
+      - name: List build files
+        run: ls -la ./.next
+
+      # Fazer o deploy para o Azure Static Web Apps
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_HILL_0E9FA5E1E }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for GitHub integrations (i.e. PR comments)
+          action: "upload"
+          app_location: "/" # Caminho do código fonte da aplicação
+          api_location: "" # Caminho do código fonte da API (opcional, deixe vazio se não houver API)
+          output_location: ".next" # Diretório de saída da aplicação Next.js após o build
+
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_HILL_0E9FA5E1E }}
+          action: "close"
