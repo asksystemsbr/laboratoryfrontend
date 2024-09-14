@@ -15,6 +15,8 @@ Modal.setAppElement('#__next');
 
 export default function GrupoUsuarioList() {
   const [grupoUsuarios, setGrupoUsuarios] = useState<GrupoUsuario[]>([]);
+  const [filtered, setFiltered] = useState<GrupoUsuario[]>([]);
+  const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingGrupo, setEditingGrupo] = useState<GrupoUsuario | null>(null);
@@ -47,11 +49,22 @@ export default function GrupoUsuarioList() {
     }
   }, [snackbar]);
 
+  useEffect(() => {
+    const filtered = grupoUsuarios.filter((item) => {
+      // Obtenha todas as chaves (campos) do objeto `cliente`
+        return Object.values(item).some((value) => 
+        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    });
+    setFiltered(filtered);
+  }, [searchTerm, grupoUsuarios]);
+
   // Função para carregar os dados
   const loadGrupoUsuarios = async () => {
     try {
       const response = await axios.get('/api/GrupoUsuario');
       setGrupoUsuarios(response.data);
+      setFiltered(response.data); 
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar grupos!', 'error', true));
     }
@@ -119,6 +132,17 @@ export default function GrupoUsuarioList() {
           </button>
         </div>
 
+        {/* Campo de busca */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)} // Atualiza o termo de busca
+            className="border border-gray-300 rounded-lg py-2 px-4 w-full"
+          />
+        </div>
+
         {/* Tabela de listagem */}
         <table className="min-w-full bg-white border border-gray-200">
           <thead>
@@ -129,7 +153,7 @@ export default function GrupoUsuarioList() {
             </tr>
           </thead>
           <tbody>
-            {grupoUsuarios.map((grupo) => (
+            {filtered.map((grupo) => (
               <tr key={grupo.id} className="border-t border-gray-200">
                 <td className="py-2 px-4 text-left">{grupo.descricao}</td>
                 <td className="py-2 px-4 text-left">

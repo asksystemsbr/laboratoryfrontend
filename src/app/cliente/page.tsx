@@ -15,6 +15,8 @@ Modal.setAppElement('#__next');
 
 export default function ClienteList() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+  const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
@@ -50,10 +52,22 @@ export default function ClienteList() {
     try {
       const response = await axios.get('/api/Cliente');
       setClientes(response.data);
+      setFilteredClientes(response.data); 
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
   };
+
+   // Função para filtrar os clientes com base no termo de busca
+   useEffect(() => {
+    const filtered = clientes.filter((cliente) => {
+      // Obtenha todas as chaves (campos) do objeto `cliente`
+        return Object.values(cliente).some((value) => 
+        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    });
+    setFilteredClientes(filtered);
+  }, [searchTerm, clientes]);
 
   const handleDelete = async () => {
     if (clienteToDelete !== null) {
@@ -109,6 +123,17 @@ export default function ClienteList() {
           </button>
         </div>
 
+        {/* Campo de busca */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)} // Atualiza o termo de busca
+            className="border border-gray-300 rounded-lg py-2 px-4 w-full"
+          />
+        </div>
+
         <table className="min-w-full bg-white border border-gray-200">
           <thead>
             <tr>
@@ -119,7 +144,7 @@ export default function ClienteList() {
             </tr>
           </thead>
           <tbody>
-            {clientes.map((cliente) => (
+            {filteredClientes.map((cliente) => (
               <tr key={cliente.id} className="border-t border-gray-200">
                 <td className="py-2 px-4 text-left">{cliente.nome}</td>
                 <td className="py-2 px-4 text-left">{cliente.email}</td>

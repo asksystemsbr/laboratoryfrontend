@@ -14,6 +14,8 @@ Modal.setAppElement('#__next');
 
 export default function EmpresaPage() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [filtered, setFiltered] = useState<Empresa[]>([]);
+  const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
@@ -44,6 +46,16 @@ export default function EmpresaPage() {
       };
     }
   }, [snackbar]);
+
+  useEffect(() => {
+    const filtered = empresas.filter((item) => {
+      // Obtenha todas as chaves (campos) do objeto `cliente`
+        return Object.values(item).some((value) => 
+        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    });
+    setFiltered(filtered);
+  }, [searchTerm, empresas]);
 
   const loadEmpresas = async () => {
     try {
@@ -108,6 +120,17 @@ export default function EmpresaPage() {
           </button>
         </div>
 
+        {/* Campo de busca */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)} // Atualiza o termo de busca
+            className="border border-gray-300 rounded-lg py-2 px-4 w-full"
+          />
+        </div>
+
         <table className="min-w-full bg-white border border-gray-200">
           <thead>
             <tr>
@@ -119,7 +142,7 @@ export default function EmpresaPage() {
             </tr>
           </thead>
           <tbody>
-            {empresas.map((empresa) => (
+            {filtered.map((empresa) => (
               <tr key={empresa.id} className="border-t border-gray-200">
                 <td className="py-2 px-4 text-left">{empresa.cnpj}</td>
                 <td className="py-2 px-4 text-left">{empresa.razaoSocial}</td>
