@@ -73,7 +73,13 @@ export default function Menu() {
     router.push('/especialidade');
   };
 
-
+  const goToSetor = () => {
+    router.push('/setor');
+  };
+  const goToModalidade = () => {
+    router.push('/modalidade');
+  };
+  
   return (
     <div className="flex">
       {/* Botão de abrir/fechar menu - visível apenas em telas pequenas */}
@@ -183,6 +189,32 @@ export default function Menu() {
                       </button>
                     </li>
                   )}
+                  {userCan(['setor.Read', 'setor.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToSetor}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">square</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Setor
+                        </span>
+                      </button>
+                    </li>
+                  )}  
+                  {userCan(['modalidade.Read', 'modalidade.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToModalidade}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Modalidade
+                        </span>
+                      </button>
+                    </li>
+                  )}                                  
                 </ul>
               )}
             </li>

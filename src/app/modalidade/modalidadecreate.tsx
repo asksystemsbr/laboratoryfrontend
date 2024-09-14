@@ -1,42 +1,39 @@
-//src/app/especialidade/especialidadeedit.tsx
+//src/app/modalidade/modalidadecreate.tsx
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { Especialidade } from '../../models/especialidade';
+import { Modalidade } from '../../models/modalidade';
 import { SnackbarState } from '@/models/snackbarState';
 
-interface EspecialidadeEditFormProps {
-  especialidade: Especialidade;
+interface ModalidadeCreateFormProps {
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
 }
 
-export const EspecialidadeEditForm = ({ especialidade, onSave, onClose,setSnackbar  }: EspecialidadeEditFormProps) => {
-  const { register, handleSubmit, reset,formState: { errors } } = useForm<Especialidade>({
-    defaultValues: especialidade,
-  });
+export const ModalidadeCreateForm = ({ onSave, onClose,setSnackbar  }: ModalidadeCreateFormProps) => {
+  const { register, handleSubmit, reset,formState: { errors } } = useForm<Modalidade>();
 
-  const onSubmit = async (data: Especialidade) => {
+  const onSubmit = async (data: Modalidade) => {
     try {
-        await axios.put(`/api/Especialidade/${especialidade.id}`, data);
+        await axios.post('/api/Modalidade', data);
         reset();
         onSave();
       } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
+        setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-      <h2 className="text-xl font-bold mb-4">Editar Especialidade</h2>
+      <h2 className="text-xl font-bold mb-4">Nova Modalidade</h2>
       <div className="mb-4">
         <label className="block text-gray-700">Descrição</label>
         <textarea
           {...register('descricao', { required: 'A descrição é obrigatória' })}
           className="border rounded w-full py-2 px-3 mt-1"
         />
-        {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
+         {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
       </div>
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
