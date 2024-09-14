@@ -1,25 +1,25 @@
-//src/app/especialidade/especialidadeedit.tsx
+//src/app/modalidade/modalidadeedit.tsx
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { Especialidade } from '../../models/especialidade';
+import { Modalidade } from '../../models/modalidade';
 import { SnackbarState } from '@/models/snackbarState';
 
-interface EspecialidadeEditFormProps {
-  especialidade: Especialidade;
+interface ModalidadeEditFormProps {
+  modalidade: Modalidade;
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
 }
 
-export const EspecialidadeEditForm = ({ especialidade, onSave, onClose,setSnackbar  }: EspecialidadeEditFormProps) => {
-  const { register, handleSubmit, reset,formState: { errors } } = useForm<Especialidade>({
-    defaultValues: especialidade,
+export const ModalidadeEditForm = ({ modalidade, onSave, onClose,setSnackbar  }: ModalidadeEditFormProps) => {
+  const { register, handleSubmit, reset,formState: { errors } } = useForm<Modalidade>({
+    defaultValues: modalidade,
   });
 
-  const onSubmit = async (data: Especialidade) => {
+  const onSubmit = async (data: Modalidade) => {
     try {
-        await axios.put(`/api/Especialidade/${especialidade.id}`, data);
+        await axios.put(`/api/Modalidade/${modalidade.id}`, data);
         reset();
         onSave();
       } catch (error) {
@@ -29,7 +29,7 @@ export const EspecialidadeEditForm = ({ especialidade, onSave, onClose,setSnackb
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-      <h2 className="text-xl font-bold mb-4">Editar Especialidade</h2>
+      <h2 className="text-xl font-bold mb-4">Editar Setor</h2>
       <div className="mb-4">
         <label className="block text-gray-700">Descrição</label>
         <textarea
