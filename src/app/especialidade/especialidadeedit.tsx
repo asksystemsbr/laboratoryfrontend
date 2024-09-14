@@ -1,29 +1,29 @@
-//src/app/grupousuario/grupousuarioedit.tsx
+//src/app/especialidade/especialidadeedit.tsx
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { GrupoUsuario } from '../../models/grupoUsuario';
+import { Especialidade } from '../../models/especialidade';
 import { SnackbarState } from '@/models/snackbarState';
 
-interface GrupoUsuarioEditFormProps {
-  grupoUsuario: GrupoUsuario;
+interface EspecialidadeEditFormProps {
+  especialidade: Especialidade;
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
 }
 
-export const GrupoUsuarioEditForm = ({ grupoUsuario, onSave, onClose,setSnackbar  }: GrupoUsuarioEditFormProps) => {
-  const { register, handleSubmit, reset,formState: { errors } } = useForm<GrupoUsuario>({
-    defaultValues: grupoUsuario,
+export const EspecialidadeEditForm = ({ especialidade, onSave, onClose,setSnackbar  }: EspecialidadeEditFormProps) => {
+  const { register, handleSubmit, reset,formState: { errors } } = useForm<Especialidade>({
+    defaultValues: especialidade,
   });
 
-  const onSubmit = async (data: GrupoUsuario) => {
+  const onSubmit = async (data: Especialidade) => {
     try {
-        await axios.put(`/api/GrupoUsuario/${grupoUsuario.id}`, data);
+        await axios.put(`/api/Especialidade/${especialidade.id}`, data);
         reset();
         onSave();
       } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao editar o grupo!', 'error', true)); // Exibe erro via snackbar
+        setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };
 

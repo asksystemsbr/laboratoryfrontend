@@ -69,6 +69,10 @@ export default function Menu() {
     router.push('/empresa');
   };
   
+  const goToEsoecialidade = () => {
+    router.push('/especialidade');
+  };
+
 
   return (
     <div className="flex">
@@ -162,6 +166,19 @@ export default function Menu() {
                         <span className="material-icons">business</span>
                         <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
                           Empresa
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                  {userCan(['especialidade.Read', 'especialidade.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToEsoecialidade}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">biotech</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Especialidade
                         </span>
                       </button>
                     </li>

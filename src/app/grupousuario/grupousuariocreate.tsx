@@ -12,7 +12,7 @@ interface GrupoUsuarioCreateFormProps {
 }
 
 export const GrupoUsuarioCreateForm = ({ onSave, onClose,setSnackbar  }: GrupoUsuarioCreateFormProps) => {
-  const { register, handleSubmit, reset } = useForm<GrupoUsuario>();
+  const { register, handleSubmit, reset,formState: { errors } } = useForm<GrupoUsuario>();
 
   const onSubmit = async (data: GrupoUsuario) => {
     try {
@@ -30,9 +30,10 @@ export const GrupoUsuarioCreateForm = ({ onSave, onClose,setSnackbar  }: GrupoUs
       <div className="mb-4">
         <label className="block text-gray-700">Descrição</label>
         <textarea
-          {...register('descricao', { required: true })}
+          {...register('descricao', { required: 'A descrição é obrigatória' })}
           className="border rounded w-full py-2 px-3 mt-1"
         />
+         {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
       </div>
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
