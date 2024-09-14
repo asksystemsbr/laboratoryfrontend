@@ -79,7 +79,19 @@ export default function Menu() {
   const goToModalidade = () => {
     router.push('/modalidade');
   };
+
+  const goToRecipienteAmostra = () => {
+    router.push('/recipienteAmostra');
+  };
+
+  const goToRotinaExame = () => {
+    router.push('/rotinaExame');
+  };
   
+  const goToMetodoExame = () => {
+    router.push('/metodoExame');
+  };
+
   return (
     <div className="flex">
       {/* Botão de abrir/fechar menu - visível apenas em telas pequenas */}
@@ -214,7 +226,46 @@ export default function Menu() {
                         </span>
                       </button>
                     </li>
-                  )}                                  
+                  )}    
+                {userCan(['recipienteamostra.Read', 'recipienteamostra.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToRecipienteAmostra}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Recipiente Amostra
+                        </span>
+                      </button>
+                    </li>
+                  )}     
+              {userCan(['rotinaexame.Read', 'rotinaexame.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToRotinaExame}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Rotina de Exame
+                        </span>
+                      </button>
+                    </li>
+                  )} 
+              {userCan(['metodoExame.Read', 'metodoExame.Write']) && (
+                    <li>
+                      <button
+                        onClick={goToMetodoExame}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Método de Exame
+                        </span>
+                      </button>
+                    </li>
+                  )}                                                                               
                 </ul>
               )}
             </li>
