@@ -2,46 +2,38 @@
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import InputMask from 'react-input-mask-next';
-import { useEffect, useCallback } from 'react';
+//import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Empresa } from '../../models/empresa';
 import { SnackbarState } from '@/models/snackbarState';
 
 interface EmpresaEditFormProps {
-  empresaId: number;
+  empresa: Empresa;
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void;
 }
 
-export const EmpresaEditForm = ({ empresaId, onSave, onClose, setSnackbar }: EmpresaEditFormProps) => {
-  const { register, handleSubmit, setValue } = useForm<Empresa>();
-
-  const loadEmpresa = useCallback(async () => {
-    try {
-      const { data } = await axios.get<Empresa>(`/api/Empresa/${empresaId}`);
-      setValue('cnpj', data.cnpj);
-      setValue('razaoSocial', data.razaoSocial);
-      setValue('nomeFantasia', data.nomeFantasia);
-      setValue('endereco', data.endereco);
-      setValue('telefone', data.telefone);
-      setValue('email', data.email);
-      setValue('dataAbertura', data.dataAbertura);
-      setValue('naturezaJuridica', data.naturezaJuridica);
-      setValue('situacaoCadastral', data.situacaoCadastral);
-      setValue('capitalSocial', data.capitalSocial);
-    } catch (error) {
-      setSnackbar(new SnackbarState('Erro ao carregar a empresa!', 'error', true));
-    }
-  }, [empresaId, setValue, setSnackbar]);
+export const EmpresaEditForm = ({ empresa, onSave, onClose, setSnackbar }: EmpresaEditFormProps) => {
+  const { register, handleSubmit, setValue,reset } = useForm<Empresa>({
+    defaultValues: empresa,
+  });
 
   useEffect(() => {
-    loadEmpresa();
-  }, [loadEmpresa]);
-
+    if (empresa.dataAbertura) {
+      const validDate = new Date(empresa.dataAbertura);
+      if (!isNaN(validDate.getTime())) {
+        const formattedDate = validDate.toISOString().split('T')[0]; // Formatar para YYYY-MM-DD
+        setValue('dataAbertura', formattedDate); // Atualizar o valor da data formatada
+      }
+    }
+  }, [empresa.dataAbertura, setValue]);
+  
   const onSubmit = async (data: Empresa) => {
     try {
-      await axios.put(`/api/Empresa/${empresaId}`, data);
+      await axios.put(`/api/Empresa/${empresa.id}`, data);
       setSnackbar(new SnackbarState('Empresa editada com sucesso!', 'success', true));
+      reset();
       onSave();
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao editar a empresa!', 'error', true));

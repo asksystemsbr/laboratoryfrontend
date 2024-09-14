@@ -7,7 +7,7 @@ export interface Empresa {
     endereco?: string;
     telefone?: string;
     email?: string;
-    dataAbertura?: Date;
+    dataAbertura?: Date | string;
     naturezaJuridica?: string;
     situacaoCadastral?: string;
     capitalSocial?: number;

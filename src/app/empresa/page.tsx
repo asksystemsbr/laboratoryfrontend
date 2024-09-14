@@ -175,7 +175,7 @@ export default function EmpresaPage() {
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
           {isEditing ? (
-            <EmpresaEditForm empresaId={editingEmpresa!.id!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <EmpresaEditForm empresa={editingEmpresa!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           ) : (
             <EmpresaCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           )}
