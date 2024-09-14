@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import InputMask from 'react-input-mask';
+import InputMask from 'react-input-mask-next';
 import { Empresa } from '../../models/empresa';
 import { SnackbarState } from '@/models/snackbarState';
 

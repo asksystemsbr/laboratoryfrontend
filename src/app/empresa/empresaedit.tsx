@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Empresa } from '../../models/empresa';
 import { SnackbarState } from '@/models/snackbarState';
 
@@ -14,7 +14,7 @@ interface EmpresaEditFormProps {
 
 export const EmpresaEditForm = ({ empresaId, onSave, onClose, setSnackbar }: EmpresaEditFormProps) => {
   const { register, handleSubmit, setValue } = useForm<Empresa>();
-  const [isCNPJ, setIsCNPJ] = useState(false);
+  //const [isCNPJ, setIsCNPJ] = useState(false);
 
   const loadEmpresa = useCallback(async () => {
     try {
