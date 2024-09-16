@@ -1,8 +1,11 @@
 //src/app/laboratorioApoio/laboratorioApoiocreate.tsx
 "use client";
 import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { LaboratorioApoio } from '../../models/laboratorioApoio';
+import { MaterialApoio } from '../../models/materialApoio'; // Model para MaterialApoio
+import { ExameApoio } from '../../models/exameApoio'; // Model para ExameApoio
 import { SnackbarState } from '@/models/snackbarState';
 
 interface LaboratorioApoioCreateFormProps   {
@@ -14,9 +17,95 @@ interface LaboratorioApoioCreateFormProps   {
 export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: LaboratorioApoioCreateFormProps  ) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<LaboratorioApoio>();
 
+  // Listas dinâmicas para adicionar materiais e exames
+  const [materiais, setMateriais] = useState<MaterialApoio[]>([]);
+  const [exames, setExames] = useState<ExameApoio[]>([]);
+
+  // Listas de opções para selects
+  const [availableMateriais, setAvailableMateriais] = useState<MaterialApoio[]>([]);
+  const [availableExames, setAvailableExames] = useState<ExameApoio[]>([]);
+
+// Estados para controlar abas
+  const [activeTab, setActiveTab] = useState<'info' | 'materiais' | 'exames'>('info'); // Define abas
+
+  // Efeito para carregar Materiais e Exames
+  useEffect(() => {
+    const loadMateriais = async () => {
+      try {
+        const response = await axios.get('/api/MaterialApoio');
+        setAvailableMateriais(response.data);
+      } catch (error) {
+        setSnackbar(new SnackbarState('Erro ao carregar materiais!', 'error', true));
+      }
+    };
+
+    const loadExames = async () => {
+      try {
+        const response = await axios.get('/api/ExameApoio');
+        setAvailableExames(response.data);
+      } catch (error) {
+        setSnackbar(new SnackbarState('Erro ao carregar exames!', 'error', true));
+      }
+    };
+
+    if (activeTab === 'materiais') {
+      loadMateriais();
+    } else if (activeTab === 'exames') {
+      loadExames();
+    }
+  }, [activeTab, setSnackbar]);
+
+  // Para adicionar MaterialApoio
+  const addMaterial = (materialId: number) => {
+    const selectedMaterial = availableMateriais.find(m => m.id === materialId);
+    if (selectedMaterial && !materiais.find(m => m.id === materialId)) {
+      setMateriais([...materiais, selectedMaterial]);
+    }
+  };
+
+  // Para adicionar ExameApoio
+  const addExame = (exameId: number) => {
+    const selectedExame = availableExames.find(e => e.id === exameId);
+    if (selectedExame && !exames.find(e => e.id === exameId)) {
+      setExames([...exames, selectedExame]);
+    }
+  };
+
+  // Para remover Material da lista
+  const removeMaterial = (event: React.MouseEvent<HTMLButtonElement>, materialId: number) => {
+    event.preventDefault(); // Evita que o botão dispare o submit do formulário
+    setMateriais(materiais.filter(m => m.id !== materialId));
+  };
+
+  // Para remover Exame da lista
+  const removeExame = (event: React.MouseEvent<HTMLButtonElement>, exameId: number) => {
+    event.preventDefault(); // Evita que o botão dispare o submit do formulário
+    setExames(exames.filter(e => e.id !== exameId));
+  };
+
   const onSubmit = async (data: LaboratorioApoio) => {
     try {
-        await axios.post('/api/LaboratorioApoio', data);
+        // Primeiro salva o LaboratorioApoio
+        const response = await axios.post('/api/LaboratorioApoio', data);
+
+        const laboratorioId = response.data.id; // Assume que o backend retorna o ID
+
+        // Salvar LaboratorioApoioMateriais
+        for (const material of materiais) {
+          await axios.post(`/api/LaboratorioApoioMateriais`, {
+            laboratorioApoioId: laboratorioId,
+            materialApoioId: material.id,
+          });
+        }
+  
+        // Salvar LaboratorioApoioExameApoio
+        for (const exame of exames) {
+          await axios.post(`/api/LaboratorioApoioExameApoio`, {
+            laboratorioApoioId: laboratorioId,
+            exameApoioId: exame.id,
+          });
+        }
+
         reset();
         onSave();
       } catch (error) {
@@ -28,6 +117,34 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <h2 className="text-xl font-bold mb-4">Novo Laboratório de Apoio</h2>
 
+      {/* Abas de navegação com layout mais moderno */}
+      <div className="flex border-b mb-4">
+        <button
+          type="button"
+          className={`mr-4 pb-2 ${activeTab === 'info' ? 'border-b-4 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('info')}
+        >
+          Informações Gerais
+        </button>
+        <button
+          type="button"
+          className={`mr-4 pb-2 ${activeTab === 'materiais' ? 'border-b-4 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('materiais')}
+        >
+          Materiais de Apoio
+        </button>
+        <button
+          type="button"
+          className={`pb-2 ${activeTab === 'exames' ? 'border-b-4 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('exames')}
+        >
+          Exames de Apoio
+        </button>
+      </div>
+
+     {/* Conteúdo das abas */}
+     {activeTab === 'info' && (
+        <>
         <div className="mb-4">
           <label className="block text-gray-700">Nome do Laboratório</label>
           <input
@@ -106,6 +223,81 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
             className="border rounded w-full py-2 px-3 mt-1"
           />
         </div>  
+        </>
+      )}
+
+      {activeTab === 'materiais' && (
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">Materiais de Apoio</h3>
+
+          {/* Select para adicionar Material */}
+          <select
+            className="border rounded w-full py-2 px-3 mt-1"
+              onChange={(e) => {
+                const materialId = parseInt(e.target.value);
+                if (!isNaN(materialId)) addMaterial(materialId);
+              }}
+          >
+            <option value="">Selecione um Material</option>
+            {availableMateriais.map(material => (
+              <option key={material.id} value={material.id}>
+                {material.nomeMaterial}
+              </option>
+            ))}
+          </select>
+
+          <ul className="mt-4">
+            {materiais.map((material, index) => (
+              <li key={index} className="border-b py-2 flex justify-between">
+                {material.nomeMaterial}
+                <button
+                  className="text-red-500 hover:text-red-700"
+                  onClick={(e) => removeMaterial(e, material.id!)}
+                >
+                  Remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {activeTab === 'exames' && (
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">Exames de Apoio</h3>
+
+          {/* Select para adicionar Exame */}
+          <select
+            className="border rounded w-full py-2 px-3 mt-1"
+            onChange={(e) => {
+              const exameId = parseInt(e.target.value);
+              if (!isNaN(exameId)) addExame(exameId);
+            }}
+          >
+            <option value="">Selecione um Exame</option>
+            {availableExames.map(exame => (
+              <option key={exame.id} value={exame.id}>
+                {exame.nomeExame}
+              </option>
+            ))}
+          </select>
+
+          <ul className="mt-4">
+            {exames.map((exame, index) => (
+              <li key={index} className="border-b py-2 flex justify-between">
+                {exame.nomeExame}
+                <button
+                  className="text-red-500 hover:text-red-700"
+                  onClick={(e) => removeExame(e, exame.id!)}
+                >
+                  Remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
           Cancelar
