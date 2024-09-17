@@ -1,36 +1,33 @@
-//src/app/login/page.tsx
-"use client"; // <-- Certifique-se de que isso está no topo do arquivo
-import { useState,useEffect  } from 'react';
+"use client"; 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../auth';  // Importa o hook de autenticação
+import { useAuth } from '../auth';  
 import axios from '../axiosConfig';
-
 
 interface Credentials {
   Nome: string;
   Senha: string;
   token: string;
-  permissions:string[];
+  permissions: string[];
 }
 
 export default function Login() {
-  const [credentials, setCredentials] = useState<Credentials>({ Nome: '', Senha: '',token: '',permissions:[] });
+  const [credentials, setCredentials] = useState<Credentials>({ Nome: '', Senha: '', token: '', permissions: [] });
   const [showPassword, setShowPassword] = useState(false);
-  const [snackbar, setSnackbar] = useState({ show: false, message: '', color: '' , duration: 5000 });
-  const [progress, setProgress] = useState(100);  // Inicializa a progress bar em 100%
+  const [snackbar, setSnackbar] = useState({ show: false, message: '', color: '', duration: 5000 });
+  const [progress, setProgress] = useState(100);  
   const router = useRouter();
-  const authContext = useAuth(); // Pega o contexto de autenticação
+  const authContext = useAuth(); 
 
   useEffect(() => {
     if (snackbar.show) {
       const interval = setInterval(() => {
-        setProgress((prev) => (prev > 0 ? prev - 1 : 0));  // Reduz progressivamente
-      }, snackbar.duration / 100);  // Duração para reduzir até 0
+        setProgress((prev) => (prev > 0 ? prev - 1 : 0)); 
+      }, snackbar.duration / 100);
 
-      // Oculta a snackbar após o tempo definido (5 segundos)
       const timer = setTimeout(() => {
         setSnackbar({ ...snackbar, show: false });
-        setProgress(100);  // Reset progress quando a snackbar some
+        setProgress(100);
       }, snackbar.duration);
 
       return () => {
@@ -43,39 +40,30 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // const response = await axios.post('/api/Usuarios/authenticate', credentials);
-      // const userData = response.data;
-
-      // Chama a função login do contexto de autenticação
-      //login(userData);
-      await authContext?.login(credentials.Nome,credentials.Senha);
-
-      // Redireciona para o dashboard após o login
+      await authContext?.login(credentials.Nome, credentials.Senha);
       router.push('/dashboard');
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        setSnackbar({
-          show: true,
-          message: error.response?.data || 'Erro no servidor ou na conexão',
-          color: 'bg-red-500',
-          duration: 5000,
-        });
-      } else {
-        setSnackbar({
-          show: true,
-          message: 'Erro desconhecido.',
-          color: 'bg-red-500',
-          duration: 5000,
-        });
-      }      
+      const message = axios.isAxiosError(error)
+        ? error.response?.data || 'Erro no servidor ou na conexão'
+        : 'Erro desconhecido.';
+      setSnackbar({
+        show: true,
+        message,
+        color: 'bg-red-500',
+        duration: 5000,
+      });
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-6 bg-white border border-gray-300 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold text-center text-gray-700">Login</h2>
-        <form onSubmit={handleLogin} className="mt-6">
+    <div className="flex min-h-screen">
+      {/* Coluna da esquerda: Formulário */}
+      <div className="w-1/3 flex flex-col justify-center items-center bg-white p-8">
+      
+        {/* Formulário de login */}
+        <div className="w-full max-w-xs">
+          <h2 className="text-xl font-semibold text-gray-700 mb-8 text-center">Informe seus dados abaixo</h2>
+          <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Nome</label>
             <input
@@ -86,53 +74,70 @@ export default function Login() {
               required
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Senha</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={credentials.Senha}
-                onChange={(e) => setCredentials({ ...credentials, Senha: e.target.value })}
-                className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-opacity-50 focus:ring-blue-400"
-                required
-              />
-              <span
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 cursor-pointer"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? '🙈' : '👁'}
-              </span>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700">Senha *</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={credentials.Senha}
+                  onChange={(e) => setCredentials({ ...credentials, Senha: e.target.value })}
+                  className="block w-full px-4 py-3 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-400"
+                  required
+                />
+                <span
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 cursor-pointer"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? '🙈' : '👁'}
+                </span>
+              </div>
             </div>
+
+            <div className="flex justify-between items-center mb-6">
+              <a href="#" className="text-sm text-blue-600 hover:underline">Esqueci minha senha</a>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full px-4 py-3 bg-green-500 text-white rounded-md hover:bg-green-600"
+            >
+              Entrar
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Coluna da direita: Banner */}
+      <div className="w-2/3 bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center p-8 text-white">
+        <div className="text-center">
+          <h2 className="text-3xl font-semibold mb-4">O seu laboratório de exames clínicos</h2>
+          <p className="mb-4">Mais transparência e agilidade nos processos.</p>
+          <img src="/imgs/laboratorio.jpeg" alt="Mobile App Preview" className="w-64 mx-auto mb-4" />
+          <p className="text-sm">Confira a área de exames</p>
+        </div>
+      </div>
+
+      {/* Snackbar Notification */}
+      {snackbar.show && (
+        <div
+          className={`fixed top-5 right-5 p-4 mb-4 text-white rounded-md shadow-lg ${snackbar.color} animate-slide-up`}
+          style={{ width: '300px' }}
+        >
+          <p>{snackbar.message}</p>
+          <div className="relative w-full h-1 mt-2 bg-gray-300">
+            <div
+              className="absolute left-0 top-0 h-full bg-white"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
           <button
-            type="submit"
-            className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:ring-opacity-50 focus:ring-blue-400"
+            onClick={() => setSnackbar({ ...snackbar, show: false })}
+            className="text-sm underline focus:outline-none"
           >
-            Entrar
+            Fechar
           </button>
-        </form>
-
-        {snackbar.show && (
-          <div
-            className={`fixed top-5 right-5 p-4 mb-4 text-white rounded-md shadow-lg ${snackbar.color} animate-slide-up`}
-            style={{ width: '300px' }}
-          >
-            <p>{snackbar.message}</p>
-            <div className="relative w-full h-1 mt-2 bg-gray-300">
-              <div
-                className="absolute left-0 top-0 h-full bg-white"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <button
-              onClick={() => setSnackbar({ ...snackbar, show: false })}
-              className="text-sm underline focus:outline-none"
-            >
-              Fechar
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
