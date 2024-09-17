@@ -112,7 +112,7 @@ export default function Login() {
         <div className="text-center">
           <h2 className="text-3xl font-semibold mb-4">O seu laboratório de exames clínicos</h2>
           <p className="mb-4">Mais transparência e agilidade nos processos.</p>
-          <img src="/imgs/laboratorio.jpeg" alt="Mobile App Preview" className="w-64 mx-auto mb-4" />
+          <img src="/imgs/laboratorio.jpg" alt="Mobile App Preview" className="w-64 mx-auto mb-4" />
           <p className="text-sm">Confira a área de exames</p>
         </div>
       </div>
