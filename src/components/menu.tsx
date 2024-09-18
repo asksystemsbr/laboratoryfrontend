@@ -4,48 +4,31 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../app/auth';
 import ConfirmationModal from './confirmationModal';
 
-// Componente para os itens do menu
-const MenuItem = ({ icon, label, route, canAccess, drawerOpen, goToPage }: { icon: string, label: string, route: string, canAccess: boolean, drawerOpen: boolean, goToPage: (route: string) => void }) => {
-  if (!canAccess) return null;
-
-  return (
-    <li>
-      <button
-        onClick={() => goToPage(route)}
-        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
-        title={label} // Adiciona tooltip quando o menu estiver colapsado
-      >
-        <span className="material-icons">{icon}</span>
-        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>{label}</span>
-      </button>
-    </li>
-  );
-};
-
 export default function Menu() {
-  const [drawerOpen, setDrawerOpen] = useState(false); // Começa colapsado
-  const [isCadastrosOpen, setIsCadastrosOpen] = useState(false);
-  const [isPermissoesOpen, setIsPermissoesOpen] = useState(false);
-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(true); // Estado do menu lateral
+  const [activeMenu, setActiveMenu] = useState<string | null>(null); // Controla o submenu ativo
+  const [showSubMenu, setShowSubMenu] = useState(false); // Controla se os ícones do submenu são exibidos
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false); // Modal de logout
+  const [isContentVisible, setIsContentVisible] = useState(true); // Estado da visibilidade do conteúdo principal
   const authContext = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setDrawerOpen(false); // Colapsado no mobile
+        setDrawerOpen(false);
+      } else {
+        setDrawerOpen(true);
       }
     };
     window.addEventListener('resize', handleResize);
-    handleResize(); // Executa ao carregar para ajustar conforme o tamanho
+    handleResize();
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  if (!authContext) {
-    return null;
-  }
+  if (!authContext) return null;
 
   const { user, logout, userCan } = authContext;
   if (!user) return null;
@@ -55,28 +38,89 @@ export default function Menu() {
     router.push('/login');
   };
 
+  // Função que navega para uma página e esconde o submenu
   const goToPage = (route: string) => {
-    setDrawerOpen(false); // Fecha o menu no mobile
+    setShowSubMenu(false); // Esconde o submenu de ícones ao clicar
     router.push(route);
+  };
+
+  // Função que renderiza os ícones do submenu na área principal
+  const renderSubMenu = (menu: string) => {
+    switch (menu) {
+      case 'cadastros':
+        return (
+          <div className="grid grid-cols-4 gap-4 p-4">
+            {userCan(['cliente.Read', 'cliente.Write']) && (
+              <div onClick={() => goToPage('/cliente')} className="cursor-pointer">
+                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
+                  <span className="material-icons">person</span>
+                  <p className="mt-2 text-center">Cliente</p>
+                </div>
+              </div>
+            )}
+            {userCan(['empresa.Read', 'empresa.Write']) && (
+              <div onClick={() => goToPage('/empresa')} className="cursor-pointer">
+                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
+                  <span className="material-icons">business</span>
+                  <p className="mt-2 text-center">Empresa</p>
+                </div>
+              </div>
+            )}
+            {userCan(['especialidade.Read', 'especialidade.Write']) && (
+              <div onClick={() => goToPage('/especialidade')} className="cursor-pointer">
+                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
+                  <span className="material-icons">queue</span>
+                  <p className="mt-2 text-center">Especialidade</p>
+                </div>
+              </div>
+            )}
+            {userCan(['setor.Read', 'setor.Write']) && (
+              <div onClick={() => goToPage('/setor')} className="cursor-pointer">
+                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
+                  <span className="material-icons">queue</span>
+                  <p className="mt-2 text-center">Setor</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 'permissoes':
+        return (
+          <div className="grid grid-cols-4 gap-4 p-4">
+            {userCan(['grupoUsuario.Read', 'grupoUsuario.Write']) && (
+              <div onClick={() => goToPage('/grupousuario')} className="cursor-pointer">
+                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
+                  <span className="material-icons">group</span>
+                  <p className="mt-2 text-center">Grupo de Usuários</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Função para lidar com a exibição do submenu e esconder o conteúdo
+  const handleMenuClick = (menu: string) => {
+    if (activeMenu === menu) {
+      // Se clicar no mesmo menu, alterna o estado de exibição
+      setShowSubMenu(!showSubMenu);
+    } else {
+      // Se clicar em outro menu, define o novo submenu e esconde o conteúdo principal
+      setActiveMenu(menu);
+      setShowSubMenu(true);
+      setIsContentVisible(false); // Esconde o conteúdo principal ao clicar no menu
+    }
   };
 
   return (
     <div className="flex">
-      {/* Botão para abrir/fechar menu */}
-      <button
-        onClick={() => setDrawerOpen(!drawerOpen)}
-        className="p-4 text-white bg-gray-800 md:hidden fixed top-0 left-0 z-50"
-      >
-        <span className="material-icons">
-          {drawerOpen ? 'menu_open' : 'menu'}
-        </span>
-      </button>
-
-      {/* Menu Lateral */}
+      {/* Menu lateral */}
       <div
-        className={`bg-gray-800 text-white transition-all duration-300 ${drawerOpen ? 'w-3/4 md:w-56' : 'w-16'} h-screen fixed md:relative z-40 overflow-y-auto`}
+        className={`bg-gray-800 text-white transition-all duration-300 ${drawerOpen ? 'w-56' : 'w-16'} h-screen fixed md:relative z-40`}
       >
-        {/* Botão para expandir ou colapsar no desktop */}
         <div className="p-4">
           <button
             onClick={() => setDrawerOpen(!drawerOpen)}
@@ -91,76 +135,43 @@ export default function Menu() {
         <nav className="flex-grow mt-4">
           <ul>
             {/* Início */}
-            <MenuItem icon="home" label="Início" route="/dashboard" canAccess={true} drawerOpen={drawerOpen} goToPage={goToPage} />
+            <li className="mb-2">
+              <button
+                onClick={() => goToPage('/dashboard')}
+                className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
+              >
+                <span className="material-icons">home</span>
+                <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Início</span>
+              </button>
+            </li>
 
             {/* Grupo Cadastros */}
             <li>
               <button
-                onClick={() => setIsCadastrosOpen(!isCadastrosOpen)}
-                aria-expanded={isCadastrosOpen}
+                onClick={() => handleMenuClick('cadastros')}
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
-                title={drawerOpen ? '' : 'Cadastros'}
               >
                 <span className="material-icons">list_alt</span>
                 <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Cadastros</span>
-                {drawerOpen && (
-                  <span className="ml-auto">
-                    <span className="material-icons">
-                      {isCadastrosOpen ? 'expand_less' : 'expand_more'}
-                    </span>
-                  </span>
-                )}
               </button>
-
-              {isCadastrosOpen && (
-                <ul className="ml-6 mt-2">
-                  <MenuItem icon="person" label="Cliente" route="/cliente" canAccess={userCan(['cliente.Read', 'cliente.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="business" label="Empresa" route="/empresa" canAccess={userCan(['empresa.Read', 'empresa.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Especialidade" route="/especialidade" canAccess={userCan(['especialidade.Read', 'especialidade.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Setor" route="/setor" canAccess={userCan(['setor.Read', 'setor.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Modalidade" route="/modalidade" canAccess={userCan(['modalidade.Read', 'modalidade.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Recipiente Amostra" route="/recipienteAmostra" canAccess={userCan(['recipienteamostra.Read', 'recipienteamostra.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Rotina de Exame" route="/rotinaExame" canAccess={userCan(['rotinaexame.Read', 'rotinaexame.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Método de Exame" route="/metodoExame" canAccess={userCan(['metodoExame.Read', 'metodoExame.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Material de Apoio" route="/materialApoio" canAccess={userCan(['materialApoio.Read', 'materialApoio.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Exame de Apoio" route="/exameApoio" canAccess={userCan(['exameApoio.Read', 'exameApoio.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                  <MenuItem icon="queue" label="Laboratório de Apoio" route="/laboratorioApoio" canAccess={userCan(['laboratorioApoio.Read', 'laboratorioApoio.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                </ul>
-              )}
             </li>
 
             {/* Grupo Permissões */}
             <li>
               <button
-                onClick={() => setIsPermissoesOpen(!isPermissoesOpen)}
-                aria-expanded={isPermissoesOpen}
+                onClick={() => handleMenuClick('permissoes')}
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
-                title={drawerOpen ? '' : 'Permissões'}
               >
                 <span className="material-icons">lock</span>
                 <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Permissões</span>
-                {drawerOpen && (
-                  <span className="ml-auto">
-                    <span className="material-icons">
-                      {isPermissoesOpen ? 'expand_less' : 'expand_more'}
-                    </span>
-                  </span>
-                )}
               </button>
-
-              {isPermissoesOpen && (
-                <ul className="ml-6 mt-2">
-                  <MenuItem icon="group" label="Grupo de Usuários" route="/grupousuario" canAccess={userCan(['grupoUsuario.Read', 'grupoUsuario.Write'])} drawerOpen={drawerOpen} goToPage={goToPage} />
-                </ul>
-              )}
             </li>
 
-            {/* Opção Sair */}
+            {/* Logout */}
             <li className="mt-4">
               <button
                 onClick={() => setIsLogoutConfirmOpen(true)}
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
-                title={drawerOpen ? '' : 'Sair'}
               >
                 <span className="material-icons">logout</span>
                 <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Sair</span>
@@ -169,7 +180,7 @@ export default function Menu() {
           </ul>
         </nav>
 
-        {/* Modal de Confirmação de Logout */}
+        {/* Modal de confirmação de logout */}
         <ConfirmationModal
           isOpen={isLogoutConfirmOpen}
           title="Confirmar Logout"
@@ -181,9 +192,16 @@ export default function Menu() {
         />
       </div>
 
-      {/* Conteúdo Principal */}
-      <div className={`flex-grow p-4 ${drawerOpen ? 'ml-42' : 'ml-16'} transition-all duration-300`}>
-        {/* Conteúdo aqui */}
+      {/* Conteúdo principal */}
+      <div className={`flex-grow p-4 transition-all duration-300 ${drawerOpen ? 'ml-56' : 'ml-16'}`}>
+        {/* Se o conteúdo estiver visível e não houver submenu, renderiza o conteúdo */}
+        {isContentVisible && !showSubMenu ? (
+          <div className="container mx-auto p-8">
+            {/* O conteúdo aqui será ocultado quando o submenu for clicado */}
+          </div>
+        ) : (
+          activeMenu ? renderSubMenu(activeMenu) : null // Se activeMenu for null, não renderiza nada
+        )}
       </div>
     </div>
   );
