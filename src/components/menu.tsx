@@ -1,126 +1,82 @@
-"use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../app/auth';
-import ConfirmationModal from './confirmationModal';
+//src/components/menu.tsx
+"use client"; // Necessário porque estamos lidando com eventos e estado no cliente
+import { useState, useEffect  } from 'react';
+import { useRouter } from 'next/navigation'; // Importa o hook de navegação do Next.js
+import { useAuth } from '../app/auth'; // Importa o hook de autenticação
+import ConfirmationModal from './confirmationModal'; // Importa a modal de confirmação
+
+//import { ReactNode } from 'react'; // Importa o tipo ReactNode
+
+// interface MenuProps {
+//   children: ReactNode; // Define o tipo de children como ReactNode
+// }
 
 export default function Menu() {
-  const [drawerOpen, setDrawerOpen] = useState(true); // Estado do menu lateral
-  const [activeMenu, setActiveMenu] = useState<string | null>(null); // Controla o submenu ativo
-  const [showSubMenu, setShowSubMenu] = useState(false); // Controla se os ícones do submenu são exibidos
-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false); // Modal de logout
-  const [isContentVisible, setIsContentVisible] = useState(true); // Estado da visibilidade do conteúdo principal
+  const [drawerOpen, setDrawerOpen] = useState(true); // O menu começa expandido por padrão no desktop
+  // const [isCadastrosOpen, setIsCadastrosOpen] = useState(false);
+  // const [isPermissoesOpen, setIsPermissoesOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const authContext = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    // Colapsa o menu automaticamente no mobile (telas menores)
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setDrawerOpen(false);
+        setDrawerOpen(false); // Colapsado no mobile
       } else {
-        setDrawerOpen(true);
+        setDrawerOpen(true); // Expandido no desktop
       }
     };
+
     window.addEventListener('resize', handleResize);
+
+    // Executa uma vez para garantir o estado inicial correto
     handleResize();
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  if (!authContext) return null;
+  if (!authContext) {
+    return null;
+  }
 
-  const { user, logout, userCan } = authContext;
-  if (!user) return null;
+  const { user, logout } = authContext;
+
+  if (!user) {
+    return null;
+  }
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
-
-  // Função que navega para uma página e esconde o submenu
+  
   const goToPage = (route: string) => {
-    setShowSubMenu(false); // Esconde o submenu de ícones ao clicar
     router.push(route);
-  };
-
-  // Função que renderiza os ícones do submenu na área principal
-  const renderSubMenu = (menu: string) => {
-    switch (menu) {
-      case 'cadastros':
-        return (
-          <div className="grid grid-cols-4 gap-4 p-4">
-            {userCan(['cliente.Read', 'cliente.Write']) && (
-              <div onClick={() => goToPage('/cliente')} className="cursor-pointer">
-                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
-                  <span className="material-icons">person</span>
-                  <p className="mt-2 text-center">Cliente</p>
-                </div>
-              </div>
-            )}
-            {userCan(['empresa.Read', 'empresa.Write']) && (
-              <div onClick={() => goToPage('/empresa')} className="cursor-pointer">
-                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
-                  <span className="material-icons">business</span>
-                  <p className="mt-2 text-center">Empresa</p>
-                </div>
-              </div>
-            )}
-            {userCan(['especialidade.Read', 'especialidade.Write']) && (
-              <div onClick={() => goToPage('/especialidade')} className="cursor-pointer">
-                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
-                  <span className="material-icons">queue</span>
-                  <p className="mt-2 text-center">Especialidade</p>
-                </div>
-              </div>
-            )}
-            {userCan(['setor.Read', 'setor.Write']) && (
-              <div onClick={() => goToPage('/setor')} className="cursor-pointer">
-                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
-                  <span className="material-icons">queue</span>
-                  <p className="mt-2 text-center">Setor</p>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      case 'permissoes':
-        return (
-          <div className="grid grid-cols-4 gap-4 p-4">
-            {userCan(['grupoUsuario.Read', 'grupoUsuario.Write']) && (
-              <div onClick={() => goToPage('/grupousuario')} className="cursor-pointer">
-                <div className="bg-gray-200 p-4 rounded-lg shadow hover:bg-gray-300">
-                  <span className="material-icons">group</span>
-                  <p className="mt-2 text-center">Grupo de Usuários</p>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Função para lidar com a exibição do submenu e esconder o conteúdo
-  const handleMenuClick = (menu: string) => {
-    if (activeMenu === menu) {
-      // Se clicar no mesmo menu, alterna o estado de exibição
-      setShowSubMenu(!showSubMenu);
-    } else {
-      // Se clicar em outro menu, define o novo submenu e esconde o conteúdo principal
-      setActiveMenu(menu);
-      setShowSubMenu(true);
-      setIsContentVisible(false); // Esconde o conteúdo principal ao clicar no menu
-    }
   };
 
   return (
     <div className="flex">
-      {/* Menu lateral */}
-      <div
-        className={`bg-gray-800 text-white transition-all duration-300 ${drawerOpen ? 'w-56' : 'w-16'} h-screen fixed md:relative z-40`}
+      {/* Botão de abrir/fechar menu - visível apenas em telas pequenas */}
+      <button
+        onClick={() => setDrawerOpen(!drawerOpen)}
+        className="p-4 text-white bg-gray-800 md:hidden fixed top-0 left-0 z-50"
       >
+        <span className="material-icons">
+          {drawerOpen ? 'menu_open' : 'menu'}
+        </span>
+      </button>
+
+      {/* Menu Lateral - ajustado para mobile e desktop */}
+      <div
+        className={`bg-gray-800 text-white transition-all duration-300 ${
+          drawerOpen ? 'w-56' : 'w-16'
+        } h-screen fixed md:relative z-40`}
+      >
+        {/* Botão para abrir/fechar o menu - visível apenas em telas grandes */}
         <div className="p-4">
           <button
             onClick={() => setDrawerOpen(!drawerOpen)}
@@ -132,9 +88,8 @@ export default function Menu() {
           </button>
         </div>
 
-        <nav className="flex-grow mt-4">
+        <nav className="flex-grow overflow-y-auto mt-4">
           <ul>
-            {/* Início */}
             <li className="mb-2">
               <button
                 onClick={() => goToPage('/dashboard')}
@@ -145,29 +100,202 @@ export default function Menu() {
               </button>
             </li>
 
-            {/* Grupo Cadastros */}
             <li>
-              <button
-                onClick={() => handleMenuClick('cadastros')}
+            <button
+                onClick={() => {
+                  console.log("Abrindo/fechando Cadastros");
+                  //setIsCadastrosOpen(!isCadastrosOpen);
+                  goToPage('/cadastros');
+                }}
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
               >
                 <span className="material-icons">list_alt</span>
                 <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Cadastros</span>
               </button>
+
+
+              {/* { {isCadastrosOpen && (
+                <ul className="ml-6 mt-2">
+                  {userCan(['cliente.Read', 'cliente.Write']) && (
+                    <li>
+                      <button
+                        onClick={() => goToPage('/cliente')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">person</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Cliente
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                   {userCan(['empresa.Read', 'empresa.Write']) && (
+                    <li>
+                      <button
+                        onClick={() => goToPage('/empresa')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">business</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Empresa
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                  {userCan(['especialidade.Read', 'especialidade.Write']) && (
+                    <li>
+                      <button
+                        onClick={()=> goToPage('/especialidade')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Especialidade
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                  {userCan(['setor.Read', 'setor.Write']) && (
+                    <li>
+                      <button
+                        onClick={()=> goToPage('/setor')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Setor
+                        </span>
+                      </button>
+                    </li>
+                  )}  
+                  {userCan(['modalidade.Read', 'modalidade.Write']) && (
+                    <li>
+                      <button
+                        onClick={()=> goToPage('/modalidade')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Modalidade
+                        </span>
+                      </button>
+                    </li>
+                  )}    
+                {userCan(['recipienteamostra.Read', 'recipienteamostra.Write']) && (
+                    <li>
+                      <button
+                        onClick={() => goToPage('/recipienteAmostra')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Recipiente Amostra
+                        </span>
+                      </button>
+                    </li>
+                  )}     
+              {userCan(['rotinaexame.Read', 'rotinaexame.Write']) && (
+                    <li>
+                      <button
+                        onClick={()=> goToPage('/rotinaExame')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Rotina de Exame
+                        </span>
+                      </button>
+                    </li>
+                  )} 
+              {userCan(['metodoExame.Read', 'metodoExame.Write']) && (
+                    <li>
+                      <button
+                        onClick={()=> goToPage('/metodoExame')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">queue</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Método de Exame
+                        </span>
+                      </button>
+                    </li>
+                  )} 
+                  {userCan(['materialApoio.Read', 'materialApoio.Write']) && (
+                      <li>
+                        <button
+                          onClick={()=> goToPage('/materialApoio')}
+                          className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                        >
+                          <span className="material-icons">queue</span>
+                          <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                            Material de Apoio
+                          </span>
+                        </button>
+                      </li>
+                    )}       
+                  {userCan(['exameApoio.Read', 'exameApoio.Write']) && (
+                      <li>
+                        <button
+                          onClick={()=> goToPage('/exameApoio')}
+                          className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                        >
+                          <span className="material-icons">queue</span>
+                          <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                            Exame de Apoio
+                          </span>
+                        </button>
+                      </li>
+                    )}        
+                  {userCan(['laboratorioApoio.Read', 'laboratorioApoio.Write']) && (
+                      <li>
+                        <button
+                          onClick={()=> goToPage('/laboratorioApoio')}
+                          className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                        >
+                          <span className="material-icons">queue</span>
+                          <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                            Laboratório de Apoio
+                          </span>
+                        </button>
+                      </li>
+                    )}                                                                                                                                                                                                                        
+                </ul>
+              )} } */}
             </li>
 
-            {/* Grupo Permissões */}
+
             <li>
-              <button
-                onClick={() => handleMenuClick('permissoes')}
+            <button
+                onClick={() => {
+                  console.log("Abrindo/fechando Permissões");
+                  //setIsPermissoesOpen(!isPermissoesOpen);
+                  goToPage('/permissoes');
+                }}
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
               >
                 <span className="material-icons">lock</span>
                 <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Permissões</span>
               </button>
-            </li>
 
-            {/* Logout */}
+
+              {/* { {isPermissoesOpen && (
+                <ul className="ml-6 mt-2">
+                  {userCan(['grupoUsuario.Read', 'grupoUsuario.Write']) && (
+                    <li>
+                      <button
+                        onClick={() => goToPage('/grupousuario')}
+                        className="flex items-center px-4 py-2 hover:bg-gray-700 w-full text-sm"
+                      >
+                        <span className="material-icons">group</span>
+                        <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>
+                          Grupo de Usuários
+                        </span>
+                      </button>
+                    </li>
+                  )}                                                                         
+                </ul>
+              )} } */}
+            </li>
             <li className="mt-4">
               <button
                 onClick={() => setIsLogoutConfirmOpen(true)}
@@ -180,7 +308,6 @@ export default function Menu() {
           </ul>
         </nav>
 
-        {/* Modal de confirmação de logout */}
         <ConfirmationModal
           isOpen={isLogoutConfirmOpen}
           title="Confirmar Logout"
@@ -192,16 +319,9 @@ export default function Menu() {
         />
       </div>
 
-      {/* Conteúdo principal */}
-      <div className={`flex-grow p-4 transition-all duration-300 ${drawerOpen ? 'ml-56' : 'ml-16'}`}>
-        {/* Se o conteúdo estiver visível e não houver submenu, renderiza o conteúdo */}
-        {isContentVisible && !showSubMenu ? (
-          <div className="container mx-auto p-8">
-            {/* O conteúdo aqui será ocultado quando o submenu for clicado */}
-          </div>
-        ) : (
-          activeMenu ? renderSubMenu(activeMenu) : null // Se activeMenu for null, não renderiza nada
-        )}
+      {/* Conteúdo Principal */}
+      <div className={`flex-grow p-4 ${drawerOpen ? 'ml-25' : 'ml-16'} transition-all duration-300`}>
+        {/* Aqui vai o conteúdo principal */}
       </div>
     </div>
   );

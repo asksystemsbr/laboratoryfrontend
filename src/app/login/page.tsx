@@ -1,8 +1,10 @@
+//src/app/login/page.tsx
 "use client"; 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth';  
 import axios from '../axiosConfig';
+import Image from 'next/image';
 
 interface Credentials {
   Nome: string;
@@ -112,7 +114,14 @@ export default function Login() {
         <div className="text-center">
           <h2 className="text-3xl font-semibold mb-4">O seu laboratório de exames clínicos</h2>
           <p className="mb-4">Mais transparência e agilidade nos processos.</p>
-          <img src="/imgs/laboratorio.jpg" alt="Mobile App Preview" className="w-64 mx-auto mb-4" />
+          {/* Utilização do componente Image */}
+          <Image 
+            src="/imgs/laboratorio.jpg"  // Caminho relativo ao diretório public
+            alt="Mobile App Preview" 
+            width={512}  // Largura da imagem
+            height={512} // Altura da imagem
+            priority={true} // Opcional: carrega a imagem com prioridade
+          />       
           <p className="text-sm">Confira a área de exames</p>
         </div>
       </div>
