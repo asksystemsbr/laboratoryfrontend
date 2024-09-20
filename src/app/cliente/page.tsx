@@ -130,6 +130,13 @@ export default function ClienteList() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Função para abrir a modal de criação de novo cliente
+  const handleNewClient = () => {
+    setIsEditing(false);  // Certifique-se de que estamos no modo de criação, não de edição
+    setEditingCliente(null);  // Resetar o cliente em edição
+    setModalIsOpen(true);  // Abrir a modal
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Menu />
@@ -138,7 +145,7 @@ export default function ClienteList() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
           <button
-            onClick={() => setModalIsOpen(true)}
+            onClick={handleNewClient}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
           >
             Novo Cliente
@@ -253,7 +260,7 @@ export default function ClienteList() {
             >
               <path
                 fillRule="evenodd"
-                d="M7.707 3.707a1 1 0 010 1.414L4.414 9H16a1 1 0 110 2H4.414l3.293 3.293a1 1 0 11-1.414 1.414l-5-5a1 1 0 011.414 0z"
+                d="M12.293 16.293a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 1 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
                 clipRule="evenodd"
               />
             </svg>
@@ -276,7 +283,7 @@ export default function ClienteList() {
             >
               <path
                 fillRule="evenodd"
-                d="M12.293 16.293a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                d="M7.707 3.707a1 1 0 010 1.414L4.414 9H16a1 1 0 110 2H4.414l3.293 3.293a1 1 0 11-1.414 1.414l-5-5a1 1 0 011.414 0z"
                 clipRule="evenodd"
               />
             </svg>
