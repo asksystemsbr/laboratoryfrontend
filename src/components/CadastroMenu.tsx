@@ -83,6 +83,12 @@ export default function CadastroMenu() {
         route: '/materialApoio',
       },
       {
+        permissions: ['exame.Read', 'exame.Write'],
+        label: 'Exame',
+        icon: 'queue',
+        route: '/exame',
+      },
+      {
         permissions: ['exameApoio.Read', 'exameApoio.Write'],
         label: 'Exame de Apoio',
         icon: 'queue',

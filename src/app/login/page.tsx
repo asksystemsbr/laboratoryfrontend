@@ -121,6 +121,7 @@ export default function Login() {
             width={512}  // Largura da imagem
             height={512} // Altura da imagem
             priority={true} // Opcional: carrega a imagem com prioridade
+            style={{ width: '100%', height: 'auto' }}
           />       
           <p className="text-sm">Confira a área de exames</p>
         </div>
