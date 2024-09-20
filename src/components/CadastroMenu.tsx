@@ -82,24 +82,24 @@ export default function CadastroMenu() {
         icon: 'queue',
         route: '/materialApoio',
       },
-      {
-        permissions: ['exame.Read', 'exame.Write'],
-        label: 'Exame',
-        icon: 'queue',
-        route: '/exame',
-      },
-      {
-        permissions: ['exameApoio.Read', 'exameApoio.Write'],
-        label: 'Exame de Apoio',
-        icon: 'queue',
-        route: '/exameApoio',
-      },
-      {
-        permissions: ['laboratorioApoio.Read', 'laboratorioApoio.Write'],
-        label: 'Laboratório de Apoio',
-        icon: 'queue',
-        route: '/laboratorioApoio',
-      },    
+      // {
+      //   permissions: ['exame.Read', 'exame.Write'],
+      //   label: 'Exame',
+      //   icon: 'queue',
+      //   route: '/exame',
+      // },
+      // {
+      //   permissions: ['exameApoio.Read', 'exameApoio.Write'],
+      //   label: 'Exame de Apoio',
+      //   icon: 'queue',
+      //   route: '/exameApoio',
+      // },
+      // {
+      //   permissions: ['laboratorioApoio.Read', 'laboratorioApoio.Write'],
+      //   label: 'Laboratório de Apoio',
+      //   icon: 'queue',
+      //   route: '/laboratorioApoio',
+      // },    
   ];
 
   // Renderiza os itens de menu com base nas permissões
