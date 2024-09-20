@@ -1,42 +1,39 @@
-//src/app/grupousuario/grupousuarioedit.tsx
+//src/app/rotinaExame/rotinaExamecreate.tsx
 "use client";
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { GrupoUsuario } from '../../models/grupoUsuario';
+import { RotinaExame } from '../../models/rotinaExame';
 import { SnackbarState } from '@/models/snackbarState';
 
-interface GrupoUsuarioEditFormProps {
-  grupoUsuario: GrupoUsuario;
+interface RotinaExameCreateFormProps {
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
 }
 
-export const GrupoUsuarioEditForm = ({ grupoUsuario, onSave, onClose,setSnackbar  }: GrupoUsuarioEditFormProps) => {
-  const { register, handleSubmit, reset,formState: { errors } } = useForm<GrupoUsuario>({
-    defaultValues: grupoUsuario,
-  });
+export const RotinaExameCreateForm = ({ onSave, onClose,setSnackbar  }: RotinaExameCreateFormProps) => {
+  const { register, handleSubmit, reset,formState: { errors } } = useForm<RotinaExame>();
 
-  const onSubmit = async (data: GrupoUsuario) => {
+  const onSubmit = async (data: RotinaExame) => {
     try {
-        await axios.put(`/api/GrupoUsuario/${grupoUsuario.id}`, data);
+        await axios.post('/api/RotinaExame', data);
         reset();
         onSave();
       } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao editar o grupo!', 'error', true)); // Exibe erro via snackbar
+        setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-      <h2 className="text-xl font-bold mb-4">Editar Grupo</h2>
+      <h2 className="text-xl font-bold mb-4">Nova Rotina</h2>
       <div className="mb-4">
         <label className="block text-gray-700">Descrição</label>
         <textarea
           {...register('descricao', { required: 'A descrição é obrigatória' })}
           className="border rounded w-full py-2 px-3 mt-1"
         />
-        {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
+         {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
       </div>
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">

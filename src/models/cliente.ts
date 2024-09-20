@@ -7,5 +7,5 @@ export interface Cliente {
     telefone?: string;
     email?: string;
     situacaoId: number;
-    dataCadastro: Date;
+    dataCadastro: Date | string;
 }

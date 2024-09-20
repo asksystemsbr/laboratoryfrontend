@@ -1,32 +1,32 @@
-//src/app/grupousuario/page.tsx
+//src/app/modalidade/page.tsx
 "use client";
 import { useState, useEffect } from 'react';
-import { GrupoUsuarioCreateForm } from './grupousuariocreate';
-import { GrupoUsuarioEditForm } from './grupousuarioedit';
+import { ModalidadeCreateForm } from './modalidadecreate';
+import { ModalidadeEditForm } from './modalidadeedit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
-import { GrupoUsuario } from '../../models/grupoUsuario';
+import { Modalidade } from '../../models/modalidade';
 import { SnackbarState } from '../../models/snackbarState'; // Importa a classe
 import Menu from '../../components/menu'; // Importa o menu
 import ConfirmationModal from '../../components/confirmationModal'; // Importa a modal genérica
 
 Modal.setAppElement('#__next');
 
-export default function GrupoUsuarioList() {
-  const [grupoUsuarios, setGrupoUsuarios] = useState<GrupoUsuario[]>([]);
-  const [filtered, setFiltered] = useState<GrupoUsuario[]>([]);
+export default function ItemsList() {
+  const [items, setItems] = useState<Modalidade[]>([]);
+  const [filtered, setFiltered] = useState<Modalidade[]>([]);
   const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingGrupo, setEditingGrupo] = useState<GrupoUsuario | null>(null);
+  const [editingItem, setEditingItem] = useState<Modalidade | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState()); // Instância de SnackbarState
   const [progress, setProgress] = useState(100); // Para a barra de progresso
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // Controla o modal de confirmação de exclusão
-  const [grupoToDelete, setGrupoToDelete] = useState<number | null>(null); // Armazena o grupo a ser excluído  
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null); 
 
   useEffect(() => {
-    loadGrupoUsuarios();
+    loadItems();
   }, []);
 
   // Timer para fechar o snackbar automaticamente
@@ -50,57 +50,56 @@ export default function GrupoUsuarioList() {
   }, [snackbar]);
 
   useEffect(() => {
-    const filtered = grupoUsuarios.filter((item) => {
+    const filtered = items.filter((item) => {
       // Obtenha todas as chaves (campos) do objeto `cliente`
         return Object.values(item).some((value) => 
         value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     );
     });
     setFiltered(filtered);
-  }, [searchTerm, grupoUsuarios]);
+  }, [searchTerm, items]);
 
   // Função para carregar os dados
-  const loadGrupoUsuarios = async () => {
+  const loadItems = async () => {
     try {
-      const response = await axios.get('/api/GrupoUsuario');
-      setGrupoUsuarios(response.data);
+      const response = await axios.get('/api/Modalidade');
+      setItems(response.data);
       setFiltered(response.data); 
     } catch (error) {
-      setSnackbar(new SnackbarState('Erro ao carregar grupos!', 'error', true));
+      setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
   };
 
-  // Excluir grupo
   const handleDelete = async () => {
-    if (grupoToDelete !== null) {
+    if (itemToDelete !== null) {
       try {
-        await axios.delete(`/api/GrupoUsuario/${grupoToDelete}`);
-        setSnackbar(new SnackbarState('Grupo excluído com sucesso!', 'success', true));
-        loadGrupoUsuarios();
+        await axios.delete(`/api/Modalidade/${itemToDelete}`);
+        setSnackbar(new SnackbarState('Registro excluído com sucesso!', 'success', true));
+        loadItems();
         closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
       } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao excluir grupo!', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao excluir registro!', 'error', true));
       }
     }
   };
 
     // Abrir modal de confirmação de exclusão
     const openDeleteConfirm = (id: number) => {
-        setGrupoToDelete(id);
+        setItemToDelete(id);
         setDeleteConfirmOpen(true);
       };
     
       // Fechar modal de confirmação
       const closeDeleteConfirm = () => {
-        setGrupoToDelete(null);
+        setItemToDelete(null);
         setDeleteConfirmOpen(false);
       };
 
   // Fechar modal e exibir snackbar ao salvar
   const handleSave = () => {
     setModalIsOpen(false);
-    setSnackbar(new SnackbarState('Grupo salvo com sucesso!', 'success', true));
-    loadGrupoUsuarios();
+    setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
+    loadItems();
   };
 
   // Abrir modal para criar
@@ -110,8 +109,8 @@ export default function GrupoUsuarioList() {
   };
 
   // Abrir modal para editar
-  const handleEdit = (grupo: GrupoUsuario) => {
-    setEditingGrupo(grupo);
+  const handleEdit = (item: Modalidade) => {
+    setEditingItem(item);
     setIsEditing(true);
     setModalIsOpen(true);
   };
@@ -123,12 +122,12 @@ export default function GrupoUsuarioList() {
 
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Grupos de Usuários</h1>
+          <h1 className="text-2xl font-bold">Modalidade</h1>
           <button
             onClick={handleCreate}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
-            Novo Grupo
+            Nova Modalidade
           </button>
         </div>
 
@@ -153,13 +152,13 @@ export default function GrupoUsuarioList() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((grupo) => (
-              <tr key={grupo.id} className="border-t border-gray-200">
-                <td className="py-2 px-4 text-left">{grupo.descricao}</td>
+            {filtered.map((item) => (
+              <tr key={item.id} className="border-t border-gray-200">
+                <td className="py-2 px-4 text-left">{item.descricao}</td>
                 <td className="py-2 px-4 text-left">
                   <button
                     className="text-yellow-500 hover:text-yellow-700 mr-2"
-                    onClick={() => handleEdit(grupo)}
+                    onClick={() => handleEdit(item)}
                   >
                     Editar
                   </button>
@@ -167,7 +166,7 @@ export default function GrupoUsuarioList() {
                 <td className="py-2 px-4">
                   <button
                     className="text-red-500 hover:text-red-700"
-                    onClick={() => openDeleteConfirm(grupo.id!)} // Usa a função de abrir o modal de confirmação
+                    onClick={() => openDeleteConfirm(item.id!)} // Usa a função de abrir o modal de confirmação
                   >
                     Excluir
                   </button>
@@ -185,9 +184,9 @@ export default function GrupoUsuarioList() {
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" // Classe para o overlay
         >
           {isEditing ? (
-            <GrupoUsuarioEditForm grupoUsuario={editingGrupo!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <ModalidadeEditForm modalidade={editingItem!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           ) : (
-            <GrupoUsuarioCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <ModalidadeCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           )}
         </Modal>
 
@@ -195,7 +194,7 @@ export default function GrupoUsuarioList() {
         <ConfirmationModal
           isOpen={deleteConfirmOpen}
           title="Confirmação de Exclusão"
-          message="Tem certeza de que deseja excluir este grupo de usuários? Esta ação não pode ser desfeita."
+          message="Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita."
           onConfirm={handleDelete} // Não passa parâmetros aqui
           onCancel={closeDeleteConfirm} // Fecha o modal
           confirmText="Excluir"
