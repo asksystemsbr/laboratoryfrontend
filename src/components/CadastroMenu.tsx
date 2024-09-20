@@ -68,7 +68,7 @@ export default function CadastroMenu() {
         permissions: ['rotinaexame.Read', 'rotinaexame.Write'],
         label: 'Rotina de Exame',
         icon: 'queue',
-        route: '/rotinaexame',
+        route: '/rotinaExame',
       },
       {
         permissions: ['metodoExame.Read', 'metodoExame.Write'],
