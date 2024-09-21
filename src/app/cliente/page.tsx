@@ -25,10 +25,9 @@ export default function ClienteList() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState<number | null>(null);
 
-  // Estado para a ordenação e paginação
   const [sortConfig, setSortConfig] = useState<{ key: keyof Cliente; direction: string } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1); // Página atual
-  const recordsPerPage = 10; // Registros por página ajustado para 10
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 10;
 
   useEffect(() => {
     loadClientes();
@@ -36,14 +35,13 @@ export default function ClienteList() {
 
   useEffect(() => {
     applySearchAndSort();
-  }, [searchTerm, sortConfig, clientes, currentPage]); // Reaplica a lógica ao alterar esses parâmetros
+  }, [searchTerm, sortConfig, clientes, currentPage]);
 
-  // Função para carregar os clientes
   const loadClientes = async () => {
     try {
       const response = await axios.get('/api/Cliente');
       setClientes(response.data);
-      setFilteredClientes(response.data); // Inicializa com todos os clientes
+      setFilteredClientes(response.data);
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
@@ -53,36 +51,39 @@ export default function ClienteList() {
     let sortedClientes = [...clientes].filter(
       (cliente) => {
         const searchTermLower = searchTerm.toLowerCase();
-        const situacao = cliente.situacaoId === 1 ? 'ativo' : 'inativo'; // Converte situacaoId para texto
-
-        return (
+  
+        // Condição para verificar nome e email
+        const matchesNameOrEmail =
           cliente.nome?.toLowerCase().includes(searchTermLower) ||
-          cliente.email?.toLowerCase().includes(searchTermLower) ||
-          situacao.includes(searchTermLower)  // Agora compara a situação com o termo de busca
-        );
+          cliente.email?.toLowerCase().includes(searchTermLower);
+  
+        // Condição para verificar o status de situação
+        const matchesSituacao =
+          (searchTermLower === 'ativo' && cliente.situacaoId === 1) ||
+          (searchTermLower === 'inativo' && cliente.situacaoId !== 1);
+  
+        // Se não houver busca por "ativo" ou "inativo", apenas retorna por nome e email
+        return matchesNameOrEmail || matchesSituacao || searchTermLower === '';
       }
     );
-
+  
     if (sortConfig !== null) {
       sortedClientes.sort((a, b) => {
         let aValue: any = a[sortConfig.key];
         let bValue: any = b[sortConfig.key];
-
+  
         if (typeof aValue === 'string') aValue = aValue.toLowerCase();
         if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-
-        // Comparação genérica
+  
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
-
+  
     setFilteredClientes(sortedClientes);
-  };
+  };  
 
-
-  // Função para alterar a ordenação
   const handleSort = (key: keyof Cliente) => {
     let direction = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -91,15 +92,12 @@ export default function ClienteList() {
     setSortConfig({ key, direction });
   };
 
-  // Paginação: calcular o índice inicial e final dos registros na página atual
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentClientes = filteredClientes.slice(indexOfFirstRecord, indexOfLastRecord);
 
-  // Função para mudar de página
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
-  // Função para alternar a visibilidade do dropdown de ações
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
   const toggleDropdown = (id: number) => {
@@ -109,7 +107,6 @@ export default function ClienteList() {
     }));
   };
 
-  // Função para definir o cliente que será editado
   const handleEdit = (cliente: Cliente) => {
     setEditingCliente(cliente);
     setIsEditing(true);
@@ -117,14 +114,12 @@ export default function ClienteList() {
     setDropdownVisible({});
   };
 
-  // Função para definir o cliente a ser excluído
   const handleDeleteConfirmation = (id: number) => {
     setClienteToDelete(id);
     setDeleteConfirmOpen(true);
     setDropdownVisible({});
   };
 
-  // Fechar dropdown de ações ao clicar fora
   const handleClickOutside = (event: any) => {
     const isClickInside = event.target.closest('.dropdown-actions');
     if (!isClickInside) {
@@ -137,18 +132,16 @@ export default function ClienteList() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Função para abrir a modal de criação de novo cliente
   const handleNewClient = () => {
-    setIsEditing(false);  // Certifique-se de que estamos no modo de criação, não de edição
-    setEditingCliente(null);  // Resetar o cliente em edição
-    setModalIsOpen(true);  // Abrir a modal
+    setIsEditing(false);
+    setEditingCliente(null);
+    setModalIsOpen(true);
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
       <Menu />
       <div className="container mx-auto p-8">
-        {/* Título */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
           <button
@@ -159,7 +152,6 @@ export default function ClienteList() {
           </button>
         </div>
 
-        {/* Campo de busca com ícone */}
         <div className="mb-4 relative">
           <input
             type="text"
@@ -184,7 +176,6 @@ export default function ClienteList() {
           </span>
         </div>
 
-        {/* Tabela de Clientes */}
         <table className="min-w-full bg-white border border-gray-300 rounded-lg">
           <thead>
             <tr className="bg-gray-50">
@@ -252,7 +243,6 @@ export default function ClienteList() {
           </tbody>
         </table>
 
-        {/* Paginação */}
         <div className="flex justify-between mt-4">
           <button
             onClick={() => paginate(currentPage - 1)}
@@ -267,7 +257,7 @@ export default function ClienteList() {
             >
               <path
                 fillRule="evenodd"
-                d="M12.293 16.293a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 1 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                d="M7.707 3.707a1 1 0 010 1.414L4.414 9H16a1 1 0 110 2H4.414l3.293 3.293a1 1 0 11-1.414 1.414l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 0z"
                 clipRule="evenodd"
               />
             </svg>
@@ -290,14 +280,13 @@ export default function ClienteList() {
             >
               <path
                 fillRule="evenodd"
-                d="M7.707 3.707a1 1 0 010 1.414L4.414 9H16a1 1 0 110 2H4.414l3.293 3.293a1 1 0 11-1.414 1.414l-5-5a1 1 0 011.414 0z"
+                d="M12.293 16.293a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
                 clipRule="evenodd"
               />
             </svg>
           </button>
         </div>
 
-        {/* Modal de criação/edição */}
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={() => setModalIsOpen(false)}
@@ -320,7 +309,6 @@ export default function ClienteList() {
           )}
         </Modal>
 
-        {/* Modal de confirmação de exclusão */}
         <ConfirmationModal
           isOpen={deleteConfirmOpen}
           title="Confirmação de Exclusão"
