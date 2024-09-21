@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect,useCallback  } from 'react';
+import { useState, useEffect } from 'react';
 import { ClienteCreateForm } from './clientecreate';
 import { ClienteEditForm } from './clienteedit';
 import { Snackbar } from '../snackbar';
@@ -34,52 +34,9 @@ export default function ClienteList() {
     loadClientes();
   }, []);
 
-    // Função para ordenar e aplicar a busca
-    const applySearchAndSort =useCallback(() => {
-      const sortedClientes = [...clientes].filter(
-        (cliente) =>
-          cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cliente?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-  
-      if (sortConfig !== null) {
-        sortedClientes.sort((a, b) => {
-          let aValue: string | number = a[sortConfig.key] as string | number;
-          let bValue: string | number = b[sortConfig.key] as string | number;
-  
-          if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-          if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-  
-          // Comparação genérica
-          if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-          if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-      }
-  
-      setFilteredClientes(sortedClientes);
-    }, [clientes, searchTerm, sortConfig]);
-
-    
   useEffect(() => {
     applySearchAndSort();
-    if (snackbar.show) {
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev > 0 ? prev - 1 : 0)); // Reduz progressivamente
-      }, 50);
-
-      const timer = setTimeout(() => {
-        snackbar.hideSnackbar(); // Esconde o Snackbar
-        setSnackbar(new SnackbarState()); // Atualiza para uma nova instância
-        setProgress(100); // Reset progress
-      }, 5000);
-
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timer);
-      };
-    }
-  }, [searchTerm, sortConfig, clientes, currentPage,applySearchAndSort,snackbar]); // Reaplica a lógica ao alterar esses parâmetros
+  }, [searchTerm, sortConfig, clientes, currentPage]); // Reaplica a lógica ao alterar esses parâmetros
 
   // Função para carregar os clientes
   const loadClientes = async () => {
@@ -90,6 +47,38 @@ export default function ClienteList() {
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
+  };
+
+  const applySearchAndSort = () => {
+    let sortedClientes = [...clientes].filter(
+      (cliente) => {
+        const searchTermLower = searchTerm.toLowerCase();
+        const situacao = cliente.situacaoId === 1 ? 'ativo' : 'inativo'; // Converte situacaoId para texto
+
+        return (
+          cliente.nome?.toLowerCase().includes(searchTermLower) ||
+          cliente.email?.toLowerCase().includes(searchTermLower) ||
+          situacao.includes(searchTermLower)  // Agora compara a situação com o termo de busca
+        );
+      }
+    );
+
+    if (sortConfig !== null) {
+      sortedClientes.sort((a, b) => {
+        let aValue: any = a[sortConfig.key];
+        let bValue: any = b[sortConfig.key];
+
+        if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+        if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+        // Comparação genérica
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    setFilteredClientes(sortedClientes);
   };
 
 
@@ -136,9 +125,8 @@ export default function ClienteList() {
   };
 
   // Fechar dropdown de ações ao clicar fora
-  const handleClickOutside = (event: MouseEvent) => {
-    const target = event.target as HTMLElement;
-    const isClickInside = target.closest('.dropdown-actions');
+  const handleClickOutside = (event: any) => {
+    const isClickInside = event.target.closest('.dropdown-actions');
     if (!isClickInside) {
       setDropdownVisible({});
     }
