@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useCallback } from 'react';
 import { ClienteCreateForm } from './clientecreate';
 import { ClienteEditForm } from './clienteedit';
 import { Snackbar } from '../snackbar';
@@ -21,7 +21,7 @@ export default function ClienteList() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
-  const [progress, setProgress] = useState(100);
+  const [progress] = useState(100);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState<number | null>(null);
 
@@ -29,26 +29,8 @@ export default function ClienteList() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
-  useEffect(() => {
-    loadClientes();
-  }, []);
-
-  useEffect(() => {
-    applySearchAndSort();
-  }, [searchTerm, sortConfig, clientes, currentPage]);
-
-  const loadClientes = async () => {
-    try {
-      const response = await axios.get('/api/Cliente');
-      setClientes(response.data);
-      setFilteredClientes(response.data);
-    } catch (error) {
-      setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
-    }
-  };
-
-  const applySearchAndSort = () => {
-    let sortedClientes = [...clientes].filter(
+  const applySearchAndSort =  useCallback(() => {
+    const sortedClientes = [...clientes].filter(
       (cliente) => {
         const searchTermLower = searchTerm.toLowerCase();
   
@@ -69,20 +51,43 @@ export default function ClienteList() {
   
     if (sortConfig !== null) {
       sortedClientes.sort((a, b) => {
-        let aValue: any = a[sortConfig.key];
-        let bValue: any = b[sortConfig.key];
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
   
-        if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-        if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-  
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === 'asc'
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+        } else {
+          return 0;
+        }
       });
     }
   
     setFilteredClientes(sortedClientes);
-  };  
+  }, [searchTerm, sortConfig, clientes]);  
+
+  useEffect(() => {
+    loadClientes();
+  }, []);
+
+  useEffect(() => {
+    applySearchAndSort();
+  }, [searchTerm, sortConfig, clientes, currentPage,applySearchAndSort]);
+
+  const loadClientes = async () => {
+    try {
+      const response = await axios.get('/api/Cliente');
+      setClientes(response.data);
+      setFilteredClientes(response.data);
+    } catch (error) {
+      setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
+    }
+  };
+
+  
 
   const handleSort = (key: keyof Cliente) => {
     let direction = 'asc';
@@ -120,8 +125,8 @@ export default function ClienteList() {
     setDropdownVisible({});
   };
 
-  const handleClickOutside = (event: any) => {
-    const isClickInside = event.target.closest('.dropdown-actions');
+  const handleClickOutside = (event: MouseEvent)  => {
+    const isClickInside = (event.target as HTMLElement).closest('.dropdown-actions');
     if (!isClickInside) {
       setDropdownVisible({});
     }
