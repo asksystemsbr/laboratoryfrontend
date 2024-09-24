@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { ClienteCreateForm } from './clientecreate';
 import { ClienteEditForm } from './clienteedit';
@@ -79,6 +80,7 @@ export default function ClienteList() {
       const response = await axios.get('/api/Cliente');
       setClientes(response.data);
       setFiltered(response.data);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
