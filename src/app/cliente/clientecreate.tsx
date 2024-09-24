@@ -13,9 +13,8 @@ interface ClienteCreateFormProps {
 }
 
 export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreateFormProps) => {
-  const { register, handleSubmit, reset, formState: { errors }  } = useForm<Cliente>();
+  const { register, handleSubmit, reset, setValue, formState: { errors }  } = useForm<Cliente>();
 
-  // Estados locais para mocar os campos de endereço
   const [cep, setCep] = useState(''); 
   const [logradouro, setLogradouro] = useState('');
   const [complemento, setComplemento] = useState('');
@@ -32,7 +31,6 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
       if (response.data.erro) {
         setSnackbar(new SnackbarState('CEP não encontrado!', 'error', true));
       } else {
-        // Preenche os campos de endereço com os dados retornados
         setLogradouro(response.data.logradouro);
         setComplemento(response.data.complemento);
         setBairro(response.data.bairro);
@@ -70,22 +68,22 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
       <form 
         onSubmit={handleSubmit(onSubmit)} 
-        className="p-6 max-w-3xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+        className="p-4 max-w-3xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
         
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Novo Cliente</h2>
+        <h2 className="text-xl font-bold mb-2 text-gray-800">Novo Cliente</h2>
 
         {/* Campo Nome */}
-        <div className="mb-4">
+        <div className="mb-3">
           <label className="block text-gray-800">Nome</label>
           <input 
             {...register('nome', { required: 'O nome é obrigatório' })} 
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
+            className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
           />
           {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
         </div>
 
         {/* Campo Email */}
-        <div className="mb-4">
+        <div className="mb-3">
           <label className="block text-gray-800">Email</label>
           <input 
             {...register('email', { 
@@ -95,91 +93,102 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
                 message: 'E-mail inválido'
               }
             })}
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
+            className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
           />
           {errors.email && <p className="text-red-500 text-sm">{errors.email?.message}</p>}
         </div>
 
-        {/* Campo CPF/CNPJ */}
-        <div className="mb-4">
-          <label className="block text-gray-800">CPF/CNPJ</label>
-          <div className="flex">
-            <InputMask
-              {...register('cpfCnpj', { required: 'CPF/CNPJ é obrigatório' })}
-              mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
-              className="border rounded w-full py-2 px-3 mt-1 text-gray-800"
-              placeholder={isCNPJ ? 'CNPJ' : 'CPF'}
-            />
-            <button
-              type="button"
-              onClick={toggleMask}
-              className="ml-2 py-2 px-4 bg-blue-500 text-white rounded"
-            >
-              {isCNPJ ? 'Usar CPF' : 'Usar CNPJ'}
-            </button>
+        {/* CPF/CNPJ e CEP */}
+        <div className="flex space-x-2 mb-3">
+          <div className="w-1/2">
+            <label className="block text-gray-800">CPF/CNPJ</label>
+            <div className="flex">
+              <InputMask
+                {...register('cpfCnpj', { required: 'CPF/CNPJ é obrigatório' })}
+                mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                placeholder={isCNPJ ? 'CNPJ' : 'CPF'}
+              />
+              <button
+                type="button"
+                onClick={toggleMask}
+                className="ml-2 py-1 px-4 bg-blue-500 text-white rounded"
+              >
+                {isCNPJ ? 'Usar CPF' : 'Usar CNPJ'}
+              </button>
+            </div>
+            {errors.cpfCnpj && <p className="text-red-500 text-sm">{errors.cpfCnpj?.message}</p>}
           </div>
-          {errors.cpfCnpj && <p className="text-red-500 text-sm">{errors.cpfCnpj?.message}</p>}
+
+          <div className="w-1/2">
+            <label className="block text-gray-800">CEP</label>
+            <InputMask
+              value={cep} 
+              mask="99999-999"
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+              onChange={handleCepChange} 
+            />
+          </div>
         </div>
 
-        {/* Campo CEP */}
-        <div className="mb-4">
-          <label className="block text-gray-800">CEP</label>
-          <InputMask
-            value={cep} 
-            mask="99999-999"
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800"
-            onChange={handleCepChange} 
-          />
-        </div>
+       {/* Campo Logradouro (Rua) e Número */}
+        <div className="flex space-x-2 mb-3">
+          <div className="w-3/4">
+            <label className="block text-gray-800">Rua (Logradouro)</label>
+            <input 
+              value={logradouro} 
+              onChange={(e) => setLogradouro(e.target.value)} 
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            />
+          </div>
 
-        {/* Campo Logradouro (Rua) */}
-        <div className="mb-4">
-          <label className="block text-gray-800">Rua (Logradouro)</label>
-          <input 
-            value={logradouro} 
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
-            readOnly 
-          />
+          <div className="w-1/4">
+            <label className="block text-gray-800">Número</label>
+            <input 
+              {...register('numero')} // Campo de número
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            />
+          </div>
         </div>
 
         {/* Campo Complemento */}
-        <div className="mb-4">
+        <div className="mb-3">
           <label className="block text-gray-800">Complemento</label>
           <input 
             value={complemento} 
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
-            readOnly 
+            onChange={(e) => setComplemento(e.target.value)} // Permitir edição
+            className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
           />
         </div>
 
-        {/* Campo Bairro */}
-        <div className="mb-4">
-          <label className="block text-gray-800">Bairro</label>
-          <input 
-            value={bairro} 
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
-            readOnly 
-          />
-        </div>
+        {/* Bairro, Cidade e UF */}
+        <div className="flex space-x-2 mb-3">
+          <div className="w-1/2">
+            <label className="block text-gray-800">Bairro</label>
+            <input 
+              value={bairro} 
+              onChange={(e) => setBairro(e.target.value)} // Permitir edição
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            />
+          </div>
 
-        {/* Campo Cidade */}
-        <div className="mb-4">
-          <label className="block text-gray-800">Cidade</label>
-          <input 
-            value={localidade} 
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
-            readOnly 
-          />
-        </div>
+          <div className="w-1/3">
+            <label className="block text-gray-800">Cidade</label>
+            <input 
+              value={localidade} 
+              onChange={(e) => setLocalidade(e.target.value)} // Permitir edição
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            />
+          </div>
 
-        {/* Campo UF */}
-        <div className="mb-4">
-          <label className="block text-gray-800">UF</label>
-          <input 
-            value={uf} 
-            className="border rounded w-full py-2 px-3 mt-1 text-gray-800" 
-            readOnly 
-          />
+          <div className="w-1/6">
+            <label className="block text-gray-800">UF</label>
+            <input 
+              value={uf} 
+              onChange={(e) => setUf(e.target.value)} // Permitir edição
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            />
+          </div>
         </div>
 
         <div className="flex justify-end">

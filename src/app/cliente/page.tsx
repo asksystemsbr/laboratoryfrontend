@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect,useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ClienteCreateForm } from './clientecreate';
 import { ClienteEditForm } from './clienteedit';
 import { Snackbar } from '../snackbar';
@@ -15,7 +15,7 @@ Modal.setAppElement('#__next');
 
 export default function ClienteList() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+  const [filtered, setFiltered] = useState<Cliente[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -29,31 +29,28 @@ export default function ClienteList() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
-  const applySearchAndSort =  useCallback(() => {
+  const applySearchAndSort = useCallback(() => {
     const sortedClientes = [...clientes].filter(
       (cliente) => {
         const searchTermLower = searchTerm.toLowerCase();
-  
-        // Condição para verificar nome e email
+
         const matchesNameOrEmail =
           cliente.nome?.toLowerCase().includes(searchTermLower) ||
           cliente.email?.toLowerCase().includes(searchTermLower);
-  
-        // Condição para verificar o status de situação
+
         const matchesSituacao =
           (searchTermLower === 'ativo' && cliente.situacaoId === 1) ||
           (searchTermLower === 'inativo' && cliente.situacaoId !== 1);
-  
-        // Se não houver busca por "ativo" ou "inativo", apenas retorna por nome e email
+
         return matchesNameOrEmail || matchesSituacao || searchTermLower === '';
       }
     );
-  
+
     if (sortConfig !== null) {
       sortedClientes.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
-  
+
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           return sortConfig.direction === 'asc'
             ? aValue.localeCompare(bValue)
@@ -65,9 +62,9 @@ export default function ClienteList() {
         }
       });
     }
-  
-    setFilteredClientes(sortedClientes);
-  }, [searchTerm, sortConfig, clientes]);  
+
+    setFiltered(sortedClientes);
+  }, [searchTerm, sortConfig, clientes]);
 
   useEffect(() => {
     loadClientes();
@@ -75,19 +72,17 @@ export default function ClienteList() {
 
   useEffect(() => {
     applySearchAndSort();
-  }, [searchTerm, sortConfig, clientes, currentPage,applySearchAndSort]);
+  }, [searchTerm, sortConfig, clientes, currentPage, applySearchAndSort]);
 
   const loadClientes = async () => {
     try {
       const response = await axios.get('/api/Cliente');
       setClientes(response.data);
-      setFilteredClientes(response.data);
+      setFiltered(response.data);
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
   };
-
-  
 
   const handleSort = (key: keyof Cliente) => {
     let direction = 'asc';
@@ -99,7 +94,7 @@ export default function ClienteList() {
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentClientes = filteredClientes.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentClientes = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -125,7 +120,7 @@ export default function ClienteList() {
     setDropdownVisible({});
   };
 
-  const handleClickOutside = (event: MouseEvent)  => {
+  const handleClickOutside = (event: MouseEvent) => {
     const isClickInside = (event.target as HTMLElement).closest('.dropdown-actions');
     if (!isClickInside) {
       setDropdownVisible({});
@@ -257,40 +252,45 @@ export default function ClienteList() {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
-                fillRule="evenodd"
-                d="M7.707 3.707a1 1 0 010 1.414L4.414 9H16a1 1 0 110 2H4.414l3.293 3.293a1 1 0 11-1.414 1.414l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 0z"
-                clipRule="evenodd"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
               />
             </svg>
             Anterior
-          </button>
+      </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+  <span className="text-gray-600">Página {currentPage}</span>
 
-          <button
-            onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === Math.ceil(filteredClientes.length / recordsPerPage)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
-          >
-            Próxima
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 ml-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12.293 16.293a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </div>
+  <button
+    onClick={() => paginate(currentPage + 1)}
+    disabled={currentPage === Math.ceil(filtered.length / recordsPerPage)}
+    className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
+  >
+    Próxima
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5 ml-2"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
+    </svg>
+  </button>
+</div>
+
 
         <Modal
           isOpen={modalIsOpen}
