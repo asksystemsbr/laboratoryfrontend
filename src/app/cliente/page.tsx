@@ -140,6 +140,18 @@ export default function ClienteList() {
     setModalIsOpen(true);
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      await axios.delete(`/api/Cliente/${id}`);
+      setSnackbar(new SnackbarState('Cliente excluído com sucesso!', 'success', true));
+      setDeleteConfirmOpen(false);
+      loadClientes(); // Recarregar a lista de clientes após a exclusão
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setSnackbar(new SnackbarState('Erro ao excluir cliente!', 'error', true));
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Menu />
@@ -266,33 +278,32 @@ export default function ClienteList() {
               />
             </svg>
             Anterior
-      </button>
+          </button>
 
-  <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage}</span>
 
-  <button
-    onClick={() => paginate(currentPage + 1)}
-    disabled={currentPage === Math.ceil(filtered.length / recordsPerPage)}
-    className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
-  >
-    Próxima
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5 ml-2"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 5l7 7-7 7"
-      />
-    </svg>
-  </button>
-</div>
-
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === Math.ceil(filtered.length / recordsPerPage)}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
+          >
+            Próxima
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 ml-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
 
         <Modal
           isOpen={modalIsOpen}
@@ -320,7 +331,7 @@ export default function ClienteList() {
           isOpen={deleteConfirmOpen}
           title="Confirmação de Exclusão"
           message="Tem certeza de que deseja excluir este cliente? Esta ação não pode ser desfeita."
-          onConfirm={() => handleDeleteConfirmation(clienteToDelete!)}
+          onConfirm={() => handleDelete(clienteToDelete!)} // Chamar handleDelete na confirmação
           onCancel={() => setDeleteConfirmOpen(false)}
           confirmText="Excluir"
           cancelText="Cancelar"
