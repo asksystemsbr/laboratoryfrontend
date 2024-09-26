@@ -99,7 +99,31 @@ export default function CadastroMenu() {
         label: 'Laboratório de Apoio',
         icon: 'queue',
         route: '/laboratorioApoio',
-      },    
+      },  
+      {
+        permissions: ['convenio.Read', 'convenio.Write'],
+        label: 'Convênios',
+        icon: 'queue',
+        route: '/convenio',
+      },       
+      {
+        permissions: ['plano.Read', 'plano.Write'],
+        label: 'Planos',
+        icon: 'queue',
+        route: '/plano',
+      },     
+      {
+        permissions: ['recepcao.Read', 'recepcao.Write'],
+        label: 'Recepções',
+        icon: 'queue',
+        route: '/recepcao',
+      },     
+      {
+        permissions: ['solicitante.Read', 'solicitante.Write'],
+        label: 'Solicitante',
+        icon: 'queue',
+        route: '/solicitante',
+      },                                 
   ];
 
   // Renderiza os itens de menu com base nas permissões
