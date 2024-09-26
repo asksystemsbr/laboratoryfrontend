@@ -1,5 +1,6 @@
 //src/app/exame/examecreate.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Exame } from '../../models/exame';
@@ -30,6 +31,7 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
       try {
         const response = await axios.get('/api/Especialidade');
         setEspecialidades(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
       }
@@ -39,6 +41,7 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
       try {
         const response = await axios.get('/api/Setor');
         setSetores(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setSnackbar(new SnackbarState('Erro ao carregar setores!', 'error', true));
       }
@@ -48,6 +51,7 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
       try {
         const response = await axios.get('/api/MaterialApoio');  // Chamada API para Material de Apoio
         setMaterialApoio(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setSnackbar(new SnackbarState('Erro ao carregar material de apoio!', 'error', true));
       }
@@ -57,6 +61,7 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
       try {
         const response = await axios.get('/api/LaboratorioApoio');  // Chamada API para Material de Apoio
         setLaboratorioApoio(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setSnackbar(new SnackbarState('Erro ao carregar laboratório de apoio!', 'error', true));
       }
@@ -115,6 +120,7 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
       await axios.post('/api/Exame', data);
       reset();
       onSave();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true));
     }
