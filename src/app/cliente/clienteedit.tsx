@@ -120,11 +120,11 @@ export const ClienteEditForm = ({ clienteId, onSave, onClose, setSnackbar }: Cli
 
       <div className="mb-4">
       <label className="block" style={textColor}>Endereço</label>
-        <input {...register('endereco',{required: 'O endereço é obrigatório'})} 
+        <input {...register('enderecoId',{required: 'O endereço é obrigatório'})} 
                className={inputStyle} 
                style={textColor} // Define a cor da fonte
         />
-        {errors.endereco && <p className="text-red-500 text-sm">{errors.endereco?.message}</p>}
+        {errors.enderecoId && <p className="text-red-500 text-sm">{errors.enderecoId?.message}</p>}
       </div>
 
       <div className="mb-4">
