@@ -49,15 +49,17 @@ jobs:
           app_location: "/" # Caminho do código fonte da aplicação
           api_location: "" # Caminho do código fonte da API (opcional, deixe vazio se não houver API)
           output_location: ".next" # Diretório de saída da aplicação Next.js após o build
+          deployment_environment: "production" # Forçar o deploy diretamente na produção
+
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_HILL_0E9FA5E1E }}
-          action: "close"
+    - name: Remove Staging Environment
+      id: closepullrequest
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_HILL_0E9FA5E1E }}
+        action: "delete-staging-environment" # Remover ambiente de staging ao fechar PR
