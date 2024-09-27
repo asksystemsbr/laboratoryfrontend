@@ -1,5 +1,6 @@
 //src/app/solicitante/page.tsx
 "use client";
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { SolicitanteCreateForm } from './solicitantecreate';
 import { SolicitanteEditForm } from './solicitanteedit';
@@ -66,6 +67,7 @@ export default function ItemsList() {
       setItems(response.data);
       setFiltered(response.data); 
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
   };
@@ -78,6 +80,7 @@ export default function ItemsList() {
         loadItems();
         closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao excluir registro!', 'error', true));
       }
     }

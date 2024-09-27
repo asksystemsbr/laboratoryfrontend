@@ -1,4 +1,5 @@
 // src/app/dashboard/page.tsx
+import React from 'react';
 import Menu from '../../components/menu'; // Importa o menu
 
 export default function Dashboard() {

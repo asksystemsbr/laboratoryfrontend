@@ -1,4 +1,6 @@
 //src/app/solicitante/solicitanteedit.tsx
+"use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Solicitante } from '../../models/solicitante';
@@ -22,6 +24,7 @@ export const SolicitanteEditForm = ({ solicitante, onSave, onClose,setSnackbar  
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

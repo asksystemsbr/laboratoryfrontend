@@ -1,5 +1,6 @@
 //src/app/exame/exameApoioedit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Exame } from '../../models/exame';
@@ -35,6 +36,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
         const response = await axios.get('/api/Especialidade');
         setEspecialidades(response.data);
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
       }
     };
@@ -44,6 +46,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
         const response = await axios.get('/api/Setor');
         setSetores(response.data);
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao carregar setores!', 'error', true));
       }
     };
@@ -53,6 +56,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
         const response = await axios.get('/api/MaterialApoio');
         setMaterialApoio(response.data);
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao carregar material de apoio!', 'error', true));
       }
     };
@@ -62,6 +66,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
         const response = await axios.get('/api/LaboratorioApoio');
         setLaboratorioApoio(response.data);
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao carregar laboratórios de apoio!', 'error', true));
       }
     };
@@ -127,6 +132,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
       reset();
       onSave();
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true));
     }
   };

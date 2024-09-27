@@ -1,5 +1,6 @@
 //src/app/exameApoio/exameApoioedit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { ExameApoio } from '../../models/exameApoio';
@@ -30,6 +31,7 @@ export const ExameApoioEditForm   = ({ exameApoio, onSave, onClose,setSnackbar  
         const response = await axios.get('/api/Especialidade');
         setEspecialidades(response.data);
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
       }
     };
@@ -39,6 +41,7 @@ export const ExameApoioEditForm   = ({ exameApoio, onSave, onClose,setSnackbar  
         const response = await axios.get('/api/Setor');
         setSetores(response.data);
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao carregar setores!', 'error', true));
       }
     };
@@ -60,6 +63,7 @@ export const ExameApoioEditForm   = ({ exameApoio, onSave, onClose,setSnackbar  
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

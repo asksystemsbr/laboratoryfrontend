@@ -1,4 +1,6 @@
 //src/app/plano/planoedit.tsx
+"use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Plano } from '../../models/plano';
@@ -22,6 +24,7 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

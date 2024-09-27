@@ -1,4 +1,6 @@
 //src/app/recepcao/recepcaoedit.tsx
+"use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Recepcao } from '../../models/recepcao';
@@ -22,6 +24,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose,setSnackbar  }: Rec
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

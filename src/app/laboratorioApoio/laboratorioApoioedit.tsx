@@ -1,5 +1,6 @@
 //src/app/laboratorioApoio/laboratorioApoioedit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { LaboratorioApoio } from '../../models/laboratorioApoio'
@@ -27,6 +28,7 @@ export const LaboratorioApoioEditForm   = ({ laboratorioApoio, onSave, onClose,s
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

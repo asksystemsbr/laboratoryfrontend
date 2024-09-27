@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { EmpresaCreateForm } from './empresacreate';
 import { EmpresaEditForm } from './empresaedit';
@@ -62,6 +63,7 @@ export default function EmpresaPage() {
       const response = await axios.get('/api/Empresa');
       setEmpresas(response.data);
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar empresas!', 'error', true));
     }
   };
@@ -74,6 +76,7 @@ export default function EmpresaPage() {
         loadEmpresas();
         closeDeleteConfirm();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao excluir empresa!', 'error', true));
       }
     }

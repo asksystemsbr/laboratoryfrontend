@@ -1,5 +1,6 @@
 //src/app/setor/setorcreate.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Setor } from '../../models/setor';
@@ -20,6 +21,7 @@ export const SetorCreateForm = ({ onSave, onClose,setSnackbar  }: SetorCreateFor
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

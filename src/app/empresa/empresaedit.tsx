@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import InputMask from 'react-input-mask-next';
@@ -36,6 +37,7 @@ export const EmpresaEditForm = ({ empresa, onSave, onClose, setSnackbar }: Empre
       reset();
       onSave();
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao editar a empresa!', 'error', true));
     }
   };
