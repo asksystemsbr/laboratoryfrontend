@@ -1,15 +1,17 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { useState } from 'react'; 
 import InputMask from 'react-input-mask-next';
 import { SnackbarState } from '@/models/snackbarState';
 import { differenceInYears } from 'date-fns';
+import { Convenio } from '@/models/convenio';  
+import { Plano } from '@/models/plano';        
 
 interface Cliente {
   id?: number;
   nome: string;
+  sexo?: string;          
   cpfCnpj: string;
   endereco: string;
   numero: string;
@@ -17,15 +19,16 @@ interface Cliente {
   email: string;
   situacaoId: number;
   dataCadastro?: Date;
+  convenioId?: number;    
+  planoId?: number;       
 
-  nomeFantasia?: string;    // Nome Fantasia para CNPJ
-  ie?: string;              // Inscrição Estadual para CNPJ
-  im?: string;              // Inscrição Municipal para CNPJ
-
-  nascimento?: Date | string; // Nascimento para verificar menor de idade
-  nomeResponsavel?: string;   // Responsável se for menor de idade
-  cpfResponsavel?: string;    // CPF do responsável
-  telefoneResponsavel?: string; // Telefone do responsável
+  nomeFantasia?: string;    
+  ie?: string;              
+  im?: string;              
+  nascimento?: Date | string;
+  nomeResponsavel?: string;
+  cpfResponsavel?: string;
+  telefoneResponsavel?: string;
 }
 
 interface ClienteCreateFormProps {
@@ -43,10 +46,36 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   const [localidade, setLocalidade] = useState('');
   const [uf, setUf] = useState('');
   const [isCNPJ, setIsCNPJ] = useState(false);
+  const [convenios, setConvenios] = useState<Convenio[]>([]);   
+  const [planos, setPlanos] = useState<Plano[]>([]);            
 
-  // Obter valor do campo nascimento para verificar menor de idade
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
+
+  useEffect(() => {
+    const fetchConvenios = async () => {
+      try {
+        const response = await axios.get('/api/Convenio');
+        setConvenios(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setSnackbar(new SnackbarState('Erro ao carregar convênios!', 'error', true));
+      }
+    };
+
+    const fetchPlanos = async () => {
+      try {
+        const response = await axios.get('/api/Plano');
+        setPlanos(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        setSnackbar(new SnackbarState('Erro ao carregar planos!', 'error', true));
+      }
+    };
+
+    fetchConvenios();
+    fetchPlanos();
+  }, []);
 
   const buscarEnderecoViaCep = async (cep: string) => {
     try {
@@ -121,6 +150,42 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
             />
             {errors.email && <p className="text-red-500 text-sm">{errors.email?.message}</p>}
+          </div>
+        </div>
+
+        {/* Sexo e Convênio */}
+        <div className="flex space-x-2 mb-3">
+          <div className="w-1/4">
+            <label className="block text-gray-800">Sexo</label>
+            <select {...register('sexo')} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
+              <option value="">Selecione</option>
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+            </select>
+          </div>
+
+          <div className="w-1/4">
+            <label className="block text-gray-800">Convênio</label>
+            <select {...register('convenioId')} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
+              <option value="">Selecione</option>
+              {convenios.map((convenio) => (
+                <option key={convenio.id} value={convenio.id}>
+                  {convenio.descricao}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-1/4">
+            <label className="block text-gray-800">Plano</label>
+            <select {...register('planoId')} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
+              <option value="">Selecione</option>
+              {planos.map((plano) => (
+                <option key={plano.id} value={plano.id}>
+                  {plano.descricao}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -226,7 +291,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
         )}
 
-        {/* Endereço */}
+        {/* Endereço Completo */}
         <div className="flex space-x-2 mb-3">
           <div className="w-3/4">
             <label className="block text-gray-800">Rua (Logradouro)</label>
@@ -246,19 +311,17 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
         </div>
 
-        {/* Complemento */}
-        <div className="mb-3">
-          <label className="block text-gray-800">Complemento</label>
-          <input 
-            value={complemento} 
-            onChange={(e) => setComplemento(e.target.value)} 
-            className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
-          />
-        </div>
-
-        {/* Bairro, Cidade e UF */}
         <div className="flex space-x-2 mb-3">
-          <div className="w-1/2">
+          <div className="w-1/3">
+            <label className="block text-gray-800">Complemento</label>
+            <input 
+              value={complemento} 
+              onChange={(e) => setComplemento(e.target.value)} 
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            />
+          </div>
+
+          <div className="w-1/3">
             <label className="block text-gray-800">Bairro</label>
             <input 
               value={bairro} 
