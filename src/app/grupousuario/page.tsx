@@ -1,5 +1,6 @@
 //src/app/grupousuario/page.tsx
 "use client";
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { GrupoUsuarioCreateForm } from './grupousuariocreate';
 import { GrupoUsuarioEditForm } from './grupousuarioedit';
@@ -66,6 +67,7 @@ export default function GrupoUsuarioList() {
       setGrupoUsuarios(response.data);
       setFiltered(response.data); 
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar grupos!', 'error', true));
     }
   };
@@ -79,6 +81,7 @@ export default function GrupoUsuarioList() {
         loadGrupoUsuarios();
         closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao excluir grupo!', 'error', true));
       }
     }

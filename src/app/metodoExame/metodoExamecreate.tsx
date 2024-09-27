@@ -1,5 +1,6 @@
 //src/app/metodoExame/metodoExamecreate.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { MetodoExame } from '../../models/metodoExame';
@@ -20,6 +21,7 @@ export const MetodoExameCreateForm = ({ onSave, onClose,setSnackbar  }: MetodoEx
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

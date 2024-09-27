@@ -1,5 +1,6 @@
 //src/app/exame/page.tsx
 "use client";
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { ExameCreateForm } from './examecreate';
 import { ExameEditForm } from './exameedit';
@@ -66,6 +67,7 @@ export default function ItemsList() {
       setItems(response.data);
       setFiltered(response.data); 
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
   };
@@ -78,6 +80,7 @@ export default function ItemsList() {
         loadItems();
         closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao excluir registro!', 'error', true));
       }
     }
@@ -148,6 +151,7 @@ export default function ItemsList() {
             <tr>
               <th className="py-2 px-4 text-left">Código do Exame</th>
               <th className="py-2 px-4 text-left">Nome do Exame</th>
+              <th className="py-2 px-4 text-left">Sinônimos</th>
               <th className="py-2 px-4 text-left">Editar</th>
               <th className="py-2 px-4 text-left">Excluir</th>
             </tr>
@@ -155,8 +159,9 @@ export default function ItemsList() {
           <tbody>
             {filtered.map((item) => (
               <tr key={item.id} className="border-t border-gray-200">
-                <td className="py-2 px-4 text-left">{item.codigo_exame}</td>
-                <td className="py-2 px-4 text-left">{item.exame}</td>
+                <td className="py-2 px-4 text-left">{item.codigoExame}</td>
+                <td className="py-2 px-4 text-left">{item.nomeExame}</td>
+                <td className="py-2 px-4 text-left">{item.sinonimos}</td>
                 <td className="py-2 px-4 text-left">
                   <button
                     className="text-yellow-500 hover:text-yellow-700 mr-2"
@@ -182,14 +187,16 @@ export default function ItemsList() {
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={() => setModalIsOpen(false)}
-          className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full" // Tornando o modal maior
+          className="bg-white p-6 max-w-4xl max-h-[90vh] mx-auto rounded-lg shadow-lg w-full overflow-auto" // Adiciona overflow-auto para rolagem horizontal e vertical
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" // Classe para o overlay
         >
-          {isEditing ? (
-            <ExameEditForm   exame={editingItem!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
-          ) : (
-            <ExameCreateForm   onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
-          )}
+          <div className="min-w-[800px]">
+            {isEditing ? (
+              <ExameEditForm   exame={editingItem!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            ) : (
+              <ExameCreateForm   onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            )}
+          </div>
         </Modal>
 
         {/* Modal de confirmação para exclusão */}

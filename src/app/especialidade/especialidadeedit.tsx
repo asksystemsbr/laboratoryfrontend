@@ -1,5 +1,6 @@
 //src/app/especialidade/especialidadeedit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Especialidade } from '../../models/especialidade';
@@ -23,6 +24,7 @@ export const EspecialidadeEditForm = ({ especialidade, onSave, onClose,setSnackb
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

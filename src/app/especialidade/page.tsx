@@ -10,6 +10,7 @@ import { Especialidade } from '../../models/especialidade';
 import { SnackbarState } from '../../models/snackbarState'; // Importa a classe
 import Menu from '../../components/menu'; // Importa o menu
 import ConfirmationModal from '../../components/confirmationModal'; // Importa a modal genérica
+import React from 'react';
 
 Modal.setAppElement('#__next');
 
@@ -66,6 +67,7 @@ export default function ItemsList() {
       setItems(response.data);
       setFiltered(response.data); 
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
   };
@@ -78,6 +80,7 @@ export default function ItemsList() {
         loadItems();
         closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao excluir registro!', 'error', true));
       }
     }

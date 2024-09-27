@@ -1,5 +1,6 @@
 //src/app/setor/setoredit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Setor } from '../../models/setor';
@@ -23,6 +24,7 @@ export const SetorEditForm = ({ setor, onSave, onClose,setSnackbar  }: SetorEdit
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

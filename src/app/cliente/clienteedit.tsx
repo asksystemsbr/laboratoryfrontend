@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { useEffect, useState,useCallback  } from 'react';
@@ -41,6 +42,7 @@ export const ClienteEditForm = ({ clienteId, onSave, onClose, setSnackbar }: Cli
         setIsCNPJ(data.cpfCnpj.length > 14);
       }
     } catch (error) {
+      console.error(error);
       setSnackbar(new SnackbarState('Erro ao carregar o cliente!', 'error', true));
     }
   }, [clienteId, setValue, setSnackbar]);
@@ -61,6 +63,7 @@ export const ClienteEditForm = ({ clienteId, onSave, onClose, setSnackbar }: Cli
       setSnackbar(new SnackbarState('Cliente editado com sucesso!', 'success', true));
       onSave();
     } catch (error) {
+      console.error(error);
       setSnackbar(new SnackbarState('Erro ao editar o cliente!', 'error', true));
     }
   };
@@ -120,11 +123,11 @@ export const ClienteEditForm = ({ clienteId, onSave, onClose, setSnackbar }: Cli
 
       <div className="mb-4">
       <label className="block" style={textColor}>Endereço</label>
-        <input {...register('endereco',{required: 'O endereço é obrigatório'})} 
+        <input {...register('enderecoId',{required: 'O endereço é obrigatório'})} 
                className={inputStyle} 
                style={textColor} // Define a cor da fonte
         />
-        {errors.endereco && <p className="text-red-500 text-sm">{errors.endereco?.message}</p>}
+        {errors.enderecoId && <p className="text-red-500 text-sm">{errors.enderecoId?.message}</p>}
       </div>
 
       <div className="mb-4">

@@ -1,5 +1,6 @@
 //src/app/rotinaExame/rotinaExameedit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { RotinaExame } from '../../models/rotinaExame';
@@ -23,6 +24,7 @@ export const RotinaExameEditForm = ({ rotinaExame, onSave, onClose,setSnackbar  
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

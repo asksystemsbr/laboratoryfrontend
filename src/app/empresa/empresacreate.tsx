@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import InputMask from 'react-input-mask-next';
@@ -20,6 +21,7 @@ export const EmpresaCreateForm = ({ onSave, onClose, setSnackbar }: EmpresaCreat
       reset();
       onSave();
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao criar a empresa!', 'error', true));
     }
   };

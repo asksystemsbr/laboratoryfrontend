@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect,useCallback  } from 'react';
+import React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ClienteCreateForm } from './clientecreate';
 import { ClienteEditForm } from './clienteedit';
 import { Snackbar } from '../snackbar';
@@ -15,85 +16,76 @@ Modal.setAppElement('#__next');
 
 export default function ClienteList() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+  const [filtered, setFiltered] = useState<Cliente[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
-  const [progress, setProgress] = useState(100);
+  const [progress] = useState(100);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState<number | null>(null);
 
-  // Estado para a ordenação e paginação
   const [sortConfig, setSortConfig] = useState<{ key: keyof Cliente; direction: string } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1); // Página atual
-  const recordsPerPage = 10; // Registros por página ajustado para 10
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 10;
+
+  const applySearchAndSort = useCallback(() => {
+    const sortedClientes = [...clientes].filter(
+      (cliente) => {
+        const searchTermLower = searchTerm.toLowerCase();
+
+        const matchesNameOrEmail =
+          cliente.nome?.toLowerCase().includes(searchTermLower) ||
+          cliente.email?.toLowerCase().includes(searchTermLower);
+
+        const matchesSituacao =
+          (searchTermLower === 'ativo' && cliente.situacaoId === 1) ||
+          (searchTermLower === 'inativo' && cliente.situacaoId !== 1);
+
+        return matchesNameOrEmail || matchesSituacao || searchTermLower === '';
+      }
+    );
+
+    if (sortConfig !== null) {
+      sortedClientes.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === 'asc'
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+        } else {
+          return 0;
+        }
+      });
+    }
+
+    setFiltered(sortedClientes);
+  }, [searchTerm, sortConfig, clientes]);
 
   useEffect(() => {
     loadClientes();
   }, []);
 
-    // Função para ordenar e aplicar a busca
-    const applySearchAndSort =useCallback(() => {
-      const sortedClientes = [...clientes].filter(
-        (cliente) =>
-          cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cliente?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-  
-      if (sortConfig !== null) {
-        sortedClientes.sort((a, b) => {
-          let aValue: string | number = a[sortConfig.key] as string | number;
-          let bValue: string | number = b[sortConfig.key] as string | number;
-  
-          if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-          if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-  
-          // Comparação genérica
-          if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-          if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-      }
-  
-      setFilteredClientes(sortedClientes);
-    }, [clientes, searchTerm, sortConfig]);
-
-    
   useEffect(() => {
     applySearchAndSort();
-    if (snackbar.show) {
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev > 0 ? prev - 1 : 0)); // Reduz progressivamente
-      }, 50);
+  }, [searchTerm, sortConfig, clientes, currentPage, applySearchAndSort]);
 
-      const timer = setTimeout(() => {
-        snackbar.hideSnackbar(); // Esconde o Snackbar
-        setSnackbar(new SnackbarState()); // Atualiza para uma nova instância
-        setProgress(100); // Reset progress
-      }, 5000);
-
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timer);
-      };
-    }
-  }, [searchTerm, sortConfig, clientes, currentPage,applySearchAndSort,snackbar]); // Reaplica a lógica ao alterar esses parâmetros
-
-  // Função para carregar os clientes
   const loadClientes = async () => {
     try {
       const response = await axios.get('/api/Cliente');
       setClientes(response.data);
-      setFilteredClientes(response.data); // Inicializa com todos os clientes
+      setFiltered(response.data);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
   };
 
-
-  // Função para alterar a ordenação
   const handleSort = (key: keyof Cliente) => {
     let direction = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -102,15 +94,12 @@ export default function ClienteList() {
     setSortConfig({ key, direction });
   };
 
-  // Paginação: calcular o índice inicial e final dos registros na página atual
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentClientes = filteredClientes.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentClientes = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
 
-  // Função para mudar de página
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
-  // Função para alternar a visibilidade do dropdown de ações
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
   const toggleDropdown = (id: number) => {
@@ -120,7 +109,6 @@ export default function ClienteList() {
     }));
   };
 
-  // Função para definir o cliente que será editado
   const handleEdit = (cliente: Cliente) => {
     setEditingCliente(cliente);
     setIsEditing(true);
@@ -128,17 +116,14 @@ export default function ClienteList() {
     setDropdownVisible({});
   };
 
-  // Função para definir o cliente a ser excluído
   const handleDeleteConfirmation = (id: number) => {
     setClienteToDelete(id);
     setDeleteConfirmOpen(true);
     setDropdownVisible({});
   };
 
-  // Fechar dropdown de ações ao clicar fora
   const handleClickOutside = (event: MouseEvent) => {
-    const target = event.target as HTMLElement;
-    const isClickInside = target.closest('.dropdown-actions');
+    const isClickInside = (event.target as HTMLElement).closest('.dropdown-actions');
     if (!isClickInside) {
       setDropdownVisible({});
     }
@@ -149,18 +134,28 @@ export default function ClienteList() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Função para abrir a modal de criação de novo cliente
   const handleNewClient = () => {
-    setIsEditing(false);  // Certifique-se de que estamos no modo de criação, não de edição
-    setEditingCliente(null);  // Resetar o cliente em edição
-    setModalIsOpen(true);  // Abrir a modal
+    setIsEditing(false);
+    setEditingCliente(null);
+    setModalIsOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await axios.delete(`/api/Cliente/${id}`);
+      setSnackbar(new SnackbarState('Cliente excluído com sucesso!', 'success', true));
+      setDeleteConfirmOpen(false);
+      loadClientes(); // Recarregar a lista de clientes após a exclusão
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setSnackbar(new SnackbarState('Erro ao excluir cliente!', 'error', true));
+    }
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
       <Menu />
       <div className="container mx-auto p-8">
-        {/* Título */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
           <button
@@ -171,7 +166,6 @@ export default function ClienteList() {
           </button>
         </div>
 
-        {/* Campo de busca com ícone */}
         <div className="mb-4 relative">
           <input
             type="text"
@@ -196,7 +190,6 @@ export default function ClienteList() {
           </span>
         </div>
 
-        {/* Tabela de Clientes */}
         <table className="min-w-full bg-white border border-gray-300 rounded-lg">
           <thead>
             <tr className="bg-gray-50">
@@ -264,7 +257,6 @@ export default function ClienteList() {
           </tbody>
         </table>
 
-        {/* Paginação */}
         <div className="flex justify-between mt-4">
           <button
             onClick={() => paginate(currentPage - 1)}
@@ -274,13 +266,15 @@ export default function ClienteList() {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
-                fillRule="evenodd"
-                d="M12.293 16.293a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 1 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
               />
             </svg>
             Anterior
@@ -290,26 +284,27 @@ export default function ClienteList() {
 
           <button
             onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === Math.ceil(filteredClientes.length / recordsPerPage)}
+            disabled={currentPage === Math.ceil(filtered.length / recordsPerPage)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
           >
             Próxima
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5 ml-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
-                fillRule="evenodd"
-                d="M7.707 3.707a1 1 0 010 1.414L4.414 9H16a1 1 0 110 2H4.414l3.293 3.293a1 1 0 11-1.414 1.414l-5-5a1 1 0 011.414 0z"
-                clipRule="evenodd"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
               />
             </svg>
           </button>
         </div>
 
-        {/* Modal de criação/edição */}
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={() => setModalIsOpen(false)}
@@ -332,12 +327,11 @@ export default function ClienteList() {
           )}
         </Modal>
 
-        {/* Modal de confirmação de exclusão */}
         <ConfirmationModal
           isOpen={deleteConfirmOpen}
           title="Confirmação de Exclusão"
           message="Tem certeza de que deseja excluir este cliente? Esta ação não pode ser desfeita."
-          onConfirm={() => handleDeleteConfirmation(clienteToDelete!)}
+          onConfirm={() => handleDelete(clienteToDelete!)} // Chamar handleDelete na confirmação
           onCancel={() => setDeleteConfirmOpen(false)}
           confirmText="Excluir"
           cancelText="Cancelar"

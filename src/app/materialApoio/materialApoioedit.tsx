@@ -1,5 +1,6 @@
 //src/app/materialApoio/materialApoioedit.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { MaterialApoio } from '../../models/materialApoio';
@@ -23,6 +24,7 @@ export const MaterialApoioEditForm  = ({ materialApoio, onSave, onClose,setSnack
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };

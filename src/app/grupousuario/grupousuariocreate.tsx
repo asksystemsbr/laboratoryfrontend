@@ -1,5 +1,6 @@
 //src/app/grupousuario/grupousuariocreate.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { GrupoUsuario } from '../../models/grupoUsuario';
@@ -20,6 +21,7 @@ export const GrupoUsuarioCreateForm = ({ onSave, onClose,setSnackbar  }: GrupoUs
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o grupo!', 'error', true)); // Exibe erro via snackbar
       }
   };

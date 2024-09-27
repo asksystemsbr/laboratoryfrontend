@@ -1,6 +1,6 @@
 
 //src/app/teste/page.tsx
-
+import React from 'react';
 import ClientAuthWrapper from '../ClientAuthWrapper';
 export default function Dashboard() {
   return (    

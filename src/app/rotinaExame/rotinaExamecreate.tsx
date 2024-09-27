@@ -1,5 +1,6 @@
 //src/app/rotinaExame/rotinaExamecreate.tsx
 "use client";
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { RotinaExame } from '../../models/rotinaExame';
@@ -20,6 +21,7 @@ export const RotinaExameCreateForm = ({ onSave, onClose,setSnackbar  }: RotinaEx
         reset();
         onSave();
       } catch (error) {
+        console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
       }
   };
