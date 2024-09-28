@@ -8,6 +8,55 @@ import { differenceInYears } from 'date-fns';
 import { Convenio } from '@/models/convenio';
 import { Plano } from '@/models/plano';
 
+// Funções para validação de CPF e CNPJ
+const validarCPF = (cpf: string): boolean => {
+  cpf = cpf.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += Number(cpf.charAt(i)) * (10 - i);
+  let resto = 11 - (soma % 11);
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== Number(cpf.charAt(9))) return false;
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += Number(cpf.charAt(i)) * (11 - i);
+  resto = 11 - (soma % 11);
+  if (resto === 10 || resto === 11) resto = 0;
+  return resto === Number(cpf.charAt(10));
+};
+
+const validarCNPJ = (cnpj: string): boolean => {
+  cnpj = cnpj.replace(/[^\d]+/g, '');
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1+$/.test(cnpj)) return false;
+
+  let tamanho = cnpj.length - 2;
+  let numeros = cnpj.substring(0, tamanho);
+  const digitos = cnpj.substring(tamanho);
+  let soma = 0;
+  let pos = tamanho - 7;
+
+  for (let i = tamanho; i >= 1; i--) {
+    soma += Number(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  if (resultado !== Number(digitos.charAt(0))) return false;
+
+  tamanho++;
+  numeros = cnpj.substring(0, tamanho);
+  soma = 0;
+  pos = tamanho - 7;
+
+  for (let i = tamanho; i >= 1; i--) {
+    soma += Number(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  return resultado === Number(digitos.charAt(1));
+};
+
 interface Cliente {
   id?: number;
   nome: string;
@@ -22,7 +71,6 @@ interface Cliente {
   dataCadastro?: Date;
   convenioId?: number;
   planoId?: number;
-
   nomeFantasia?: string;
   ie?: string;
   im?: string;
@@ -39,7 +87,7 @@ interface ClienteCreateFormProps {
 }
 
 export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreateFormProps) => {
-  const { register, handleSubmit, reset, formState: { errors }, watch } = useForm<Cliente>();
+  const { register, handleSubmit, reset, formState: { errors }, watch, setError } = useForm<Cliente>();
   const [cep, setCep] = useState('');
   const [logradouro, setLogradouro] = useState('');
   const [complemento, setComplemento] = useState('');
@@ -104,6 +152,15 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   };
 
   const onSubmit = async (data: Cliente) => {
+    // Validação de CPF/CNPJ
+    if (!isCNPJ && !validarCPF(data.cpfCnpj)) {
+      setError('cpfCnpj', { type: 'manual', message: 'CPF inválido!' });
+      return;
+    } else if (isCNPJ && !validarCNPJ(data.cpfCnpj)) {
+      setError('cpfCnpj', { type: 'manual', message: 'CNPJ inválido!' });
+      return;
+    }
+
     try {
       await axios.post('/api/Cliente', data);
       reset();
@@ -125,9 +182,9 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         
         <h2 className="text-xl font-bold mb-2 text-gray-800">Novo Cliente</h2>
 
-        {/* Nome e Email */}
+        {/* Nome */}
         <div className="flex space-x-2 mb-3">
-          <div className="w-1/2">
+          <div className="w-full">
             <label className="block text-gray-800">Nome</label>
             <input 
               {...register('nome', { required: 'O nome é obrigatório' })} 
@@ -135,7 +192,10 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             />
             {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
           </div>
+        </div>
 
+        {/* E-mail e Telefone */}
+        <div className="flex space-x-2 mb-3">
           <div className="w-1/2">
             <label className="block text-gray-800">Email</label>
             <input 
@@ -149,6 +209,16 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
             />
             {errors.email && <p className="text-red-500 text-sm">{errors.email?.message}</p>}
+          </div>
+
+          <div className="w-1/2">
+            <label className="block text-gray-800">Telefone</label>
+            <InputMask
+              {...register('telefone', { required: 'O telefone é obrigatório' })}
+              mask="(99) 99999-9999"
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+            />
+            {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
           </div>
         </div>
 
