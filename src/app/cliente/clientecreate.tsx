@@ -5,26 +5,75 @@ import axios from 'axios';
 import InputMask from 'react-input-mask-next';
 import { SnackbarState } from '@/models/snackbarState';
 import { differenceInYears } from 'date-fns';
-import { Convenio } from '@/models/convenio';  
-import { Plano } from '@/models/plano';        
+import { Convenio } from '@/models/convenio';
+import { Plano } from '@/models/plano';
+
+// Funções para validação de CPF e CNPJ
+const validarCPF = (cpf: string): boolean => {
+  cpf = cpf.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += Number(cpf.charAt(i)) * (10 - i);
+  let resto = 11 - (soma % 11);
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== Number(cpf.charAt(9))) return false;
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += Number(cpf.charAt(i)) * (11 - i);
+  resto = 11 - (soma % 11);
+  if (resto === 10 || resto === 11) resto = 0;
+  return resto === Number(cpf.charAt(10));
+};
+
+const validarCNPJ = (cnpj: string): boolean => {
+  cnpj = cnpj.replace(/[^\d]+/g, '');
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1+$/.test(cnpj)) return false;
+
+  let tamanho = cnpj.length - 2;
+  let numeros = cnpj.substring(0, tamanho);
+  const digitos = cnpj.substring(tamanho);
+  let soma = 0;
+  let pos = tamanho - 7;
+
+  for (let i = tamanho; i >= 1; i--) {
+    soma += Number(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  if (resultado !== Number(digitos.charAt(0))) return false;
+
+  tamanho++;
+  numeros = cnpj.substring(0, tamanho);
+  soma = 0;
+  pos = tamanho - 7;
+
+  for (let i = tamanho; i >= 1; i--) {
+    soma += Number(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  return resultado === Number(digitos.charAt(1));
+};
 
 interface Cliente {
   id?: number;
   nome: string;
-  sexo?: string;          
+  sexo?: string;
   cpfCnpj: string;
+  rg?: string;
   endereco: string;
   numero: string;
   telefone: string;
   email: string;
   situacaoId: number;
   dataCadastro?: Date;
-  convenioId?: number;    
-  planoId?: number;       
-
-  nomeFantasia?: string;    
-  ie?: string;              
-  im?: string;              
+  convenioId?: number;
+  planoId?: number;
+  nomeFantasia?: string;
+  ie?: string;
+  im?: string;
   nascimento?: Date | string;
   nomeResponsavel?: string;
   cpfResponsavel?: string;
@@ -38,16 +87,16 @@ interface ClienteCreateFormProps {
 }
 
 export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreateFormProps) => {
-  const { register, handleSubmit, reset, formState: { errors }, watch } = useForm<Cliente>();
-  const [cep, setCep] = useState(''); 
+  const { register, handleSubmit, reset, formState: { errors }, watch, setError } = useForm<Cliente>();
+  const [cep, setCep] = useState('');
   const [logradouro, setLogradouro] = useState('');
   const [complemento, setComplemento] = useState('');
   const [bairro, setBairro] = useState('');
   const [localidade, setLocalidade] = useState('');
   const [uf, setUf] = useState('');
   const [isCNPJ, setIsCNPJ] = useState(false);
-  const [convenios, setConvenios] = useState<Convenio[]>([]);   
-  const [planos, setPlanos] = useState<Plano[]>([]);            
+  const [convenios, setConvenios] = useState<Convenio[]>([]);
+  const [planos, setPlanos] = useState<Plano[]>([]);
 
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
@@ -89,33 +138,40 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         setLocalidade(response.data.localidade);
         setUf(response.data.uf);
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       setSnackbar(new SnackbarState('Erro ao buscar CEP!', 'error', true));
     }
   };
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const cepDigitado = e.target.value.replace(/\D/g, ''); 
-    setCep(cepDigitado); 
+    const cepDigitado = e.target.value.replace(/\D/g, '');
+    setCep(cepDigitado);
     if (cepDigitado.length === 8) {
-      buscarEnderecoViaCep(cepDigitado); 
+      buscarEnderecoViaCep(cepDigitado);
     }
   };
 
   const onSubmit = async (data: Cliente) => {
+    // Validação de CPF/CNPJ
+    if (!isCNPJ && !validarCPF(data.cpfCnpj)) {
+      setError('cpfCnpj', { type: 'manual', message: 'CPF inválido!' });
+      return;
+    } else if (isCNPJ && !validarCNPJ(data.cpfCnpj)) {
+      setError('cpfCnpj', { type: 'manual', message: 'CNPJ inválido!' });
+      return;
+    }
+
     try {
-      await axios.post('/api/Cliente', data); 
+      await axios.post('/api/Cliente', data);
       reset();
       onSave();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       setSnackbar(new SnackbarState('Erro ao criar o cliente!', 'error', true));
     }
   };
 
   const toggleMask = () => {
-    setIsCNPJ(!isCNPJ); 
+    setIsCNPJ(!isCNPJ);
   };
 
   return (
@@ -126,9 +182,9 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         
         <h2 className="text-xl font-bold mb-2 text-gray-800">Novo Cliente</h2>
 
-        {/* Nome e Email */}
+        {/* Nome */}
         <div className="flex space-x-2 mb-3">
-          <div className="w-1/2">
+          <div className="w-full">
             <label className="block text-gray-800">Nome</label>
             <input 
               {...register('nome', { required: 'O nome é obrigatório' })} 
@@ -136,7 +192,10 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             />
             {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
           </div>
+        </div>
 
+        {/* E-mail e Telefone */}
+        <div className="flex space-x-2 mb-3">
           <div className="w-1/2">
             <label className="block text-gray-800">Email</label>
             <input 
@@ -151,9 +210,19 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             />
             {errors.email && <p className="text-red-500 text-sm">{errors.email?.message}</p>}
           </div>
+
+          <div className="w-1/2">
+            <label className="block text-gray-800">Telefone</label>
+            <InputMask
+              {...register('telefone', { required: 'O telefone é obrigatório' })}
+              mask="(99) 99999-9999"
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+            />
+            {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
+          </div>
         </div>
 
-        {/* Sexo e Convênio */}
+        {/* Sexo, Convênio, Plano e Situação */}
         <div className="flex space-x-2 mb-3">
           <div className="w-1/4">
             <label className="block text-gray-800">Sexo</label>
@@ -187,9 +256,20 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
               ))}
             </select>
           </div>
+
+          <div className="w-1/4">
+            <label className="block text-gray-800">Situação</label>
+            <select 
+              {...register('situacaoId', { required: 'A situação é obrigatória' })}
+              className={`border rounded w-full py-1 px-3 mt-1 text-gray-800 ${Number(watch('situacaoId')) === 0 ? 'bg-red-200' : 'bg-green-200'}`}
+            >
+              <option value="1">Ativo</option>
+              <option value="0">Inativo</option>
+            </select>
+          </div>
         </div>
 
-        {/* CPF/CNPJ, CEP e Data de Nascimento */}
+        {/* CPF/CNPJ, RG, CEP e Data de Nascimento */}
         <div className="flex space-x-2 items-end mb-3">
           <div className="w-1/2">
             <label className="block text-gray-800">CPF/CNPJ</label>
@@ -203,7 +283,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
               <button
                 type="button"
                 onClick={toggleMask}
-                className="ml-2 py-1 px-3 bg-blue-500 text-white rounded"
+                className="ml-2 py-1 px-2 bg-blue-500 text-white rounded"
               >
                 Usar {isCNPJ ? 'CPF' : 'CNPJ'}
               </button>
@@ -212,12 +292,21 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
 
           <div className="w-1/4">
+            <label className="block text-gray-800">RG</label>
+            <InputMask
+              {...register('rg')}
+              mask="99.999.999-9"
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+            />
+          </div>
+
+          <div className="w-1/4">
             <label className="block text-gray-800">CEP</label>
             <InputMask
-              value={cep} 
+              value={cep}
               mask="99999-999"
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
-              onChange={handleCepChange} 
+              onChange={handleCepChange}
             />
           </div>
 
@@ -315,36 +404,36 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           <div className="w-1/3">
             <label className="block text-gray-800">Complemento</label>
             <input 
-              value={complemento} 
-              onChange={(e) => setComplemento(e.target.value)} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+              value={complemento}
+              onChange={(e) => setComplemento(e.target.value)}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
             />
           </div>
 
           <div className="w-1/3">
             <label className="block text-gray-800">Bairro</label>
-            <input 
-              value={bairro} 
-              onChange={(e) => setBairro(e.target.value)} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            <input
+              value={bairro}
+              onChange={(e) => setBairro(e.target.value)}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
             />
           </div>
 
           <div className="w-1/3">
             <label className="block text-gray-800">Cidade</label>
-            <input 
-              value={localidade} 
-              onChange={(e) => setLocalidade(e.target.value)} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            <input
+              value={localidade}
+              onChange={(e) => setLocalidade(e.target.value)}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
             />
           </div>
 
           <div className="w-1/6">
             <label className="block text-gray-800">UF</label>
-            <input 
-              value={uf} 
-              onChange={(e) => setUf(e.target.value)} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            <input
+              value={uf}
+              onChange={(e) => setUf(e.target.value)}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
             />
           </div>
         </div>

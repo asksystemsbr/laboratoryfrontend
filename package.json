@@ -19,7 +19,8 @@
     "react-hook-form": "^7.53.0",
     "react-input-mask": "^2.0.4",
     "react-input-mask-next": "^3.0.0-alpha.12",
-    "react-modal": "^3.16.1"
+    "react-modal": "^3.16.1",
+    "react-select": "^5.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
