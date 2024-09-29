@@ -22,55 +22,73 @@ export default function ClienteList() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
-  const [progress] = useState(100);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState<number | null>(null);
+  const [progress, setProgress] = useState(100); // Para a barra de progresso
 
   const [sortConfig, setSortConfig] = useState<{ key: keyof Cliente; direction: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
   const applySearchAndSort = useCallback(() => {
-    const sortedClientes = [...clientes].filter(
-      (cliente) => {
-        const searchTermLower = searchTerm.toLowerCase();
+    const searchTermLower = searchTerm.toLowerCase();
 
-        const matchesNameOrEmail =
-          cliente.nome?.toLowerCase().includes(searchTermLower) ||
-          cliente.email?.toLowerCase().includes(searchTermLower);
+   const sortedClientes = [...clientes].filter((cliente) => {
+    // Filtrar baseado em todos os campos
+    return Object.keys(cliente).some((key) => {
+      const value = cliente[key as keyof Cliente]; // Acessa dinamicamente os valores de cada campo
 
-        const matchesSituacao =
-          (searchTermLower === 'ativo' && cliente.situacaoId === 1) ||
-          (searchTermLower === 'inativo' && cliente.situacaoId !== 1);
+      // Ignora campos indefinidos ou nulos
+      if (value == null) return false;
 
-        return matchesNameOrEmail || matchesSituacao || searchTermLower === '';
+      // Converte todos os valores para string e verifica se o termo de busca está incluído
+      return String(value).toLowerCase().includes(searchTermLower);
+    });
+  });
+
+  if (sortConfig !== null) {
+    sortedClientes.sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      } else {
+        return 0;
       }
-    );
+    });
+  }
 
-    if (sortConfig !== null) {
-      sortedClientes.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return sortConfig.direction === 'asc'
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
-        } else {
-          return 0;
-        }
-      });
-    }
-
-    setFiltered(sortedClientes);
+  setFiltered(sortedClientes);
   }, [searchTerm, sortConfig, clientes]);
 
   useEffect(() => {
     loadClientes();
   }, []);
 
+    // Timer para fechar o snackbar automaticamente
+    useEffect(() => {
+      if (snackbar.show) {
+        const interval = setInterval(() => {
+          setProgress((prev) => (prev > 0 ? prev - 1 : 0)); // Reduz progressivamente
+        }, 50);
+  
+        const timer = setTimeout(() => {
+          snackbar.hideSnackbar(); // Esconde o Snackbar
+          setSnackbar(new SnackbarState()); // Atualiza para uma nova instância
+          setProgress(100); // Reset progress
+        }, 5000);
+  
+        return () => {
+          clearInterval(interval);
+          clearTimeout(timer);
+        };
+      }
+    }, [snackbar]);
   useEffect(() => {
     applySearchAndSort();
   }, [searchTerm, sortConfig, clientes, currentPage, applySearchAndSort]);
@@ -84,6 +102,12 @@ export default function ClienteList() {
     } catch (error) {
       setSnackbar(new SnackbarState('Erro ao carregar clientes!', 'error', true));
     }
+  };
+
+  const handleSave = () => {
+    setModalIsOpen(false);
+    setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
+    loadClientes();
   };
 
   const handleSort = (key: keyof Cliente) => {
@@ -313,14 +337,14 @@ export default function ClienteList() {
         >
           {isEditing ? (
             <ClienteEditForm
-              clienteId={editingCliente!.id!}
-              onSave={loadClientes}
+              cliente={editingCliente!}
+              onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
             />
           ) : (
             <ClienteCreateForm
-              onSave={loadClientes}
+              onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
             />

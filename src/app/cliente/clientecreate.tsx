@@ -7,78 +7,12 @@ import { SnackbarState } from '@/models/snackbarState';
 import { differenceInYears } from 'date-fns';
 import { Convenio } from '@/models/convenio';
 import { Plano } from '@/models/plano';
-
-// Funções para validação de CPF e CNPJ
-const validarCPF = (cpf: string): boolean => {
-  cpf = cpf.replace(/[^\d]+/g, '');
-  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-  let soma = 0;
-  for (let i = 0; i < 9; i++) soma += Number(cpf.charAt(i)) * (10 - i);
-  let resto = 11 - (soma % 11);
-  if (resto === 10 || resto === 11) resto = 0;
-  if (resto !== Number(cpf.charAt(9))) return false;
-  soma = 0;
-  for (let i = 0; i < 10; i++) soma += Number(cpf.charAt(i)) * (11 - i);
-  resto = 11 - (soma % 11);
-  if (resto === 10 || resto === 11) resto = 0;
-  return resto === Number(cpf.charAt(10));
-};
-
-const validarCNPJ = (cnpj: string): boolean => {
-  cnpj = cnpj.replace(/[^\d]+/g, '');
-  if (cnpj.length !== 14) return false;
-  if (/^(\d)\1+$/.test(cnpj)) return false;
-
-  let tamanho = cnpj.length - 2;
-  let numeros = cnpj.substring(0, tamanho);
-  const digitos = cnpj.substring(tamanho);
-  let soma = 0;
-  let pos = tamanho - 7;
-
-  for (let i = tamanho; i >= 1; i--) {
-    soma += Number(numeros.charAt(tamanho - i)) * pos--;
-    if (pos < 2) pos = 9;
-  }
-
-  let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-  if (resultado !== Number(digitos.charAt(0))) return false;
-
-  tamanho++;
-  numeros = cnpj.substring(0, tamanho);
-  soma = 0;
-  pos = tamanho - 7;
-
-  for (let i = tamanho; i >= 1; i--) {
-    soma += Number(numeros.charAt(tamanho - i)) * pos--;
-    if (pos < 2) pos = 9;
-  }
-
-  resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-  return resultado === Number(digitos.charAt(1));
-};
-
-interface Cliente {
-  id?: number;
-  nome: string;
-  sexo?: string;
-  cpfCnpj: string;
-  rg?: string;
-  endereco: string;
-  numero: string;
-  telefone: string;
-  email: string;
-  situacaoId: number;
-  dataCadastro?: Date;
-  convenioId?: number;
-  planoId?: number;
-  nomeFantasia?: string;
-  ie?: string;
-  im?: string;
-  nascimento?: Date | string;
-  nomeResponsavel?: string;
-  cpfResponsavel?: string;
-  telefoneResponsavel?: string;
-}
+import { Endereco } from '@/models/endereco'; 
+import { Cliente } from '@/models/cliente'; 
+import { validateCPF } from '@/utils/cpfValidator';
+import { validarCNPJ } from '@/utils/cnpjValidator';
+import { validateDate } from '@/utils/validateDate';
+import { UF } from '@/models/uf';
 
 interface ClienteCreateFormProps {
   onSave: () => void;
@@ -87,16 +21,22 @@ interface ClienteCreateFormProps {
 }
 
 export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreateFormProps) => {
-  const { register, handleSubmit, reset, formState: { errors }, watch, setError } = useForm<Cliente>();
+  const { register, handleSubmit, reset, formState: { errors }, watch, setError,clearErrors } = useForm<Cliente>();
   const [cep, setCep] = useState('');
-  const [logradouro, setLogradouro] = useState('');
-  const [complemento, setComplemento] = useState('');
-  const [bairro, setBairro] = useState('');
-  const [localidade, setLocalidade] = useState('');
-  const [uf, setUf] = useState('');
   const [isCNPJ, setIsCNPJ] = useState(false);
+  const [cpfInUse, setCpfInUse] = useState<boolean>(false);
+  const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
+  const [endereco, setEndereco] = useState<Endereco>({
+    cep: '',
+    rua: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    uf: ''
+  });
 
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
@@ -122,8 +62,19 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
       }
     };
 
+    const fetchUF = async () => {
+      try {
+        const response = await axios.get('/api/UF'); // Supondo que essa seja a rota da API
+        setUFOptions(response.data);
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar os tipos de solicitante', 'error', true));
+      }
+    };
+
     fetchConvenios();
     fetchPlanos();
+    fetchUF();
   }, []);
 
   const buscarEnderecoViaCep = async (cep: string) => {
@@ -132,11 +83,15 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
       if (response.data.erro) {
         setSnackbar(new SnackbarState('CEP não encontrado!', 'error', true));
       } else {
-        setLogradouro(response.data.logradouro);
-        setComplemento(response.data.complemento);
-        setBairro(response.data.bairro);
-        setLocalidade(response.data.localidade);
-        setUf(response.data.uf);
+        setEndereco({
+          cep: response.data.cep,
+          rua: response.data.logradouro,
+          complemento: response.data.complemento,
+          bairro: response.data.bairro,
+          cidade: response.data.localidade,
+          uf: response.data.uf,
+          numero: endereco.numero // Mantém o número do endereço se já estiver preenchido
+        });
       }
     } catch {
       setSnackbar(new SnackbarState('Erro ao buscar CEP!', 'error', true));
@@ -151,18 +106,65 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
     }
   };
 
+     // Função para verificar se o CPF já existe
+     const checkCpfExists = async (cpf: string) => {
+      try {
+        const response = await axios.get(`/api/Cliente/existsByCPF/${cpf}`);
+        if (response.data) {
+          setError('cpfCnpj', {
+            type: 'manual',
+            message: 'O CPF/CNPJ já está cadastrado',
+          });
+          setCpfInUse(true);
+        } else {
+          clearErrors('cpfCnpj');
+          setCpfInUse(false);
+        }
+      } catch (error) {
+        console.log('Erro ao verificar o CPF/CNPJ:', error);
+      }
+    };
+
   const onSubmit = async (data: Cliente) => {
+
+    if(!endereco.cep  
+        || !endereco.rua 
+        || !endereco.numero  
+        || !endereco.bairro
+        || !endereco.cidade
+        || !endereco.uf  
+    ){
+      return;
+    }
     // Validação de CPF/CNPJ
-    if (!isCNPJ && !validarCPF(data.cpfCnpj)) {
+    const cpfCnpj = data.cpfCnpj || '';
+    if (!isCNPJ && !validateCPF(cpfCnpj)) {
       setError('cpfCnpj', { type: 'manual', message: 'CPF inválido!' });
       return;
-    } else if (isCNPJ && !validarCNPJ(data.cpfCnpj)) {
+    } else if (isCNPJ && !validarCNPJ(cpfCnpj)) {
       setError('cpfCnpj', { type: 'manual', message: 'CNPJ inválido!' });
       return;
     }
 
+    checkCpfExists(cpfCnpj);
+    if (cpfInUse) {
+      setSnackbar(new SnackbarState('O CPF/CNPJ já está em uso', 'error', true));
+      return;
+    }
+    const clienteComEndereco = {
+      ...data,
+      endereco,  // Inclui o endereço completo ao enviar o cliente
+
+       // Comparação correta de convenioId e planoId para valores numéricos ou string vazia
+       convenioId: typeof data.convenioId === 'string' && data.convenioId === '' ? null : data.convenioId,
+       planoId: typeof data.planoId === 'string' && data.planoId === '' ? null : data.planoId,
+       sexo: data.sexo === '' ? null : data.sexo,
+       nomeResponsavel: data.nomeResponsavel === '' ? null : data.nomeResponsavel,
+       cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
+       telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
+    };
     try {
-      await axios.post('/api/Cliente', data);
+      await axios.post('/api/Cliente', clienteComEndereco);
       reset();
       onSave();
     } catch {
@@ -185,8 +187,9 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         {/* Nome */}
         <div className="flex space-x-2 mb-3">
           <div className="w-full">
-            <label className="block text-gray-800">Nome</label>
+            <label className="block text-gray-800">Nome *</label>
             <input 
+            type='text'
               {...register('nome', { required: 'O nome é obrigatório' })} 
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
             />
@@ -195,10 +198,11 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         </div>
 
         {/* E-mail e Telefone */}
-        <div className="flex space-x-2 mb-3">
-          <div className="w-1/2">
-            <label className="block text-gray-800">Email</label>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-gray-800">Email *</label>
             <input 
+            type='text'
               {...register('email', { 
                 required: 'O e-mail é obrigatório',
                 pattern: {
@@ -211,10 +215,16 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             {errors.email && <p className="text-red-500 text-sm">{errors.email?.message}</p>}
           </div>
 
-          <div className="w-1/2">
-            <label className="block text-gray-800">Telefone</label>
+          <div>
+            <label className="block text-gray-800">Telefone *</label>
             <InputMask
-              {...register('telefone', { required: 'O telefone é obrigatório' })}
+              {...register('telefone', { 
+                required: 'O telefone é obrigatório',
+                pattern: {
+                  value: /^\(\d{2}\) \d{5}-\d{4}$/,
+                  message: 'Formato de telefone inválido',
+                },
+               })}
               mask="(99) 99999-9999"
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
             />
@@ -223,17 +233,18 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         </div>
 
         {/* Sexo, Convênio, Plano e Situação */}
-        <div className="flex space-x-2 mb-3">
-          <div className="w-1/4">
-            <label className="block text-gray-800">Sexo</label>
-            <select {...register('sexo')} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div>
+            <label className="block text-gray-800">Sexo *</label>
+            <select {...register('sexo', { required: 'O sexo é obrigatório' })} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
               <option value="">Selecione</option>
               <option value="M">Masculino</option>
               <option value="F">Feminino</option>
             </select>
+            {errors.sexo && <p className="text-red-500 text-sm">{errors.sexo?.message}</p>}
           </div>
 
-          <div className="w-1/4">
+          <div>
             <label className="block text-gray-800">Convênio</label>
             <select {...register('convenioId')} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
               <option value="">Selecione</option>
@@ -245,7 +256,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             </select>
           </div>
 
-          <div className="w-1/4">
+          <div>
             <label className="block text-gray-800">Plano</label>
             <select {...register('planoId')} className="border rounded w-full py-1 px-3 mt-1 text-gray-800">
               <option value="">Selecione</option>
@@ -257,8 +268,8 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             </select>
           </div>
 
-          <div className="w-1/4">
-            <label className="block text-gray-800">Situação</label>
+          <div>
+            <label className="block text-gray-800">Situação *</label>
             <select 
               {...register('situacaoId', { required: 'A situação é obrigatória' })}
               className={`border rounded w-full py-1 px-3 mt-1 text-gray-800 ${Number(watch('situacaoId')) === 0 ? 'bg-red-200' : 'bg-green-200'}`}
@@ -270,28 +281,52 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         </div>
 
         {/* CPF/CNPJ, RG, CEP e Data de Nascimento */}
-        <div className="flex space-x-2 items-end mb-3">
-          <div className="w-1/2">
-            <label className="block text-gray-800">CPF/CNPJ</label>
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div>
+            <label className="block text-gray-800">CPF/CNPJ *</label>
             <div className="flex items-center">
               <InputMask
                 {...register('cpfCnpj', { required: 'CPF/CNPJ é obrigatório' })}
                 mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
                 placeholder={isCNPJ ? 'CNPJ' : 'CPF'}
-              />
-              <button
+                onBlur={(e) => {
+                  const cpf = e.target.value;
+                  if(isCNPJ)
+                  {
+                    if (!validarCNPJ(cpf)) {
+                      setError('cpfCnpj', {
+                        type: 'manual',
+                        message: 'CNPJ inválido',
+                      });
+                      return;
+                    }                    
+                  }
+                  else
+                  {
+                    if (!validateCPF(cpf)) {
+                      setError('cpfCnpj', {
+                        type: 'manual',
+                        message: 'CPF inválido',
+                      });
+                      return;
+                    } 
+                  }
+                  checkCpfExists(cpf);
+                }}
+              />          
+                <button
                 type="button"
                 onClick={toggleMask}
                 className="ml-2 py-1 px-2 bg-blue-500 text-white rounded"
               >
-                Usar {isCNPJ ? 'CPF' : 'CNPJ'}
-              </button>
+                {isCNPJ ? 'CPF' : 'CNPJ'}
+              </button>   
             </div>
             {errors.cpfCnpj && <p className="text-red-500 text-sm">{errors.cpfCnpj?.message}</p>}
           </div>
 
-          <div className="w-1/4">
+          <div>
             <label className="block text-gray-800">RG</label>
             <InputMask
               {...register('rg')}
@@ -300,48 +335,57 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             />
           </div>
 
-          <div className="w-1/4">
-            <label className="block text-gray-800">CEP</label>
+          <div>
+            <label className="block text-gray-800">CEP *</label>
             <InputMask
               value={cep}
               mask="99999-999"
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               onChange={handleCepChange}
             />
+            {!endereco.cep && <p className="text-red-500 text-sm">CEP é obrigatório</p>}
           </div>
 
-          <div className="w-1/4">
-            <label className="block text-gray-800">Data de Nascimento</label>
+          <div>
+            <label className="block text-gray-800">Data de Nascimento *</label>
             <input
               type="date"
-              {...register('nascimento')}
+              {...register('nascimento', { 
+                required: 'Obrigatória',
+                validate: validateDate
+               })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
             />
+            {errors.nascimento && <p className="text-red-500 text-sm">{errors.nascimento?.message}</p>}
           </div>
         </div>
 
         {/* Campos para CNPJ (Nome Fantasia, IE, IM) */}
         {isCNPJ && (
-          <div className="flex space-x-2 mb-3">
-            <div className="w-1/3">
-              <label className="block text-gray-800">Nome Fantasia</label>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-800">Nome Fantasia *</label>
               <input 
-                {...register('nomeFantasia')}
+              type='text'
+                 {...register('nomeFantasia', { required: isCNPJ && 'Nome fantasia obrigatório' })}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
+              {errors.nomeFantasia && <p className="text-red-500 text-sm">{errors.nomeFantasia?.message}</p>}
             </div>
 
-            <div className="w-1/3">
+            <div>
               <label className="block text-gray-800">Inscrição Estadual (IE)</label>
               <input 
+              type='text'
                 {...register('ie')}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
             </div>
 
-            <div className="w-1/3">
+            <div>
               <label className="block text-gray-800">Inscrição Municipal (IM)</label>
               <input 
+              type='text'
                 {...register('im')}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
@@ -351,90 +395,128 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
 
         {/* Campos para Menores de Idade */}
         {isMenorDeIdade && (
-          <div className="flex space-x-2 mb-3">
-            <div className="w-1/3">
-              <label className="block text-gray-800">Nome do Responsável</label>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-800">Nome do Responsável *</label>
               <input 
-                {...register('nomeResponsavel')}
+              type='text'
+              {...register('nomeResponsavel', { required: isMenorDeIdade && 'Nome do responsável obrigatório' })}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
+              {errors.nomeResponsavel && <p className="text-red-500 text-sm">{errors.nomeResponsavel?.message}</p>}
             </div>
 
-            <div className="w-1/3">
-              <label className="block text-gray-800">CPF do Responsável</label>
+            <div>
+              <label className="block text-gray-800">CPF do Responsável *</label>
               <InputMask
-                {...register('cpfResponsavel')}
+                  {...register('cpfResponsavel', { required: isMenorDeIdade && 'CPF do responsável obrigatório' })}
                 mask="999.999.999-99"
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                onBlur={(e) => {
+                  const cpf = e.target.value;
+                  if (!validateCPF(cpf)) {
+                    setError('cpfResponsavel', {
+                      type: 'manual',
+                      message: 'CPF do responsável inválido',
+                    });
+                    return;
+                  }
+                }}
               />
+              {errors.cpfResponsavel && <p className="text-red-500 text-sm">{errors.cpfResponsavel?.message}</p>}
             </div>
 
-            <div className="w-1/3">
-              <label className="block text-gray-800">Telefone do Responsável</label>
+            <div>
+              <label className="block text-gray-800">Telefone do Responsável *</label>
               <InputMask
-                {...register('telefoneResponsavel')}
+                {...register('telefoneResponsavel', { 
+                  required: isMenorDeIdade && 'Telefone do responsável obrigatório',
+                  pattern: {
+                    value: /^\(\d{2}\) \d{5}-\d{4}$/,
+                    message: 'Formato de telefone inválido',
+                  },
+                 })}
                 mask="(99) 99999-9999"
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
+              {errors.telefoneResponsavel && <p className="text-red-500 text-sm">{errors.telefoneResponsavel?.message}</p>}
             </div>
           </div>
         )}
 
         {/* Endereço Completo */}
-        <div className="flex space-x-2 mb-3">
-          <div className="w-3/4">
-            <label className="block text-gray-800">Rua (Logradouro)</label>
+        <div className="grid grid-cols-[3fr,1fr] gap-4 mb-4">
+          <div>
+            <label className="block text-gray-800">Rua (Logradouro) *</label>
             <input 
-              value={logradouro} 
-              onChange={(e) => setLogradouro(e.target.value)} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            type='text'
+              value={endereco.rua}
+              onChange={(e) => setEndereco({ ...endereco, rua: e.target.value })}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"        
             />
+             {!endereco.rua && <p className="text-red-500 text-sm">Rua é obrigatória</p>}
           </div>
 
-          <div className="w-1/4">
-            <label className="block text-gray-800">Número</label>
+          <div>
+            <label className="block text-gray-800">Número *</label>
             <input 
-              {...register('numero')}
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200" 
+            type='text'
+              value={endereco.numero}
+              onChange={(e) => setEndereco({ ...endereco, numero: e.target.value })}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"   
             />
+             {!endereco.numero && <p className="text-red-500 text-sm">Número é obrigatório</p>}
           </div>
         </div>
 
-        <div className="flex space-x-2 mb-3">
-          <div className="w-1/3">
+        <div className="grid grid-cols-[1fr,2fr,2fr,1fr] gap-4 mb-4">
+          <div>
             <label className="block text-gray-800">Complemento</label>
             <input 
-              value={complemento}
-              onChange={(e) => setComplemento(e.target.value)}
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
+            type='text'
+              value={endereco.complemento}
+              onChange={(e) => setEndereco({ ...endereco, complemento: e.target.value })}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"     
             />
           </div>
 
-          <div className="w-1/3">
-            <label className="block text-gray-800">Bairro</label>
+          <div>
+            <label className="block text-gray-800">Bairro *</label>
             <input
-              value={bairro}
-              onChange={(e) => setBairro(e.target.value)}
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
+            type='text'
+              value={endereco.bairro}
+              onChange={(e) => setEndereco({ ...endereco, bairro: e.target.value })}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"     
             />
+            {!endereco.bairro && <p className="text-red-500 text-sm">Bairro é obrigatório</p>}
           </div>
 
-          <div className="w-1/3">
-            <label className="block text-gray-800">Cidade</label>
+          <div>
+            <label className="block text-gray-800">Cidade *</label>
             <input
-              value={localidade}
-              onChange={(e) => setLocalidade(e.target.value)}
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
+            type='text'
+              value={endereco.cidade}
+              onChange={(e) => setEndereco({ ...endereco, cidade: e.target.value })}
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"      
             />
+            {!endereco.cidade && <p className="text-red-500 text-sm">Cidade é obrigatório</p>}
           </div>
 
-          <div className="w-1/6">
-            <label className="block text-gray-800">UF</label>
-            <input
-              value={uf}
-              onChange={(e) => setUf(e.target.value)}
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800 bg-gray-200"
-            />
+          <div>
+            <label className="block text-gray-800">UF *</label>
+            <select
+              value={endereco.uf}
+              onChange={(e) => setEndereco({ ...endereco, uf: e.target.value })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            >
+              <option value="">Selecione</option>
+              {ufOptions.map((option) => (
+                <option key={option.siglaUf} value={option.siglaUf}>
+                  {option.siglaUf}
+                </option>
+              ))}
+            </select>
+            {!endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
           </div>
         </div>
 

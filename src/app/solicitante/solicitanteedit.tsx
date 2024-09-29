@@ -165,7 +165,7 @@ export const SolicitanteEditForm = ({ solicitante, onSave, onClose,setSnackbar  
               message: 'E-mail inválido'
             }
           })}
-          type="email"
+          type="text"
           className="border rounded w-full py-2 px-3 mt-1"
         />
         {errors.email && <p className="text-red-500 text-sm">{errors.email?.message}</p>}
