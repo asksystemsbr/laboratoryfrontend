@@ -25,3 +25,10 @@ body {
     text-wrap: balance;
   }
 }
+
+@layer base {
+  /* Aplica `text-transform: uppercase` a todos os inputs de texto, textareas e selects */
+  input[type="text"], textarea, select {
+    @apply uppercase;
+  }
+}

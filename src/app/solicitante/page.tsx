@@ -149,7 +149,8 @@ export default function ItemsList() {
         <table className="min-w-full bg-white border border-gray-200">
           <thead>
             <tr>
-              <th className="py-2 px-4 text-left">Descrição</th>
+              <th className="py-2 px-4 text-left">Nome</th>
+              <th className="py-2 px-4 text-left">Telefone</th>
               <th className="py-2 px-4 text-left">Editar</th>
               <th className="py-2 px-4 text-left">Excluir</th>
             </tr>
@@ -158,6 +159,7 @@ export default function ItemsList() {
             {filtered.map((item) => (
               <tr key={item.id} className="border-t border-gray-200">
                 <td className="py-2 px-4 text-left">{item.descricao}</td>
+                <td className="py-2 px-4 text-left">{item.telefone}</td>
                 <td className="py-2 px-4 text-left">
                   <button
                     className="text-yellow-500 hover:text-yellow-700 mr-2"
