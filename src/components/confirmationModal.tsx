@@ -1,4 +1,5 @@
 // src/components/confirmationModal.tsx
+import React from 'react';
 import Modal from 'react-modal';
 
 interface ConfirmationModalProps {

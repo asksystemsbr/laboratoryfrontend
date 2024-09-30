@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../app/auth'; // Importa o hook de autenticação
 

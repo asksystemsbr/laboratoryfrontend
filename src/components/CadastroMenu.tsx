@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../app/auth'; // Importa o hook de autenticação
 
@@ -123,7 +124,13 @@ export default function CadastroMenu() {
         label: 'Solicitante',
         icon: 'queue',
         route: '/solicitante',
-      },                                 
+      },  
+      {
+        permissions: ['tabelaPreco.Read', 'tabelaPreco.Write'],
+        label: 'Tabela Preço',
+        icon: 'queue',
+        route: '/tabelaPreco',
+      },                                       
   ];
 
   // Renderiza os itens de menu com base nas permissões
