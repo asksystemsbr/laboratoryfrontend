@@ -20,7 +20,8 @@
     "react-input-mask": "^2.0.4",
     "react-input-mask-next": "^3.0.0-alpha.12",
     "react-modal": "^3.16.1",
-    "react-select": "^5.8.1"
+    "react-select": "^5.8.1",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
@@ -31,6 +32,7 @@
     "@types/react-dom": "^18",
     "@types/react-input-mask": "^3.0.5",
     "@types/react-modal": "^3.16.3",
+    "@types/uuid": "^10.0.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.8",
     "eslint-config-prettier": "^9.1.0",
