@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { TabelaPrecoItens } from '../../models/tabelaPrecoItens'; // Interface fornecida
 import { Exame } from '../../models/exame';
+import { formatDecimal } from '@/utils/numbers';
 //import { SnackbarState } from '@/models/snackbarState';
 
 
@@ -118,11 +119,6 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
     );
     setEditingItems(updatedItems);
   };
-
-    // Função para limitar casas decimais
-    const formatDecimal = (value: number, decimalPlaces: number) => {
-      return parseFloat(value.toFixed(decimalPlaces));
-    };
 
   // Função para salvar as alterações
   const handleSave = async () => {

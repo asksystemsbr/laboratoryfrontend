@@ -7,12 +7,13 @@ import { SnackbarState } from '@/models/snackbarState';
 import { differenceInYears } from 'date-fns';
 import { Convenio } from '@/models/convenio';
 import { Plano } from '@/models/plano';
-import { Endereco } from '@/models/endereco'; 
 import { Cliente } from '@/models/cliente'; 
 import { validateCPF } from '@/utils/cpfValidator';
 import { validarCNPJ } from '@/utils/cnpjValidator';
 import { validateDate } from '@/utils/validateDate';
 import { UF } from '@/models/uf';
+import { buscarEnderecoViaCep} from '@/utils/endereco';
+import { Endereco } from '@/models/endereco';
 
 interface ClienteCreateFormProps {
   onSave: () => void;
@@ -77,32 +78,21 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
     fetchUF();
   }, []);
 
-  const buscarEnderecoViaCep = async (cep: string) => {
-    try {
-      const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-      if (response.data.erro) {
-        setSnackbar(new SnackbarState('CEP não encontrado!', 'error', true));
-      } else {
-        setEndereco({
-          cep: response.data.cep,
-          rua: response.data.logradouro,
-          complemento: response.data.complemento,
-          bairro: response.data.bairro,
-          cidade: response.data.localidade,
-          uf: response.data.uf,
-          numero: endereco.numero // Mantém o número do endereço se já estiver preenchido
-        });
-      }
-    } catch {
-      setSnackbar(new SnackbarState('Erro ao buscar CEP!', 'error', true));
-    }
-  };
-
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');
     setCep(cepDigitado);
+
     if (cepDigitado.length === 8) {
-      buscarEnderecoViaCep(cepDigitado);
+        const enderecoAtualizado = await buscarEnderecoViaCep(cepDigitado);
+      
+      if (enderecoAtualizado) {
+        setEndereco({
+          ...enderecoAtualizado, // Preenche o endereço retornado pela API
+          numero: endereco.numero // Mantém o número se já estiver preenchido
+        });
+      } else {
+        setSnackbar(new SnackbarState('CEP não encontrado!', 'error', true));
+      }
     }
   };
 

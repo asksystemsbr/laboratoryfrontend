@@ -1,3 +1,4 @@
+import React from 'react';
 import CadastroMenu from '../../components/CadastroMenu';
 import Menu from '../../components/menu';
 
