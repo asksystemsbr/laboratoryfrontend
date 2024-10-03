@@ -1,5 +1,6 @@
 import React from 'react';
 import CadastroMenu from '../../components/CadastroMenu';
+import React from 'react';
 import Menu from '../../components/menu';
 
 export default function CadastrosPage() {
