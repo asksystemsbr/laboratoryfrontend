@@ -1,6 +1,6 @@
 //src/app/tabelaPrecoItens/tabelaPrecoItenscreate.tsx
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { TabelaPrecoItens } from '../../models/tabelaPrecoItens'; // Interface fornecida
 import { Exame } from '../../models/exame';
@@ -22,81 +22,75 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
   const [editingItems, setEditingItems] = useState<TabelaPrecoItens[]>([]);
   const [exames, setExames] = useState<Exame[]>([]);
 
-  if (!tabelaPrecoId) {
-    return <div>Carregando...</div>; // Ou trate o caso em que tabelaPrecoId não é fornecido
-  }
-  // Carregar dados na ordem correta
-  useEffect(() => {
-    const loadData = async () => {
-      await loadExames(); // Garante que exames são carregados primeiro
-    };
-    loadData();
-  }, []);
+    // Função para carregar a lista de exames do backend
+    const loadExames = useCallback(async () => {
+      try {
+        const response = await axios.get('/api/Exame'); // Endpoint para obter os exames
+        setExames(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar lista de exames:', error);
+        alert('Erro ao carregar dados');
+      }
+    }, []); // Sem dependências, essa função é estável
 
-  // Carregar os itens apenas quando os exames forem atualizados
+ // Função para carregar os dados do backend
+ const loadItems = useCallback(async () => {
+  try {
+    const response = await axios.get(`/api/TabelaPrecoItens/getByPriceTable/${tabelaPrecoId}`);
+    const itemsData  = response.data || [];
+
+    // Nova lista para armazenar os itens com exame
+    const itemsWithExames: TabelaPrecoItens[] = [];
+
+    // Percorre todos os exames
+    exames.forEach((exame) => {
+      // Verifica se já existe um item na tabela de preço para este exame
+      const itemExistente = itemsData.find((item: TabelaPrecoItens) => item.exameId === exame.id);
+
+      if (itemExistente) {
+        // Se o item já existe, atualizamos o nome do exame
+        itemsWithExames.push({
+          ...itemExistente,
+          tabelaPrecoId: tabelaPrecoId, // Atribui o tabelaPrecoId vindo da prop
+          nomeExame: exame.nomeExame, // Adiciona o nome do exame ao item existente
+        });
+      } else {
+        // Se o item não existe, criamos um novo com valores padrão
+        itemsWithExames.push({
+          tabelaPrecoId: tabelaPrecoId, // ou qualquer ID padrão
+          exameId: exame.id ?? 0, // Associar o exameId ao novo item
+          valor: 0,
+          custoOperacional: 0,
+          custoHorario: 0,
+          filme: 0,
+          codigoArnb: "N/A",
+          nomeExame: exame.nomeExame, // Adiciona o nome do exame
+        });
+      }
+    });
+
+    setItems(itemsWithExames);
+    setFiltered(itemsWithExames); // Inicia com todos os itens
+    setEditingItems(itemsWithExames); // Cria uma cópia editável dos itens
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
+    alert('Erro ao carregar dados');
+  }
+}, [exames, tabelaPrecoId]); // Recarregar os itens quando exames ou tabelaPrecoId mudar;
+
+
+  // Carrega os exames assim que o componente é montado
+  useEffect(() => {
+    loadExames(); // Garante que exames são carregados primeiro
+  }, [loadExames]);
+
+  // Carregar itens da tabela de preço somente quando os exames estiverem carregados
   useEffect(() => {
     if (exames.length > 0) {
-      // Só executa loadItems quando exames estiverem carregados
       loadItems();
     }
-  }, [exames]);
+  }, [exames, loadItems]); // Quando `exames` ou `loadItems` mudar, recarregar os itens
 
-  // Função para carregar os dados do backend
-  const loadItems = async () => {
-    try {
-      const response = await axios.get(`/api/TabelaPrecoItens/getByPriceTable/${tabelaPrecoId}`);
-      const itemsData  = response.data || [];
-
-      // Nova lista para armazenar os itens com exame
-      const itemsWithExames: TabelaPrecoItens[] = [];
-
-      // Percorre todos os exames
-      exames.forEach((exame) => {
-        // Verifica se já existe um item na tabela de preço para este exame
-        const itemExistente = itemsData.find((item: TabelaPrecoItens) => item.exameId === exame.id);
-
-        if (itemExistente) {
-          // Se o item já existe, atualizamos o nome do exame
-          itemsWithExames.push({
-            ...itemExistente,
-            tabelaPrecoId: tabelaPrecoId, // Atribui o tabelaPrecoId vindo da prop
-            nomeExame: exame.nomeExame, // Adiciona o nome do exame ao item existente
-          });
-        } else {
-          // Se o item não existe, criamos um novo com valores padrão
-          itemsWithExames.push({
-            tabelaPrecoId: tabelaPrecoId, // ou qualquer ID padrão
-            exameId: exame.id ?? 0, // Associar o exameId ao novo item
-            valor: 0,
-            custoOperacional: 0,
-            custoHorario: 0,
-            filme: 0,
-            codigoArnb: "N/A",
-            nomeExame: exame.nomeExame, // Adiciona o nome do exame
-          });
-        }
-      });
-
-      setItems(itemsWithExames);
-      setFiltered(itemsWithExames); // Inicia com todos os itens
-      setEditingItems(itemsWithExames); // Cria uma cópia editável dos itens
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      alert('Erro ao carregar dados');
-    }
-  };
-
-  // Função para carregar a lista de exames do endpoint /Exames
-  const loadExames = async () => {
-    try {
-      const response = await axios.get('/api/Exame'); // Endpoint para obter os exames
-      setExames(response.data);
-      //console.log(exames);
-    } catch (error) {
-      console.error('Erro ao carregar lista de exames:', error);
-      alert('Erro ao carregar dados');
-    }
-  };
 
   // Filtrar a listagem conforme o termo de busca
   useEffect(() => {
@@ -111,6 +105,7 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
       setFiltered(filteredItems);
     }
   }, [searchTerm, items, exames]);
+
 
   // Atualiza os campos editados
   const handleInputChange = (id: number, field: keyof TabelaPrecoItens, value: string | number) => {

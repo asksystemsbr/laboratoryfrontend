@@ -63,7 +63,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose,setSnackbar  }: Rec
     if (isLoaded) {
       fetchEndereco();
     }
-  }, [isLoaded]);
+  }, [isLoaded,recepcao.enderecoId,setSnackbar]);
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');
