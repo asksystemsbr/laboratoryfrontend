@@ -2,4 +2,5 @@
 export interface Recepcao {
     id?: number;    
     nomeRecepcao: string;
+    enderecoId: number;
   }

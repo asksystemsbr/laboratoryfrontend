@@ -15,6 +15,7 @@ import { validarCNPJ } from '@/utils/cnpjValidator';
 import { validateDate } from '@/utils/validateDate';
 import { UF } from '@/models/uf';
 import { formatDateForInput } from '@/utils/formatDateForInput';
+import { buscarEnderecoViaCep } from '@/utils/endereco';
 
 interface ClienteEditFormProps {
   cliente: Cliente;
@@ -111,32 +112,21 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
   }, [isLoaded, cliente, setValue]);
 
 
-  const buscarEnderecoViaCep = async (cep: string) => {
-    try {
-      const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-      if (response.data.erro) {
-        setSnackbar(new SnackbarState('CEP não encontrado!', 'error', true));
-      } else {
-        setEndereco({
-          cep: response.data.cep,
-          rua: response.data.logradouro,
-          complemento: response.data.complemento,
-          bairro: response.data.bairro,
-          cidade: response.data.localidade,
-          uf: response.data.uf,
-          numero: endereco.numero // Mantém o número do endereço se já estiver preenchido
-        });
-      }
-    } catch {
-      setSnackbar(new SnackbarState('Erro ao buscar CEP!', 'error', true));
-    }
-  };
-
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');
     setEndereco({ ...endereco, cep: e.target.value })
+
     if (cepDigitado.length === 8) {
-      buscarEnderecoViaCep(cepDigitado);
+        const enderecoAtualizado = await buscarEnderecoViaCep(cepDigitado);
+      
+      if (enderecoAtualizado) {
+        setEndereco({
+          ...enderecoAtualizado, // Preenche o endereço retornado pela API
+          numero: endereco.numero // Mantém o número se já estiver preenchido
+        });
+      } else {
+        setSnackbar(new SnackbarState('CEP não encontrado!', 'error', true));
+      }
     }
   };
 

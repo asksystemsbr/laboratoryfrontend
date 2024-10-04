@@ -107,12 +107,12 @@ export default function CadastroMenu() {
         icon: 'queue',
         route: '/convenio',
       },       
-      {
-        permissions: ['plano.Read', 'plano.Write'],
-        label: 'Planos',
-        icon: 'queue',
-        route: '/plano',
-      },     
+      // {
+      //   permissions: ['plano.Read', 'plano.Write'],
+      //   label: 'Planos',
+      //   icon: 'queue',
+      //   route: '/plano',
+      // },     
       {
         permissions: ['recepcao.Read', 'recepcao.Write'],
         label: 'Recepções',
