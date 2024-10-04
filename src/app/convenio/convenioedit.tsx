@@ -83,7 +83,7 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
     if (activeTab === 'planos'  && convenio.id !== undefined) {
       fetchPlanoByConvenioId(convenio.id); // Passa o ID do convênio para buscar o plano
     }
-  }, [activeTab, convenio.id]);
+  }, [activeTab, convenio.id,fetchPlanoByConvenioId]);
 
   useEffect(() => {
     const fetchEndereco = async () => {
@@ -99,7 +99,7 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
     if (isLoaded) {
       fetchEndereco();
     }
-  }, [isLoaded]);
+  }, [isLoaded,convenio.enderecoId, setSnackbar]);
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');

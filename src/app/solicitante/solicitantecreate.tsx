@@ -45,7 +45,7 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
 
     fetchTipoSolicitantes();
     fetchUF();
-  }, []);
+  }, [setSnackbar]);
 
    // Função para verificar se o CPF já existe
    const checkCpfExists = async (cpf: string) => {

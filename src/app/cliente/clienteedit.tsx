@@ -109,7 +109,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
       }
       fetchEndereco();
     }
-  }, [isLoaded, cliente, setValue]);
+  }, [isLoaded, cliente, setValue,setSnackbar]);
 
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

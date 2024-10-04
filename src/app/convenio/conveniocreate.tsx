@@ -42,7 +42,7 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
       }
     };
     fetchUF();
-  }, []);
+  }, [setSnackbar]);
 
   const onSubmit = async (data: Convenio) => {
     try {

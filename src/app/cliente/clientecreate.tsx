@@ -1,3 +1,4 @@
+//src/app/cliente/clientecreate.tsx
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -76,7 +77,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
     fetchConvenios();
     fetchPlanos();
     fetchUF();
-  }, []);
+  }, [setSnackbar]);
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');

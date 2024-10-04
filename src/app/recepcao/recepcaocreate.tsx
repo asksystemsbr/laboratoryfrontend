@@ -42,7 +42,7 @@ export const RecepcaoCreateForm = ({ onSave, onClose,setSnackbar  }: RecepcaoCre
       }
     };
     fetchUF();
-  }, []);
+  }, [setSnackbar]);
 
   const onSubmit = async (data: Recepcao) => {
       if(!endereco.cep  
