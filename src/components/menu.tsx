@@ -1,5 +1,6 @@
 //src/components/menu.tsx
 "use client"; // Necessário porque estamos lidando com eventos e estado no cliente
+import React from 'react';
 import { useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation'; // Importa o hook de navegação do Next.js
 import { useAuth } from '../app/auth'; // Importa o hook de autenticação

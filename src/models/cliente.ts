@@ -11,8 +11,8 @@ export interface Cliente {
 
     sexo?: string; 
     nascimento?: Date | string;
-    convenioId: number; 
-    planoId: number; 
+    convenioId?: number; 
+    planoId?: number; 
     rg?: string; 
     razaoSocial?: string; 
     ie?: string; 

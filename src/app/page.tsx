@@ -1,6 +1,6 @@
  // src/app/page.tsx
  "use client";
-import { useEffect } from 'react';
+ import React ,{ useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Certifique-se de usar o Router correto para App Router
 import { useAuth } from './auth';
 

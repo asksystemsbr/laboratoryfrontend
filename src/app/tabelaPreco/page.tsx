@@ -1,13 +1,13 @@
-//src/app/solicitante/page.tsx
+//src/app/TabelaPreco/page.tsx
 "use client";
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { SolicitanteCreateForm } from './solicitantecreate';
-import { SolicitanteEditForm } from './solicitanteedit';
+import { TabelaPrecoCreateForm } from './tabelaPrecocreate';
+import { TabelaPrecEditForm } from './tablaPrecoedit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
-import { Solicitante } from '../../models/solicitante';
+import { TabelaPreco } from '../../models/tabelaPreco';
 import { SnackbarState } from '../../models/snackbarState'; // Importa a classe
 import Menu from '../../components/menu'; // Importa o menu
 import ConfirmationModal from '../../components/confirmationModal'; // Importa a modal genérica
@@ -15,12 +15,12 @@ import ConfirmationModal from '../../components/confirmationModal'; // Importa a
 Modal.setAppElement('#__next');
 
 export default function ItemsList() {
-  const [items, setItems] = useState<Solicitante[]>([]);
-  const [filtered, setFiltered] = useState<Solicitante[]>([]);
+  const [items, setItems] = useState<TabelaPreco[]>([]);
+  const [filtered, setFiltered] = useState<TabelaPreco[]>([]);
   const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingItem, setEditingItem] = useState<Solicitante | null>(null);
+  const [editingItem, setEditingItem] = useState<TabelaPreco | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState()); // Instância de SnackbarState
   const [progress, setProgress] = useState(100); // Para a barra de progresso
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // Controla o modal de confirmação de exclusão
@@ -63,7 +63,7 @@ export default function ItemsList() {
   // Função para carregar os dados
   const loadItems = async () => {
     try {
-      const response = await axios.get('/api/Solicitante');
+      const response = await axios.get('/api/TabelaPreco');
       setItems(response.data);
       setFiltered(response.data); 
     } catch (error) {
@@ -75,7 +75,7 @@ export default function ItemsList() {
   const handleDelete = async () => {
     if (itemToDelete !== null) {
       try {
-        await axios.delete(`/api/Solicitante/${itemToDelete}`);
+        await axios.delete(`/api/TabelaPreco/${itemToDelete}`);
         setSnackbar(new SnackbarState('Registro excluído com sucesso!', 'success', true));
         loadItems();
         closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
@@ -112,7 +112,7 @@ export default function ItemsList() {
   };
 
   // Abrir modal para editar
-  const handleEdit = (item: Solicitante) => {
+  const handleEdit = (item: TabelaPreco) => {
     setEditingItem(item);
     setIsEditing(true);
     setModalIsOpen(true);
@@ -125,12 +125,12 @@ export default function ItemsList() {
 
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Solicitantes</h1>
+          <h1 className="text-2xl font-bold">Tabela de Preço</h1>
           <button
             onClick={handleCreate}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
-            Novo Solicitante
+            Nova Tabela de Preço
           </button>
         </div>
 
@@ -149,8 +149,7 @@ export default function ItemsList() {
         <table className="min-w-full bg-white border border-gray-200">
           <thead>
             <tr>
-              <th className="py-2 px-4 text-left">Nome</th>
-              <th className="py-2 px-4 text-left">Telefone</th>
+              <th className="py-2 px-4 text-left">Descrição</th>
               <th className="py-2 px-4 text-left">Editar</th>
               <th className="py-2 px-4 text-left">Excluir</th>
             </tr>
@@ -158,8 +157,7 @@ export default function ItemsList() {
           <tbody>
             {filtered.map((item) => (
               <tr key={item.id} className="border-t border-gray-200">
-                <td className="py-2 px-4 text-left">{item.descricao}</td>
-                <td className="py-2 px-4 text-left">{item.telefone}</td>
+                <td className="py-2 px-4 text-left">{item.nome.toUpperCase()}</td>
                 <td className="py-2 px-4 text-left">
                   <button
                     className="text-yellow-500 hover:text-yellow-700 mr-2"
@@ -189,9 +187,9 @@ export default function ItemsList() {
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" // Classe para o overlay
         >
           {isEditing ? (
-            <SolicitanteEditForm solicitante={editingItem!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <TabelaPrecEditForm tabelaPreco={editingItem!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           ) : (
-            <SolicitanteCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <TabelaPrecoCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
           )}
         </Modal>
 

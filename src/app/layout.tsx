@@ -1,4 +1,5 @@
 //src/app/layout.tsx
+import React from 'react';
 import { AuthProvider } from './auth'; // Certifique-se de importar o AuthProvider corretamente
  import type { Metadata } from "next";
  import localFont from "next/font/local";

@@ -1,36 +1,48 @@
-//src/app/especialidade/page.tsx
 "use client";
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ConvenioCreateForm } from './conveniocreate';
 import { ConvenioEditForm } from './convenioedit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
 import { Convenio } from '../../models/convenio';
-import { SnackbarState } from '../../models/snackbarState'; // Importa a classe
-import Menu from '../../components/menu'; // Importa o menu
-import ConfirmationModal from '../../components/confirmationModal'; // Importa a modal genérica
+import { SnackbarState } from '../../models/snackbarState';
+import Menu from '../../components/menu';
+import ConfirmationModal from '../../components/confirmationModal';
 
 Modal.setAppElement('#__next');
 
-export default function ItemsList() {
-  const [items, setItems] = useState<Convenio[]>([]);
+export default function ConvenioList() {
+  const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [filtered, setFiltered] = useState<Convenio[]>([]);
-  const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
+  const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingItem, setEditingItem] = useState<Convenio | null>(null);
-  const [snackbar, setSnackbar] = useState(new SnackbarState()); // Instância de SnackbarState
-  const [progress, setProgress] = useState(100); // Para a barra de progresso
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // Controla o modal de confirmação de exclusão
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null); 
+  const [editingConvenio, setEditingConvenio] = useState<Convenio | null>(null);
+  const [snackbar, setSnackbar] = useState(new SnackbarState());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [convenioToDelete, setConvenioToDelete] = useState<number | null>(null);
+  const [progress, setProgress] = useState(100);
+
+  const recordsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const loadConvenios = async () => {
+    try {
+      const response = await axios.get('/api/Convenio');
+      setConvenios(response.data);
+      setFiltered(response.data);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setSnackbar(new SnackbarState('Erro ao carregar convênios!', 'error', true));
+    }
+  };
 
   useEffect(() => {
-    loadItems();
+    loadConvenios();
   }, []);
 
-  // Timer para fechar o snackbar automaticamente
+  // Função para controlar o progresso do Snackbar
   useEffect(() => {
     if (snackbar.show) {
       const interval = setInterval(() => {
@@ -38,8 +50,8 @@ export default function ItemsList() {
       }, 50);
 
       const timer = setTimeout(() => {
-        snackbar.hideSnackbar(); // Esconde o Snackbar
-        setSnackbar(new SnackbarState()); // Atualiza para uma nova instância
+        snackbar.hideSnackbar();
+        setSnackbar(new SnackbarState());
         setProgress(100); // Reset progress
       }, 5000);
 
@@ -50,164 +62,239 @@ export default function ItemsList() {
     }
   }, [snackbar]);
 
-  useEffect(() => {
-    const filtered = items.filter((item) => {
-      // Obtenha todas as chaves (campos) do objeto `cliente`
-        return Object.values(item).some((value) => 
-        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  const applySearch = useCallback(() => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const filteredConvenios = convenios.filter((convenio) =>
+      Object.values(convenio).some((value) =>
+        String(value).toLowerCase().includes(searchTermLower)
+      )
     );
-    });
-    setFiltered(filtered);
-  }, [searchTerm, items]);
+    setFiltered(filteredConvenios);
+  }, [searchTerm, convenios]);
 
-  // Função para carregar os dados
-  const loadItems = async () => {
-    try {
-      const response = await axios.get('/api/Convenio');
-      setItems(response.data);
-      setFiltered(response.data); 
-    } catch (error) {
-      console.log(error);
-      setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
-    }
+  useEffect(() => {
+    applySearch();
+  }, [searchTerm, convenios, applySearch]);
+
+  const handleSave = () => {
+    setModalIsOpen(false);
+    setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
+    loadConvenios();
   };
 
   const handleDelete = async () => {
-    if (itemToDelete !== null) {
+    if (convenioToDelete !== null) {
       try {
-        await axios.delete(`/api/Convenio/${itemToDelete}`);
-        setSnackbar(new SnackbarState('Registro excluído com sucesso!', 'success', true));
-        loadItems();
-        closeDeleteConfirm(); // Fechar o modal de confirmação após a exclusão
+        await axios.delete(`/api/Convenio/${convenioToDelete}`);
+        setSnackbar(new SnackbarState('Convênio excluído com sucesso!', 'success', true));
+        setDeleteConfirmOpen(false);
+        loadConvenios();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        console.log(error);
-        setSnackbar(new SnackbarState('Erro ao excluir registro!', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao excluir convênio!', 'error', true));
       }
     }
   };
 
-    // Abrir modal de confirmação de exclusão
-    const openDeleteConfirm = (id: number) => {
-        setItemToDelete(id);
-        setDeleteConfirmOpen(true);
-      };
-    
-      // Fechar modal de confirmação
-      const closeDeleteConfirm = () => {
-        setItemToDelete(null);
-        setDeleteConfirmOpen(false);
-      };
-
-  // Fechar modal e exibir snackbar ao salvar
-  const handleSave = () => {
-    setModalIsOpen(false);
-    setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
-    loadItems();
-  };
-
-  // Abrir modal para criar
-  const handleCreate = () => {
-    setIsEditing(false);
-    setModalIsOpen(true);
-  };
-
-  // Abrir modal para editar
-  const handleEdit = (item: Convenio) => {
-    setEditingItem(item);
+  const handleEdit = (convenio: Convenio) => {
+    setEditingConvenio(convenio);
     setIsEditing(true);
+    setDropdownVisible({}); // Fecha todos os dropdowns abertos
     setModalIsOpen(true);
   };
+
+  const handleNewConvenio = () => {
+    setIsEditing(false);
+    setEditingConvenio(null);
+    setDropdownVisible({}); // Fecha todos os dropdowns abertos
+    setModalIsOpen(true);
+  };
+
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentConvenios = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
+
+  const toggleDropdown = (id: number) => {
+    setDropdownVisible((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    const isClickInside = (event.target as HTMLElement).closest('.dropdown-actions');
+    if (!isClickInside) {
+      setDropdownVisible({});
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
-    <div className="flex h-screen">
-      {/* Inclui o menu no lado esquerdo */}
+    <div className="flex h-screen bg-gray-100">
       <Menu />
-
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Convênios</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Convênios</h1>
           <button
-            onClick={handleCreate}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleNewConvenio}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
           >
             Novo Convênio
           </button>
         </div>
 
-        {/* Campo de busca */}
-        <div className="mb-4">
+        <div className="mb-4 relative">
           <input
             type="text"
             placeholder="Buscar"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} // Atualiza o termo de busca
-            className="border border-gray-300 rounded-lg py-2 px-4 w-full"
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border border-gray-300 rounded-lg py-2 px-4 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <span className="absolute right-4 top-2.5 text-gray-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.9 14.32a8 8 0 111.42-1.42l4.28 4.29a1 1 0 11-1.42 1.42l-4.28-4.29zM8 14a6 6 0 100-12 6 6 0 000 12z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
         </div>
 
-        {/* Tabela de listagem */}
-        <table className="min-w-full bg-white border border-gray-200">
+        <table className="min-w-full bg-white border border-gray-300 rounded-lg">
           <thead>
-            <tr>
-              <th className="py-2 px-4 text-left">Descrição</th>
-              <th className="py-2 px-4 text-left">Editar</th>
-              <th className="py-2 px-4 text-left">Excluir</th>
+            <tr className="bg-gray-50">
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Descrição</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((item) => (
-              <tr key={item.id} className="border-t border-gray-200">
-                <td className="py-2 px-4 text-left">{item.descricao}</td>
-                <td className="py-2 px-4 text-left">
+            {currentConvenios.map((convenio) => (
+              <tr key={convenio.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{convenio.descricao}</td>
+                <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
-                    className="text-yellow-500 hover:text-yellow-700 mr-2"
-                    onClick={() => handleEdit(item)}
+                    onClick={() => toggleDropdown(convenio.id!)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded-lg shadow-sm transition-all duration-200"
                   >
-                    Editar
+                    Ações
                   </button>
-                </td>
-                <td className="py-2 px-4">
-                  <button
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => openDeleteConfirm(item.id!)} // Usa a função de abrir o modal de confirmação
-                  >
-                    Excluir
-                  </button>
+                  {dropdownVisible[convenio.id!] && (
+                    <div className="absolute mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
+                      <ul className="py-1">
+                        <li
+                          className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => handleEdit(convenio)}
+                        >
+                          Editar
+                        </li>
+                        <li
+                          className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => {
+                            if (convenio.id !== undefined) {
+                              setConvenioToDelete(convenio.id);
+                              setDeleteConfirmOpen(true);
+                            } else {
+                              console.error("ID do convênio indefinido!");
+                            }
+                          }}
+                        >
+                          Excluir
+                        </li>
+                      </ul>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Modal para criar ou editar */}
+        <div className="flex justify-between mt-4">
+          <button
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Anterior
+          </button>
+
+          <span className="text-gray-600">Página {currentPage}</span>
+
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === Math.ceil(filtered.length / recordsPerPage)}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
+          >
+            Próxima
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 ml-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={() => setModalIsOpen(false)}
-          className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full" // Tornando o modal maior
-          overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" // Classe para o overlay
+          className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full"
+          overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
           {isEditing ? (
-            <ConvenioEditForm convenio={editingItem!} onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <ConvenioEditForm
+              convenio={editingConvenio!}
+              onSave={handleSave}
+              onClose={() => setModalIsOpen(false)}
+              setSnackbar={setSnackbar}
+            />
           ) : (
-            <ConvenioCreateForm onSave={handleSave} onClose={() => setModalIsOpen(false)} setSnackbar={setSnackbar} />
+            <ConvenioCreateForm
+              onSave={handleSave}
+              onClose={() => setModalIsOpen(false)}
+              setSnackbar={setSnackbar}
+            />
           )}
         </Modal>
 
-        {/* Modal de confirmação para exclusão */}
         <ConfirmationModal
           isOpen={deleteConfirmOpen}
           title="Confirmação de Exclusão"
-          message="Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita."
-          onConfirm={handleDelete} // Não passa parâmetros aqui
-          onCancel={closeDeleteConfirm} // Fecha o modal
+          message="Tem certeza de que deseja excluir este convênio? Esta ação não pode ser desfeita."
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteConfirmOpen(false)}
           confirmText="Excluir"
           cancelText="Cancelar"
         />
 
-        {/* Snackbar de feedback */}
-        {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
-        )}
+        {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />}
       </div>
     </div>
   );
