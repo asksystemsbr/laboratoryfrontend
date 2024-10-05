@@ -38,7 +38,7 @@ export const RecepcaoCreateForm = ({ onSave, onClose,setSnackbar  }: RecepcaoCre
         setUFOptions(response.data);
       } catch (error) {
         console.log(error);
-        setSnackbar(new SnackbarState('Erro ao carregar os tipos de solicitante', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao carregar dados', 'error', true));
       }
     };
     fetchUF();

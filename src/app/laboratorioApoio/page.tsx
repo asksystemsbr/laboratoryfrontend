@@ -126,9 +126,11 @@ export default function LaboratorioApoioList() {
     }
   };
 
-  function handleSave(): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleSave = () => {
+    setModalIsOpen(false);
+    setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
+    loadItems();
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -172,6 +174,7 @@ export default function LaboratorioApoioList() {
           <thead>
             <tr className="bg-gray-50">
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Nome do Laboratório</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">CNPJ</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
             </tr>
           </thead>
@@ -179,6 +182,7 @@ export default function LaboratorioApoioList() {
             {currentItems.map((item) => (
               <tr key={item.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
                 <td className="py-3 px-6 text-left text-sm text-gray-800">{item.nomeLaboratorio}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{item.cpfCnpj}</td>
                 <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
                     onClick={() => toggleDropdown(item.id!)}
