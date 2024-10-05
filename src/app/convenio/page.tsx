@@ -27,6 +27,13 @@ export default function ConvenioList() {
   const recordsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
+
   const loadConvenios = async () => {
     try {
       const response = await axios.get('/api/Convenio');
@@ -294,7 +301,7 @@ export default function ConvenioList() {
           cancelText="Cancelar"
         />
 
-        {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />}
+        {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />}
       </div>
     </div>
   );

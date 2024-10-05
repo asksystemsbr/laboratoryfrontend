@@ -1,7 +1,8 @@
 //src/app/cliente/clientecreate.tsx
 "use client";
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+// import { useForm,FieldErrors, UseFormRegister } from 'react-hook-form';
+import { useForm} from 'react-hook-form';
 import axios from 'axios';
 import InputMask from 'react-input-mask-next';
 import { SnackbarState } from '@/models/snackbarState';
@@ -15,6 +16,7 @@ import { validateDate } from '@/utils/validateDate';
 import { UF } from '@/models/uf';
 import { buscarEnderecoViaCep} from '@/utils/endereco';
 import { Endereco } from '@/models/endereco';
+import { validatePhone } from '@/utils/phone';
 
 interface ClienteCreateFormProps {
   onSave: () => void;
@@ -26,6 +28,8 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   const { register, handleSubmit, reset, formState: { errors }, watch, setError,clearErrors } = useForm<Cliente>();
   const [cep, setCep] = useState('');
   const [isCNPJ, setIsCNPJ] = useState(false);
+  const [isPhoneFixo, setIsPhoneFixo] = useState(false);
+  const [isPhoneFixoResponsavel, setIsPhoneFixoResponsavel] = useState(false);
   const [cpfInUse, setCpfInUse] = useState<boolean>(false);
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
@@ -42,6 +46,55 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
 
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
+
+    // // Define tipos para o TelefoneInput
+    // interface TelefoneInputProps {
+    //   register: UseFormRegister<Cliente>;
+    //   errors: FieldErrors<Cliente>;
+    // }
+
+    // const TelefoneInput = ({ register, errors }: TelefoneInputProps) => {
+    //   const [mask, setMask] = useState('(99) 9999-99999');  // Começa com a máscara flexível
+  
+    //   const handleMaskChange = (event: React.ChangeEvent<HTMLInputElement>) => { // Define o tipo do evento
+    //     const inputValue = event.currentTarget.value.replace(/\D/g, ''); // Remove tudo que não for número
+  
+    //     console.log('Valor digitado: ', inputValue); 
+    //     // Se o número tem mais de 10 dígitos, usa a máscara de celular
+    //     if (inputValue.length > 10) {
+    //       setMask('(99) 99999-9999');
+    //     } else {
+    //       setMask('(99) 9999-9999');  // Se não, usa a máscara de telefone fixo
+    //     }
+    //   };
+
+    //   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    //     // Garante que o campo seja focado corretamente
+    //     event.currentTarget.setSelectionRange(event.currentTarget.value.length, event.currentTarget.value.length);
+    //   };
+  
+    //   return (
+    //     <div>
+    //       <label className="block text-gray-800">Telefone *</label>
+    //       <InputMask
+    //         {...register('telefone', { 
+    //           required: 'O telefone é obrigatório',
+    //           pattern: {
+    //             value: /^\(\d{2}\) \d{4,5}-\d{4}$/,
+    //             message: 'Formato de telefone inválido',
+    //           },
+    //          })}
+    //         mask={mask}  // Usa a máscara dinamicamente
+    //         maskPlaceholder={null}
+    //         alwaysShowMask={false}
+    //         onInput={handleMaskChange}
+    //         onFocus={handleFocus}  // Garante o foco correto ao clicar
+    //         className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+    //       />
+    //       {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
+    //     </div>
+    //   );
+    // };
 
   useEffect(() => {
     const fetchConvenios = async () => {
@@ -100,6 +153,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
      // Função para verificar se o CPF já existe
      const checkCpfExists = async (cpf: string) => {
       try {
+        setCpfInUse(true);
         const response = await axios.get(`/api/Cliente/existsByCPF/${cpf}`);
         if (response.data) {
           setError('cpfCnpj', {
@@ -207,20 +261,34 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
 
           <div>
-            <label className="block text-gray-800">Telefone *</label>
-            <InputMask
-              {...register('telefone', { 
-                required: 'O telefone é obrigatório',
-                pattern: {
-                  value: /^\(\d{2}\) \d{5}-\d{4}$/,
-                  message: 'Formato de telefone inválido',
-                },
-               })}
-              mask="(99) 99999-9999"
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
-            />
-            {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
-          </div>
+              <label className="block text-gray-800">Telefone *</label>
+              <InputMask
+                {...register('telefone', { 
+                  required: 'Telefone obrigatório',
+                 })}
+                mask={isPhoneFixo ? '(99) 9999-9999' : '(99) 99999-9999'}
+                maskPlaceholder={null}
+                alwaysShowMask={false}
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                onBlur={(e) => {
+                  const phoneImput = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número;
+                  if (phoneImput.length === 10) {
+                    setIsPhoneFixo(true);
+                  }
+                  else{
+                    setIsPhoneFixo(false);
+                  }
+                    if (!validatePhone(phoneImput)) {
+                      setError('telefone', {
+                        type: 'manual',
+                        message: 'Telefone obrigatório',
+                      });
+                      return;
+                    }                    
+                }}
+              />
+              {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
+            </div>
         </div>
 
         {/* Sexo, Convênio, Plano e Situação */}
@@ -422,13 +490,27 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
               <InputMask
                 {...register('telefoneResponsavel', { 
                   required: isMenorDeIdade && 'Telefone do responsável obrigatório',
-                  pattern: {
-                    value: /^\(\d{2}\) \d{5}-\d{4}$/,
-                    message: 'Formato de telefone inválido',
-                  },
                  })}
-                mask="(99) 99999-9999"
+                mask={isPhoneFixoResponsavel ? '(99) 9999-9999' : '(99) 99999-9999'}
+                maskPlaceholder={null}
+                alwaysShowMask={false}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                onBlur={(e) => {
+                  const phoneImput = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número;
+                  if (phoneImput.length === 10) {
+                    setIsPhoneFixoResponsavel(true);
+                  }
+                  else{
+                    setIsPhoneFixoResponsavel(false);
+                  }
+                    if (!validatePhone(phoneImput)) {
+                      setError('telefone', {
+                        type: 'manual',
+                        message: 'Telefone do responsável obrigatório',
+                      });
+                      return;
+                    }                    
+                }}
               />
               {errors.telefoneResponsavel && <p className="text-red-500 text-sm">{errors.telefoneResponsavel?.message}</p>}
             </div>

@@ -130,7 +130,7 @@ export default function CadastroMenu() {
         label: 'Tabela Preço',
         icon: 'queue',
         route: '/tabelaPreco',
-      },                                       
+      },                                        
   ];
 
   // Renderiza os itens de menu com base nas permissões

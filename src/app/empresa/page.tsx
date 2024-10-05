@@ -30,6 +30,13 @@ export default function EmpresaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
+
   const applySearchAndSort = useCallback(() => {
     const searchTermLower = searchTerm.toLowerCase();
 
@@ -350,7 +357,7 @@ export default function EmpresaPage() {
           cancelText="Cancelar"
         />
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>

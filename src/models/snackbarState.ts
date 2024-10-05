@@ -1,5 +1,4 @@
 // src/models/snackbarState.ts
-
 export class SnackbarState {
     show: boolean;
     message: string;

@@ -63,6 +63,13 @@ export default function EspecialidadeList() {
     }
   }, [snackbar]);
 
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
+
   const applySearch = useCallback(() => {
     const searchTermLower = searchTerm.toLowerCase();
     const filteredEspecialidades = especialidades.filter((especialidade) =>
@@ -281,7 +288,7 @@ export default function EspecialidadeList() {
 
         {/* Snackbar */}
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>
