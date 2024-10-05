@@ -130,13 +130,7 @@ export default function CadastroMenu() {
         label: 'Tabela Preço',
         icon: 'queue',
         route: '/tabelaPreco',
-      },
-      {
-        permissions: ['Plano.Read', 'Plano.Write'],
-        label: 'Plano',
-        icon: 'queue',
-        route: '/plano',
-      },                                           
+      },                                        
   ];
 
   // Renderiza os itens de menu com base nas permissões
