@@ -1,10 +1,9 @@
 //src/app/TabelaPreco/page.tsx
 "use client";
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React ,{ useState, useEffect } from 'react';
 import { TabelaPrecoCreateForm } from './tabelaPrecocreate';
 import { TabelaPrecEditForm } from './tablaPrecoedit';
-import { Snackbar } from '../snackbar';
+import {Snackbar}  from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
 import { TabelaPreco } from '../../models/tabelaPreco';
@@ -25,6 +24,25 @@ export default function ItemsList() {
   const [progress, setProgress] = useState(100); // Para a barra de progresso
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // Controla o modal de confirmação de exclusão
   const [itemToDelete, setItemToDelete] = useState<number | null>(null); 
+
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
+    // Função para carregar os dados
+    const loadItems = async () => {
+      try {
+        const response = await axios.get('/api/TabelaPreco');
+        setItems(response.data);
+        setFiltered(response.data); 
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
+      }
+    };
+    
 
   useEffect(() => {
     loadItems();
@@ -60,17 +78,7 @@ export default function ItemsList() {
     setFiltered(filtered);
   }, [searchTerm, items]);
 
-  // Função para carregar os dados
-  const loadItems = async () => {
-    try {
-      const response = await axios.get('/api/TabelaPreco');
-      setItems(response.data);
-      setFiltered(response.data); 
-    } catch (error) {
-      console.log(error);
-      setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
-    }
-  };
+
 
   const handleDelete = async () => {
     if (itemToDelete !== null) {
@@ -206,7 +214,7 @@ export default function ItemsList() {
 
         {/* Snackbar de feedback */}
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>

@@ -27,6 +27,13 @@ export default function RotinaExameList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
+
   // Carregar rotinas de exames
   const loadRotinas = useCallback(async () => {
     try {
@@ -289,7 +296,7 @@ export default function RotinaExameList() {
         />
 
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>

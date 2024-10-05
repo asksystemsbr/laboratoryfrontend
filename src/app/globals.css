@@ -27,6 +27,11 @@ body {
 }
 
 @layer base {
+    /* Aplica `text-transform: uppercase` a todos os <td> */
+    td {
+      @apply uppercase;
+    }  
+  
   /* Aplica `text-transform: uppercase` a todos os inputs de texto, textareas e selects */
   input[type="text"], textarea, select {
     @apply uppercase;

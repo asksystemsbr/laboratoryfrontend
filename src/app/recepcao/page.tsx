@@ -26,6 +26,12 @@ export default function ItemsList() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // Controla o modal de confirmação de exclusão
   const [itemToDelete, setItemToDelete] = useState<number | null>(null); 
 
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
   useEffect(() => {
     loadItems();
   }, []);
@@ -206,7 +212,7 @@ export default function ItemsList() {
 
         {/* Snackbar de feedback */}
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>

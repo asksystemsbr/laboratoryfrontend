@@ -27,6 +27,12 @@ export default function MetodoExameList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+  const hideSnackbar = () => {
+    setSnackbar((prev) => {
+      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+      return newSnackbarState;
+    });
+  };
   // Carregar métodos de exame
   const loadMetodos = useCallback(async () => {
     try {
@@ -289,7 +295,7 @@ export default function MetodoExameList() {
         />
 
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>

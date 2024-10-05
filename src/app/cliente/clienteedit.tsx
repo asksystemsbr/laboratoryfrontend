@@ -16,6 +16,7 @@ import { validateDate } from '@/utils/validateDate';
 import { UF } from '@/models/uf';
 import { formatDateForInput } from '@/utils/formatDateForInput';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
+import { validatePhone } from '@/utils/phone';
 
 interface ClienteEditFormProps {
   cliente: Cliente;
@@ -29,6 +30,8 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
     defaultValues: cliente,
   });
   const [isCNPJ, setIsCNPJ] = useState(false);
+  const [isPhoneFixo, setIsPhoneFixo] = useState(false);
+  const [isPhoneFixoResponsavel, setIsPhoneFixoResponsavel] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
@@ -217,16 +220,30 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
           <div>
             <label className="block text-gray-800">Telefone *</label>
             <InputMask
-              {...register('telefone', { 
-                required: 'O telefone é obrigatório',
-                pattern: {
-                  value: /^\(\d{2}\) \d{5}-\d{4}$/,
-                  message: 'Formato de telefone inválido',
-                },
-               })}
-              mask="(99) 99999-9999"
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
-            />
+                {...register('telefone', { 
+                  required: 'Telefone obrigatório',
+                 })}
+                mask={isPhoneFixo ? '(99) 9999-9999' : '(99) 99999-9999'}
+                maskPlaceholder={null}
+                alwaysShowMask={false}
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                onBlur={(e) => {
+                  const phoneImput = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número;
+                  if (phoneImput.length === 10) {
+                    setIsPhoneFixo(true);
+                  }
+                  else{
+                    setIsPhoneFixo(false);
+                  }
+                    if (!validatePhone(phoneImput)) {
+                      setError('telefone', {
+                        type: 'manual',
+                        message: 'Telefone obrigatório',
+                      });
+                      return;
+                    }                    
+                }}
+              />
             {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
           </div>
         </div>
@@ -423,13 +440,27 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
               <InputMask
                 {...register('telefoneResponsavel', { 
                   required: isMenorDeIdade && 'Telefone do responsável obrigatório',
-                  pattern: {
-                    value: /^\(\d{2}\) \d{5}-\d{4}$/,
-                    message: 'Formato de telefone inválido',
-                  },
                  })}
-                mask="(99) 99999-9999"
+                mask={isPhoneFixoResponsavel ? '(99) 9999-9999' : '(99) 99999-9999'}
+                maskPlaceholder={null}
+                alwaysShowMask={false}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                onBlur={(e) => {
+                  const phoneImput = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número;
+                  if (phoneImput.length === 10) {
+                    setIsPhoneFixoResponsavel(true);
+                  }
+                  else{
+                    setIsPhoneFixoResponsavel(false);
+                  }
+                    if (!validatePhone(phoneImput)) {
+                      setError('telefone', {
+                        type: 'manual',
+                        message: 'Telefone do responsável obrigatório',
+                      });
+                      return;
+                    }                    
+                }}
               />
               {errors.telefoneResponsavel && <p className="text-red-500 text-sm">{errors.telefoneResponsavel?.message}</p>}
             </div>

@@ -5,14 +5,15 @@ import axios from 'axios';
 import { TabelaPrecoItens } from '../../models/tabelaPrecoItens'; // Interface fornecida
 import { Exame } from '../../models/exame';
 import { formatDecimal } from '@/utils/numbers';
-//import { SnackbarState } from '@/models/snackbarState';
+import { SnackbarState } from '@/models/snackbarState';
+import  {Snackbar}  from '../snackbar';
 
 
 interface TabelaPrecoItensComponentProps {
   tabelaPrecoId: number;
   //onSave: () => void;
   onClose: () => void;
-  //setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
+  setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
 }
 
 export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPrecoItensComponentProps) => {
@@ -21,7 +22,28 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
   const [searchTerm, setSearchTerm] = useState('');
   const [editingItems, setEditingItems] = useState<TabelaPrecoItens[]>([]);
   const [exames, setExames] = useState<Exame[]>([]);
+  const [snackbar, setSnackbar] = useState(new SnackbarState());
+  const [progress, setProgress] = useState(100); // Para a barra de progresso
 
+
+  // Mostrar o Snackbar
+  // const showSnackbar = (message: string, type: 'success' | 'error') => {
+  //   snackbar.showSnackbar(message, type);
+  //   setSnackbarState(new SnackbarState(message, type, true)); // Atualiza o estado
+  // };
+
+  // Função para esconder o Snackbar
+  // const hideSnackbar = () => {
+  //   setSnackbarState(new SnackbarState()); // Esconde o Snackbar
+  // };
+
+      // Função para fechar o Snackbar
+      const hideSnackbar = () => {
+        setSnackbar((prev) => {
+          const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+          return newSnackbarState;
+        });
+      };
     // Função para carregar a lista de exames do backend
     const loadExames = useCallback(async () => {
       try {
@@ -29,7 +51,7 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
         setExames(response.data);
       } catch (error) {
         console.error('Erro ao carregar lista de exames:', error);
-        alert('Erro ao carregar dados');
+        setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
       }
     }, []); // Sem dependências, essa função é estável
 
@@ -74,7 +96,7 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
     setEditingItems(itemsWithExames); // Cria uma cópia editável dos itens
   } catch (error) {
     console.error('Erro ao carregar dados:', error);
-    alert('Erro ao carregar dados');
+    setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
   }
 }, [exames, tabelaPrecoId]); // Recarregar os itens quando exames ou tabelaPrecoId mudar;
 
@@ -106,6 +128,24 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
     }
   }, [searchTerm, items, exames]);
 
+  useEffect(() => {
+    if (snackbar.show) {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev > 0 ? prev - 1 : 0)); // Reduz progressivamente
+      }, 50);
+
+      const timer = setTimeout(() => {
+        snackbar.hideSnackbar(); // Esconde o Snackbar
+        setSnackbar(new SnackbarState()); // Atualiza para uma nova instância
+        setProgress(100); // Reset progress
+      }, 5000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timer);
+      };
+    }
+  }, [snackbar]);
 
   // Atualiza os campos editados
   const handleInputChange = (id: number, field: keyof TabelaPrecoItens, value: string | number) => {
@@ -119,11 +159,11 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
   const handleSave = async () => {
     try {
       await axios.post('/api/TabelaPrecoItens', editingItems);
-      alert('Dados salvos com sucesso!');
+      setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
       loadItems(); // Recarrega os dados após salvar
     } catch (error) {
       console.error('Erro ao salvar dados:', error);
-      alert('Erro ao salvar os dados!');
+      setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
   };
 
@@ -163,6 +203,11 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
           Fechar
         </button>
       </div>
+
+        {/* Snackbar de feedback */}
+        {snackbar.show && (
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
+        )}
 
       {/* Listagem de exames */}
       <table className="min-w-full bg-white border border-gray-200">

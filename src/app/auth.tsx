@@ -1,6 +1,6 @@
  // src/app/auth.tsx
  "use client"; 
-import { useEffect, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import axios from './axiosConfig'; // Usa o axios configurado
 import { setCookie,getCookie,deleteCookie} from 'cookies-next'; // Um pacote auxiliar para cookies
 

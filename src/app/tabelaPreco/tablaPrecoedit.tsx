@@ -78,7 +78,7 @@ export const TabelaPrecEditForm = ({ tabelaPreco, onSave, onClose,setSnackbar  }
 
         {/* Aba de TabelaPrecoItens */}
         {activeTab === 'tabelaPrecoItens' && (
-        <TabelaPrecoItensComponent tabelaPrecoId={tabelaPreco.id ?? 0} onClose={onClose} />
+        <TabelaPrecoItensComponent tabelaPrecoId={tabelaPreco.id ?? 0} onClose={onClose} setSnackbar={setSnackbar} />
         )}
       </div>
     </div>

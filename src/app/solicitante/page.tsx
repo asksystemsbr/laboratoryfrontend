@@ -4,7 +4,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { SolicitanteCreateForm } from './solicitantecreate';
 import { SolicitanteEditForm } from './solicitanteedit';
-import { Snackbar } from '../snackbar';
+import  {Snackbar}  from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
 import { Solicitante } from '../../models/solicitante';
@@ -25,6 +25,14 @@ export default function ItemsList() {
   const [progress, setProgress] = useState(100); // Para a barra de progresso
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // Controla o modal de confirmação de exclusão
   const [itemToDelete, setItemToDelete] = useState<number | null>(null); 
+
+    // Função para fechar o Snackbar
+    const hideSnackbar = () => {
+      setSnackbar((prev) => {
+        const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
+        return newSnackbarState;
+      });
+    };
 
   useEffect(() => {
     loadItems();
@@ -117,6 +125,7 @@ export default function ItemsList() {
     setIsEditing(true);
     setModalIsOpen(true);
   };
+  
 
   return (
     <div className="flex h-screen">
@@ -208,7 +217,7 @@ export default function ItemsList() {
 
         {/* Snackbar de feedback */}
         {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} />
+          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
     </div>
