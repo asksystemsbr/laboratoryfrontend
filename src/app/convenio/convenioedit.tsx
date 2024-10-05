@@ -26,6 +26,7 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
 
   const [activeTab, setActiveTab] = useState<string>('info');
   const [plano, setPlano] = useState<Plano | null>(null);
+  const [isPlanoFetched, setIsPlanoFetched] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
@@ -80,10 +81,11 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
   }, [setSnackbar]);
 
   useEffect(() => {
-    if (activeTab === 'planos'  && convenio.id !== undefined) {
+    if (activeTab === 'planos'  && convenio.id !== undefined && !isPlanoFetched) {
       fetchPlanoByConvenioId(convenio.id); // Passa o ID do convênio para buscar o plano
+      setIsPlanoFetched(true); 
     }
-  }, [activeTab, convenio.id,fetchPlanoByConvenioId]);
+  }, [activeTab, convenio.id,isPlanoFetched]);
 
   useEffect(() => {
     const fetchEndereco = async () => {

@@ -82,7 +82,7 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
           <input
                   type="number"
                   step="0.0001"
-                  min="0.0001" // Valor mínimo
+                  min="0.0000" // Valor mínimo
                   {...register('custoHorario')}
                   onChange={(e) => handleDecimalChange(e, 'custoHorario')}
                   className="border rounded w-full py-2 px-3 mt-1"
@@ -93,7 +93,7 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
           <input
               type="number"
               step="0.0001" // Permite 4 casas decimais
-              min="0.0001" // Valor mínimo
+              min="0.0000" // Valor mínimo
               {...register('filme')}
               onChange={(e) => handleDecimalChange(e, 'filme')}
               className="border rounded w-full py-2 px-3 mt-1"
