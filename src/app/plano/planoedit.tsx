@@ -1,6 +1,6 @@
 //src/app/plano/planoedit.tsx
 "use client";
-import React, {useEffect,useState} from 'react';
+import React, {useEffect,useRef,useState} from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Plano } from '../../models/plano';
@@ -22,6 +22,7 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
 
   const [tabelaPreco, setTabelaPreco] = useState<TabelaPreco[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const hasSetDefaultValue = useRef(false);
 
   useEffect(() => {
     const loadTabelas = async () => {
@@ -37,10 +38,11 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
   },[setSnackbar]);
 
   useEffect(() => {
-    if (isLoaded) {
-      setValue('tabelaPrecoId', plano.tabelaPrecoId);
+    if (isLoaded && !hasSetDefaultValue.current) {
+      setValue('tabelaPrecoId', plano.tabelaPrecoId); 
+      hasSetDefaultValue.current = true; // Mark as set
     }
-  }, [isLoaded, plano, setValue]);
+  }, [isLoaded, plano.tabelaPrecoId, setValue]);
 
   const onSubmit = async (data: Plano) => {
     try {
@@ -66,7 +68,7 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-      <h2 className="text-xl font-bold mb-4">Editar Plano</h2>
+      <h2 className="text-xl font-bold mb-4">Planos / Convênios</h2>
       <div className="mb-4">
         <label className="block text-gray-700">Descrição</label>
         <textarea
@@ -113,10 +115,13 @@ export const PlanoEditForm = ({ plano, onSave, onClose,setSnackbar  }: PlanoEdit
       <div className="mb-4">
         <label className="block text-gray-700">Tabela de Preço</label>
         <select
-          {...register('tabelaPrecoId')}
+          {...register('tabelaPrecoId',{
+            validate: (value) => value !== -1 || 'Selecione uma tabela válida',
+            onChange: (e) => setValue('tabelaPrecoId', parseInt(e.target.value)) // Converte string para number
+          })}
           className="border rounded w-full py-2 px-3 mt-1"
         >
-          <option value="">Selecione a tabela</option>
+          <option value={-1}>Selecione a tabela</option>
           {tabelaPreco.map((tabela) => (
             <option key={tabela.id} value={tabela.id}>
               {tabela.nome}

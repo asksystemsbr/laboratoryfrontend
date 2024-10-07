@@ -416,9 +416,9 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
             </div>
 
             <div>
-              <label className="block text-gray-800">CPF do Responsável *</label>
+              <label className="block text-gray-800">CPF do Responsável </label>
               <InputMask
-                  {...register('cpfResponsavel', { required: isMenorDeIdade && 'CPF do responsável obrigatório' })}
+                  {...register('cpfResponsavel')}
                 mask="999.999.999-99"
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
                 onBlur={(e) => {
@@ -454,7 +454,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
                     setIsPhoneFixoResponsavel(false);
                   }
                     if (!validatePhone(phoneImput)) {
-                      setError('telefone', {
+                      setError('telefoneResponsavel', {
                         type: 'manual',
                         message: 'Telefone do responsável obrigatório',
                       });

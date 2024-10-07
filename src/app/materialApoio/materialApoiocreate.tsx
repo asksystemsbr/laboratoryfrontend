@@ -1,6 +1,6 @@
 //src/app/materialApoio/materialApoiocreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { MaterialApoio } from '../../models/materialApoio';
@@ -15,14 +15,21 @@ interface MaterialApoioCreateFormProps  {
 export const MaterialApoioCreateForm  = ({ onSave, onClose,setSnackbar  }: MaterialApoioCreateFormProps ) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<MaterialApoio>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: MaterialApoio) => {
+    if (isSubmitting) return;
     try {
+        setIsSubmitting(true); 
         await axios.post('/api/MaterialApoio', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }
+      finally {
+        setIsSubmitting(false); 
       }
   };
 

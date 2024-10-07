@@ -30,6 +30,8 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
     cidade: '',
     uf: ''
   });
+  // Novo estado para indicar se está processando a requisição
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
     const fetchUF = async () => {
@@ -45,7 +47,7 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
   }, [setSnackbar]);
 
   const onSubmit = async (data: Convenio) => {
-    try {
+
       if(!endereco.cep  
         || !endereco.rua 
         || !endereco.numero  
@@ -59,12 +61,19 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
         ...data,
         endereco,  // Inclui o endereço completo ao enviar o cliente
       };
+        // Verifica se a requisição já está em andamento
+        if (isSubmitting) return;
+
+      try {
+        setIsSubmitting(true);
         await axios.post('/api/Convenio', convenioComEndereco);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      } finally {
+        setIsSubmitting(false); // Encerra o estado de submissão
       }
   };
 

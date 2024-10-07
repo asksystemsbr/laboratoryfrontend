@@ -47,6 +47,9 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
 
+    // Novo estado para indicar se está processando a requisição
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // // Define tipos para o TelefoneInput
     // interface TelefoneInputProps {
     //   register: UseFormRegister<Cliente>;
@@ -208,12 +211,18 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
        cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
        telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
     };
+
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       await axios.post('/api/Cliente', clienteComEndereco);
       reset();
       onSave();
     } catch {
       setSnackbar(new SnackbarState('Erro ao criar o cliente!', 'error', true));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -466,9 +475,9 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             </div>
 
             <div>
-              <label className="block text-gray-800">CPF do Responsável *</label>
+              <label className="block text-gray-800">CPF do Responsável</label>
               <InputMask
-                  {...register('cpfResponsavel', { required: isMenorDeIdade && 'CPF do responsável obrigatório' })}
+                  {...register('cpfResponsavel')}
                 mask="999.999.999-99"
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
                 onBlur={(e) => {
@@ -504,7 +513,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
                     setIsPhoneFixoResponsavel(false);
                   }
                     if (!validatePhone(phoneImput)) {
-                      setError('telefone', {
+                      setError('telefoneResponsavel', {
                         type: 'manual',
                         message: 'Telefone do responsável obrigatório',
                       });

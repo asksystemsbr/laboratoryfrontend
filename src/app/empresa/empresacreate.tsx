@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import InputMask from 'react-input-mask-next';
@@ -15,14 +15,21 @@ interface EmpresaCreateFormProps {
 export const EmpresaCreateForm = ({ onSave, onClose, setSnackbar }: EmpresaCreateFormProps) => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<Empresa>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: Empresa) => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       await axios.post('/api/Empresa', data);
       reset();
       onSave();
     } catch (error) {
       console.log(error);
       setSnackbar(new SnackbarState('Erro ao criar a empresa!', 'error', true));
+    }finally {
+      setIsSubmitting(false); // Encerra o estado de submissão
     }
   };
 

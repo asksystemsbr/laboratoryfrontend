@@ -19,6 +19,8 @@ interface RecepcaoCreateFormProps {
 export const RecepcaoCreateForm = ({ onSave, onClose,setSnackbar  }: RecepcaoCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<Recepcao>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [cep, setCep] = useState('');
   const [endereco, setEndereco] = useState<Endereco>({
@@ -58,13 +60,17 @@ export const RecepcaoCreateForm = ({ onSave, onClose,setSnackbar  }: RecepcaoCre
         ...data,
         endereco,  // Inclui o endereço completo ao enviar o cliente
       };
+      if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
         await axios.post('/api/Recepcao', dataComEndereco);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

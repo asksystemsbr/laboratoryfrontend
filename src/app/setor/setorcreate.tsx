@@ -1,6 +1,6 @@
 //src/app/setor/setorcreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Setor } from '../../models/setor';
@@ -15,14 +15,20 @@ interface SetorCreateFormProps {
 export const SetorCreateForm = ({ onSave, onClose,setSnackbar  }: SetorCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<Setor>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: Setor) => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
         await axios.post('/api/Setor', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

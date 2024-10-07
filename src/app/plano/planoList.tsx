@@ -1,18 +1,20 @@
+//src/app/plano/planoList.tsx
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { PlanoCreateForm } from './planocreate';
 import { PlanoEditForm } from './planoedit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
 import { Plano } from '../../models/plano';
 import { SnackbarState } from '../../models/snackbarState';
-import Menu from '../../components/menu';
 import ConfirmationModal from '../../components/confirmationModal';
 
-Modal.setAppElement('#__next');
+// Modal.setAppElement('#__next');
+interface PlanoListProps {
+  convenioId: number; // Adiciona o parâmetro do convênio
+}
 
-export default function PlanoList() {
+export default function PlanoList({ convenioId }: PlanoListProps) {
   const [items, setItems] = useState<Plano[]>([]);
   const [filteredItems, setFilteredItems] = useState<Plano[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,14 +32,15 @@ export default function PlanoList() {
   // Função para carregar os dados
   const loadItems = useCallback(async () => {
     try {
-      const response = await axios.get('/api/Plano');
+      const response = await axios.get(`/api/Plano/getListByConvenio/${convenioId}`); 
       setItems(response.data);
       setFilteredItems(response.data);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.log(response.data);
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
-  }, []);
+  }, [convenioId]);
 
   const hideSnackbar = () => {
     setSnackbar((prev) => {
@@ -81,7 +84,9 @@ export default function PlanoList() {
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentItems = filteredItems.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentItems = Array.isArray(filteredItems) 
+  ? filteredItems.slice(indexOfFirstRecord, indexOfLastRecord)
+  : [];
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -132,8 +137,7 @@ export default function PlanoList() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Menu />
+    // <div className="flex h-screen bg-gray-100">
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Planos</h1>
@@ -273,8 +277,16 @@ export default function PlanoList() {
               setSnackbar={setSnackbar}
             />
           ) : (
-            <PlanoCreateForm
-              convenioId={0}
+            <PlanoEditForm
+              plano={{
+                id: 0, // ou undefined
+                descricao: '',
+                tabelaPrecoId: 0,
+                convenioId: convenioId, // Usa o convenioId como parte do novo plano
+                custoHorario: 0,
+                filme: 0,
+                codigoArnb: ''
+              }}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
@@ -296,6 +308,6 @@ export default function PlanoList() {
           <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
-    </div>
+    // </div>
   );
 }

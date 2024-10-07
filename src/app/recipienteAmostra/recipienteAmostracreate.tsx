@@ -1,6 +1,6 @@
 //src/app/recipienteAmostra/recipienteAmostracreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { RecipienteAmostra } from '../../models/recipienteAmostra';
@@ -15,14 +15,20 @@ interface RecipienteAmostraCreateFormProps {
 export const RecipienteAmostraCreateForm = ({ onSave, onClose,setSnackbar  }: RecipienteAmostraCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<RecipienteAmostra>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: RecipienteAmostra) => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true); 
         await axios.post('/api/RecipienteAmostra', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

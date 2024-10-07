@@ -36,6 +36,8 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
     uf: ''
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Listas dinâmicas para adicionar materiais e exames
   // const [materiais, setMateriais] = useState<MaterialApoio[]>([]);
   // const [exames, setExames] = useState<ExameApoio[]>([]);
@@ -117,6 +119,9 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
   }, [setSnackbar]);
 
   const onSubmit = async (data: LaboratorioApoio) => {
+
+    if (isSubmitting) return;
+
       if(!endereco.cep  
         || !endereco.rua 
         || !endereco.numero  
@@ -143,6 +148,7 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
         ...data,
         endereco,  // Inclui o endereço completo ao enviar o cliente
       };
+      setIsSubmitting(true); 
         // Primeiro salva o LaboratorioApoio
         const response = await axios.post('/api/LaboratorioApoio', laboratorioComEndereco);
         console.log(response);
@@ -169,6 +175,8 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

@@ -22,6 +22,8 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [cpfInUse, setCpfInUse] = useState<boolean>(false);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     const fetchTipoSolicitantes = async () => {
       try {
@@ -67,6 +69,7 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
   };
 
   const onSubmit = async (data: Solicitante) => {
+    if (isSubmitting) return;
     const cpfInput = data.cpf;
     if (!validateCPF(cpfInput)) {
       setError('cpf', {
@@ -82,12 +85,15 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
     }
 
     try {
+      setIsSubmitting(true); 
         await axios.post('/api/Solicitante', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 
