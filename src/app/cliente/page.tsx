@@ -226,6 +226,12 @@ export default function ClienteList() {
             <tr className="bg-gray-50">
               <th
                 className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b cursor-pointer"
+                onClick={() => handleSort('id')}
+              >
+                Código {sortConfig?.key === 'id' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>              
+              <th
+                className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b cursor-pointer"
                 onClick={() => handleSort('nome')}
               >
                 Nome {sortConfig?.key === 'nome' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -248,6 +254,7 @@ export default function ClienteList() {
           <tbody>
             {currentClientes.map((cliente) => (
               <tr key={cliente.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{cliente.id}</td>
                 <td className="py-3 px-6 text-left text-sm text-gray-800">{cliente.nome}</td>
                 <td className="py-3 px-6 text-left text-sm text-gray-800">{cliente.email}</td>
                 <td className="py-3 px-6 text-left text-sm">

@@ -21,5 +21,13 @@ export interface Cliente {
     cpfResponsavel?: string; 
     telefoneResponsavel?: string; 
 
+    nomeSocial?: string;
+    nomeMae?: string;
+    foto?: ArrayBuffer | string |  null; // Usando ArrayBuffer para representar binário em TS
+    profissao?: string;
+    matricula?: string;
+    validadeMatricula?: Date | string;
+    titularConvenio?: string;
+
     nomeFantasia?: string;
 }
