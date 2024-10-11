@@ -17,6 +17,7 @@ import { UF } from '@/models/uf';
 import { formatDateForInput } from '@/utils/formatDateForInput';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
 import { validatePhone } from '@/utils/phone';
+import Image from 'next/image'; 
 
 interface ClienteEditFormProps {
   cliente: Cliente;
@@ -36,6 +37,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
+  const [previewFoto, setPreviewFoto] = useState<string | null>(null);
   const [endereco, setEndereco] = useState<Endereco>({
     cep: '',
     rua: '',
@@ -104,6 +106,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
       setValue('convenioId', cliente.convenioId);
       setValue('planoId', cliente.planoId);
       setValue('nascimento', formatDateForInput(cliente.nascimento)); // Converter a data para o formato correto
+      setValue('validadeMatricula', formatDateForInput(cliente.validadeMatricula));
       if ((cliente?.cpfCnpj ?? '').length > 14) {
         setIsCNPJ(true);
       }
@@ -114,6 +117,36 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
     }
   }, [isLoaded, cliente, setValue,setSnackbar]);
 
+  // useEffect(() => {
+  //   if (cliente.foto && cliente.foto.byteLength  > 0) {
+  //     const base64String = `data:image/png;base64,${Buffer.from(cliente.foto).toString('base64')}`;
+  //     setPreviewFoto(base64String);
+  //     // const base64String = arrayBufferToBase64(cliente.foto);
+  //     // setPreviewFoto(`data:image/png;base64,${base64String}`);
+  //   }
+  // }, [cliente.foto]);
+
+
+  useEffect(() => {
+    if (cliente.foto && cliente.foto instanceof ArrayBuffer) {
+      // Se 'cliente.foto' for um ArrayBuffer, converte para Base64
+      const base64String = arrayBufferToBase64(cliente.foto);
+      setPreviewFoto(`data:image/png;base64,${base64String}`);
+    } else if (typeof cliente.foto === 'string') {
+      // Se 'cliente.foto' for uma string Base64
+      setPreviewFoto(cliente.foto.startsWith('data:image') ? cliente.foto : `data:image/png;base64,${cliente.foto}`);
+    }
+  }, [cliente.foto]);
+
+  function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');
@@ -166,6 +199,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
         nomeResponsavel: data.nomeResponsavel === '' ? null : data.nomeResponsavel,
         cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
         telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
+        foto: previewFoto ? previewFoto.split(",")[1] : cliente.foto, 
       };
 
     try {
@@ -178,24 +212,77 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
     }
   };
 
+      // Função para manipular a mudança de imagem e gerar pré-visualização
+      const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setPreviewFoto(reader.result as string); // Converte para uma string base64 para pré-visualização
+          };
+          reader.readAsDataURL(file); // Converte o arquivo em base64
+        } else {
+          setPreviewFoto(null); // Limpa a pré-visualização se o arquivo for removido
+        }
+      };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
       <form 
         onSubmit={handleSubmit(onSubmit)} 
         className="p-4 max-w-4xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
         
-        <h2 className="text-xl font-bold mb-2 text-gray-800">Novo Cliente</h2>
+        <h2 className="text-xl font-bold mb-2 text-gray-800">Editar Cliente - {cliente.id} </h2>
 
-        {/* Nome */}
-        <div className="flex space-x-2 mb-3">
-          <div className="w-full">
-            <label className="block text-gray-800">Nome *</label>
-            <input 
-            type='text'
-              {...register('nome', { required: 'O nome é obrigatório' })} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Nome */}
+          <div>
+            <div className="w-full">
+              <label className="block text-gray-800">Nome *</label>
+              <input 
+              type='text'
+                {...register('nome', { required: 'O nome é obrigatório' })} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+              {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
+            </div>
+          </div>
+
+          {/* Nome Social */}
+          <div>
+              <label className="block text-gray-800">Nome Social</label>
+              <input 
+                type="text" 
+                {...register('nomeSocial')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>
+        </div>
+
+        {/* Upload de Foto com Pré-visualização */}
+        <div className="grid grid-cols-2 gap-4 items-center mb-4">
+          <div>
+            <label className="block text-gray-800">Foto</label>
+            <input
+              type="file"
+              {...register('foto')}
+              onChange={handleFotoChange} // Lida com a mudança de foto
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+              accept="image/*"
             />
-            {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
+          </div>
+          <div className="w-24 h-24 border rounded-md overflow-hidden">
+          {previewFoto ? (
+              <Image
+                src={previewFoto}
+                alt="Preview da Foto"
+                width={96}  // Specify width in pixels
+                height={96} // Specify height in pixels
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <div className="flex items-center justify-center text-gray-400">Sem Imagem</div>
+            )}
           </div>
         </div>
 
@@ -296,13 +383,63 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4 mb-4">
+            {/* Profissão e Matricula */}
+              <div>
+                <label className="block text-gray-800">Profissão</label>
+                <input 
+                  type="text" 
+                  {...register('profissao')} 
+                  className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+                />
+              </div>
+              {/* Nome da Mãe */}
+              <div>
+                <label className="block text-gray-800">Nome da Mãe</label>
+                <input 
+                  type="text" 
+                  {...register('nomeMae')} 
+                  className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+                />
+              </div>              
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-800">Matrícula</label>
+              <input 
+                type="text" 
+                {...register('matricula')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>
+            {/* Validade da Matrícula */}
+            <div>
+              <label className="block text-gray-800">Validade da Matrícula</label>
+              <input 
+                type="date" 
+                {...register('validadeMatricula')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>    
+            {/* Titular do Convênio */}
+            <div>
+              <label className="block text-gray-800">Titular do Convênio</label>
+              <input 
+                type="text" 
+                {...register('titularConvenio')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>                    
+        </div>
+        
         {/* CPF/CNPJ, RG, CEP e Data de Nascimento */}
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div>
             <label className="block text-gray-800">CPF/CNPJ *</label>
             <div className="flex items-center">
               <InputMask
-                {...register('cpfCnpj', { required: 'CPF/CNPJ é obrigatório' })}
+                {...register('cpfCnpj', { required: !isMenorDeIdade && 'CPF/CNPJ é obrigatório' })}
                 mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
                 placeholder={isCNPJ ? 'CNPJ' : 'CPF'}
