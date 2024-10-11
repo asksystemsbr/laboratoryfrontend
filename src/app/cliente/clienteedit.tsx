@@ -17,6 +17,7 @@ import { UF } from '@/models/uf';
 import { formatDateForInput } from '@/utils/formatDateForInput';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
 import { validatePhone } from '@/utils/phone';
+import Image from 'next/image'; 
 
 interface ClienteEditFormProps {
   cliente: Cliente;
@@ -271,8 +272,14 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
             />
           </div>
           <div className="w-24 h-24 border rounded-md overflow-hidden">
-            {previewFoto ? (
-              <img src={previewFoto} alt="Preview da Foto" className="object-cover w-full h-full" />
+          {previewFoto ? (
+              <Image
+                src={previewFoto}
+                alt="Preview da Foto"
+                width={96}  // Specify width in pixels
+                height={96} // Specify height in pixels
+                className="object-cover w-full h-full"
+              />
             ) : (
               <div className="flex items-center justify-center text-gray-400">Sem Imagem</div>
             )}

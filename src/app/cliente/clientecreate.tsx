@@ -17,6 +17,7 @@ import { UF } from '@/models/uf';
 import { buscarEnderecoViaCep} from '@/utils/endereco';
 import { Endereco } from '@/models/endereco';
 import { validatePhone } from '@/utils/phone';
+import Image from 'next/image';
 
 interface ClienteCreateFormProps {
   onSave: () => void;
@@ -244,10 +245,16 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
           <div className="w-24 h-24 border rounded-md overflow-hidden">
             {previewFoto ? (
-              <img src={previewFoto} alt="Preview da Foto" className="object-cover w-full h-full" />
-            ) : (
+              <Image 
+              src={previewFoto} 
+              alt="Preview da Foto" 
+              width={96}  // Size in pixels for width and height (adjust as needed)
+              height={96} 
+              className="object-cover w-full h-full"
+              />
+              ) : (
               <div className="flex items-center justify-center text-gray-400">Sem Imagem</div>
-            )}
+              )}
           </div>
         </div>
 
