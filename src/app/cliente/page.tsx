@@ -28,7 +28,7 @@ export default function ClienteList() {
 
   const [sortConfig, setSortConfig] = useState<{ key: keyof Cliente; direction: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 10;
+  const recordsPerPage = 6;
 
   const hideSnackbar = () => {
     setSnackbar((prev) => {
