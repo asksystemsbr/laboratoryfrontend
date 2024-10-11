@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TabelaPrecoCreateForm } from './tabelaPrecocreate';
 import { TabelaPrecEditForm } from './tablaPrecoedit';
 import {Snackbar}  from '../snackbar';
@@ -34,23 +34,22 @@ export default function TabelaPrecoList() {
       return newSnackbarState;
     });
   };
-    // Função para carregar os dados
-    const loadItems = async () => {
-      try {
-        const response = await axios.get('/api/TabelaPreco');
-        setItems(response.data);
-        setFilteredItems(response.data); 
-      } catch (error) {
-        console.log(error);
-        setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
-      }
-    };
-    
+  // Memoize the loadItems function using useCallback to avoid redefinition on each render
+  const loadItems = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/TabelaPreco');
+      setItems(response.data);
+      setFilteredItems(response.data); 
+    } catch (error) {
+      console.log(error);
+      setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
+    }
+  }, [setSnackbar]);
 
   useEffect(() => {
     loadItems();
   }, [loadItems]);
-
+  
   // Controle do Snackbar
   useEffect(() => {
     if (snackbar.show) {

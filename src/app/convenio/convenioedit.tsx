@@ -85,7 +85,7 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
       fetchPlanoByConvenioId(convenio.id); // Passa o ID do convênio para buscar o plano
       setIsPlanoFetched(true); 
     }
-  }, [activeTab, convenio.id,isPlanoFetched]);
+  }, [activeTab, convenio.id,isPlanoFetched,fetchPlanoByConvenioId]);
 
   useEffect(() => {
     const fetchEndereco = async () => {
