@@ -1,6 +1,6 @@
 //src/app/grupousuario/grupousuariocreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { GrupoUsuario } from '../../models/grupoUsuario';
@@ -15,14 +15,20 @@ interface GrupoUsuarioCreateFormProps {
 export const GrupoUsuarioCreateForm = ({ onSave, onClose,setSnackbar  }: GrupoUsuarioCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<GrupoUsuario>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: GrupoUsuario) => {
+    if (isSubmitting) return;
     try {
+        setIsSubmitting(true); 
         await axios.post('/api/GrupoUsuario', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o grupo!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

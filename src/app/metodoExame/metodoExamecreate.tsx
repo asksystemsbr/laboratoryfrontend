@@ -1,6 +1,6 @@
 //src/app/metodoExame/metodoExamecreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { MetodoExame } from '../../models/metodoExame';
@@ -14,15 +14,20 @@ interface MetodoExameCreateFormProps {
 
 export const MetodoExameCreateForm = ({ onSave, onClose,setSnackbar  }: MetodoExameCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<MetodoExame>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (data: MetodoExame) => {
+    if (isSubmitting) return;
     try {
+        setIsSubmitting(true); 
         await axios.post('/api/MetodoExame', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

@@ -1,28 +1,36 @@
 //src/app/plano/planocreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Plano } from '../../models/plano';
 import { SnackbarState } from '@/models/snackbarState';
 
 interface PlanoCreateFormProps {
+  convenioId: number; 
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
 }
 
-export const PlanoCreateForm = ({ onSave, onClose,setSnackbar  }: PlanoCreateFormProps) => {
+export const PlanoCreateForm = ({ convenioId ,onSave, onClose,setSnackbar  }: PlanoCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<Plano>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: Plano) => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true); 
+        data.convenioId = convenioId;
         await axios.post('/api/Plano', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

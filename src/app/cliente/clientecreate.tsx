@@ -34,6 +34,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
+  const [previewFoto, setPreviewFoto] = useState<string | null>(null);
   const [endereco, setEndereco] = useState<Endereco>({
     cep: '',
     rua: '',
@@ -47,54 +48,8 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
 
-    // // Define tipos para o TelefoneInput
-    // interface TelefoneInputProps {
-    //   register: UseFormRegister<Cliente>;
-    //   errors: FieldErrors<Cliente>;
-    // }
-
-    // const TelefoneInput = ({ register, errors }: TelefoneInputProps) => {
-    //   const [mask, setMask] = useState('(99) 9999-99999');  // Começa com a máscara flexível
-  
-    //   const handleMaskChange = (event: React.ChangeEvent<HTMLInputElement>) => { // Define o tipo do evento
-    //     const inputValue = event.currentTarget.value.replace(/\D/g, ''); // Remove tudo que não for número
-  
-    //     console.log('Valor digitado: ', inputValue); 
-    //     // Se o número tem mais de 10 dígitos, usa a máscara de celular
-    //     if (inputValue.length > 10) {
-    //       setMask('(99) 99999-9999');
-    //     } else {
-    //       setMask('(99) 9999-9999');  // Se não, usa a máscara de telefone fixo
-    //     }
-    //   };
-
-    //   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-    //     // Garante que o campo seja focado corretamente
-    //     event.currentTarget.setSelectionRange(event.currentTarget.value.length, event.currentTarget.value.length);
-    //   };
-  
-    //   return (
-    //     <div>
-    //       <label className="block text-gray-800">Telefone *</label>
-    //       <InputMask
-    //         {...register('telefone', { 
-    //           required: 'O telefone é obrigatório',
-    //           pattern: {
-    //             value: /^\(\d{2}\) \d{4,5}-\d{4}$/,
-    //             message: 'Formato de telefone inválido',
-    //           },
-    //          })}
-    //         mask={mask}  // Usa a máscara dinamicamente
-    //         maskPlaceholder={null}
-    //         alwaysShowMask={false}
-    //         onInput={handleMaskChange}
-    //         onFocus={handleFocus}  // Garante o foco correto ao clicar
-    //         className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
-    //       />
-    //       {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
-    //     </div>
-    //   );
-    // };
+    // Novo estado para indicar se está processando a requisição
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchConvenios = async () => {
@@ -126,7 +81,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         setSnackbar(new SnackbarState('Erro ao carregar os tipos de solicitante', 'error', true));
       }
     };
-
+    setIsCNPJ(false);
     fetchConvenios();
     fetchPlanos();
     fetchUF();
@@ -207,19 +162,40 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
        nomeResponsavel: data.nomeResponsavel === '' ? null : data.nomeResponsavel,
        cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
        telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
+       foto: previewFoto,
     };
+
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       await axios.post('/api/Cliente', clienteComEndereco);
       reset();
       onSave();
     } catch {
       setSnackbar(new SnackbarState('Erro ao criar o cliente!', 'error', true));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const toggleMask = () => {
-    setIsCNPJ(!isCNPJ);
-  };
+  // const toggleMask = () => {
+  //   setIsCNPJ(!isCNPJ);
+  // };
+
+    // Função para manipular a mudança de imagem e gerar pré-visualização
+    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewFoto(reader.result as string); // Converte para uma string base64 para pré-visualização
+        };
+        reader.readAsDataURL(file); // Converte o arquivo em base64
+      } else {
+        setPreviewFoto(null); // Limpa a pré-visualização se o arquivo for removido
+      }
+    };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
@@ -229,16 +205,49 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         
         <h2 className="text-xl font-bold mb-2 text-gray-800">Novo Cliente</h2>
 
-        {/* Nome */}
-        <div className="flex space-x-2 mb-3">
-          <div className="w-full">
-            <label className="block text-gray-800">Nome *</label>
-            <input 
-            type='text'
-              {...register('nome', { required: 'O nome é obrigatório' })} 
-              className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Nome */}
+          <div>
+            <div className="w-full">
+              <label className="block text-gray-800">Nome *</label>
+              <input 
+              type='text'
+                {...register('nome', { required: 'O nome é obrigatório' })} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+              {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
+            </div>
+          </div>
+
+          {/* Nome Social */}
+          <div>
+              <label className="block text-gray-800">Nome Social</label>
+              <input 
+                type="text" 
+                {...register('nomeSocial')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>
+        </div>
+
+        {/* Upload de Foto com Pré-visualização */}
+        <div className="grid grid-cols-2 gap-4 items-center mb-4">
+          <div>
+            <label className="block text-gray-800">Foto</label>
+            <input
+              type="file"
+              {...register('foto')}
+              onChange={handleFotoChange} // Lida com a mudança de foto
+              className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+              accept="image/*"
             />
-            {errors.nome && <p className="text-red-500 text-sm">{errors.nome?.message}</p>}
+          </div>
+          <div className="w-24 h-24 border rounded-md overflow-hidden">
+            {previewFoto ? (
+              <img src={previewFoto} alt="Preview da Foto" className="object-cover w-full h-full" />
+            ) : (
+              <div className="flex items-center justify-center text-gray-400">Sem Imagem</div>
+            )}
           </div>
         </div>
 
@@ -339,13 +348,65 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4 mb-4">
+            {/* Profissão e Matricula */}
+              <div>
+                <label className="block text-gray-800">Profissão</label>
+                <input 
+                  type="text" 
+                  {...register('profissao')} 
+                  className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+                />
+              </div>
+              {/* Nome da Mãe */}
+              <div>
+                <label className="block text-gray-800">Nome da Mãe</label>
+                <input 
+                  type="text" 
+                  {...register('nomeMae')} 
+                  className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+                />
+              </div>              
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-800">Matrícula</label>
+              <input 
+                type="text" 
+                {...register('matricula')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>
+            {/* Validade da Matrícula */}
+            <div>
+              <label className="block text-gray-800">Validade da Matrícula</label>
+              <input 
+                type="date" 
+                {...register('validadeMatricula')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>    
+            {/* Titular do Convênio */}
+            <div>
+              <label className="block text-gray-800">Titular do Convênio</label>
+              <input 
+                type="text" 
+                {...register('titularConvenio')} 
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800" 
+              />
+            </div>                    
+        </div>
+        
         {/* CPF/CNPJ, RG, CEP e Data de Nascimento */}
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-gray-800">CPF/CNPJ *</label>
+            <label className="block text-gray-800">CPF *</label>
             <div className="flex items-center">
               <InputMask
-                {...register('cpfCnpj', { required: 'CPF/CNPJ é obrigatório' })}
+                {...register('cpfCnpj', { 
+                  required: !isMenorDeIdade &&  'CPF é obrigatório' 
+                })}
                 mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
                 placeholder={isCNPJ ? 'CNPJ' : 'CPF'}
@@ -374,13 +435,6 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
                   checkCpfExists(cpf);
                 }}
               />          
-                <button
-                type="button"
-                onClick={toggleMask}
-                className="ml-2 py-1 px-2 bg-blue-500 text-white rounded"
-              >
-                {isCNPJ ? 'CPF' : 'CNPJ'}
-              </button>   
             </div>
             {errors.cpfCnpj && <p className="text-red-500 text-sm">{errors.cpfCnpj?.message}</p>}
           </div>
@@ -466,9 +520,9 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             </div>
 
             <div>
-              <label className="block text-gray-800">CPF do Responsável *</label>
+              <label className="block text-gray-800">CPF do Responsável</label>
               <InputMask
-                  {...register('cpfResponsavel', { required: isMenorDeIdade && 'CPF do responsável obrigatório' })}
+                  {...register('cpfResponsavel')}
                 mask="999.999.999-99"
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
                 onBlur={(e) => {
@@ -504,7 +558,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
                     setIsPhoneFixoResponsavel(false);
                   }
                     if (!validatePhone(phoneImput)) {
-                      setError('telefone', {
+                      setError('telefoneResponsavel', {
                         type: 'manual',
                         message: 'Telefone do responsável obrigatório',
                       });

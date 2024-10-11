@@ -1,6 +1,6 @@
 //src/app/tabelaPreco/tabelaPrecocreate.tsx
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { TabelaPreco } from '../../models/tabelaPreco';
@@ -15,14 +15,20 @@ interface TabelaPrecoCreateFormProps {
 export const TabelaPrecoCreateForm = ({ onSave, onClose,setSnackbar  }: TabelaPrecoCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<TabelaPreco>();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: TabelaPreco) => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
         await axios.post('/api/TabelaPreco', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 

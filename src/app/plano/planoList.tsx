@@ -1,24 +1,26 @@
+//src/app/plano/planoList.tsx
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { LaboratorioApoioCreateForm } from './laboratorioApoiocreate';
-import { LaboratorioApoioEditForm } from './laboratorioApoioedit';
+import { PlanoEditForm } from './planoedit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
-import { LaboratorioApoio } from '../../models/laboratorioApoio'; 
+import { Plano } from '../../models/plano';
 import { SnackbarState } from '../../models/snackbarState';
-import Menu from '../../components/menu';
 import ConfirmationModal from '../../components/confirmationModal';
 
-Modal.setAppElement('#__next');
+// Modal.setAppElement('#__next');
+interface PlanoListProps {
+  convenioId: number; // Adiciona o parâmetro do convênio
+}
 
-export default function LaboratorioApoioList() {
-  const [items, setItems] = useState<LaboratorioApoio[]>([]);
-  const [filtered, setFiltered] = useState<LaboratorioApoio[]>([]);
+export default function PlanoList({ convenioId }: PlanoListProps) {
+  const [items, setItems] = useState<Plano[]>([]);
+  const [filteredItems, setFilteredItems] = useState<Plano[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingItem, setEditingItem] = useState<LaboratorioApoio | null>(null);
+  const [editingItem, setEditingItem] = useState<Plano | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
@@ -30,14 +32,15 @@ export default function LaboratorioApoioList() {
   // Função para carregar os dados
   const loadItems = useCallback(async () => {
     try {
-      const response = await axios.get('/api/LaboratorioApoio');
+      const response = await axios.get(`/api/Plano/getListByConvenio/${convenioId}`); 
       setItems(response.data);
-      setFiltered(response.data); 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      setFilteredItems(response.data);
+      console.log(response.data);
     } catch (error) {
+      console.log(error);
       setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
     }
-  }, []);
+  }, [convenioId]);
 
   const hideSnackbar = () => {
     setSnackbar((prev) => {
@@ -70,19 +73,20 @@ export default function LaboratorioApoioList() {
     }
   }, [snackbar]);
 
-  // Filtragem e paginação
   useEffect(() => {
-    const filteredItems = items.filter((item) =>
+    const filtered = items.filter((item) =>
       Object.values(item).some((value) =>
         value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
-    setFiltered(filteredItems);
+    setFilteredItems(filtered);
   }, [searchTerm, items]);
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentItems = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentItems = Array.isArray(filteredItems) 
+  ? filteredItems.slice(indexOfFirstRecord, indexOfLastRecord)
+  : [];
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -93,7 +97,7 @@ export default function LaboratorioApoioList() {
     }));
   };
 
-  const handleEdit = (item: LaboratorioApoio) => {
+  const handleEdit = (item: Plano) => {
     setEditingItem(item);
     setIsEditing(true);
     setModalIsOpen(true);
@@ -115,7 +119,7 @@ export default function LaboratorioApoioList() {
   const handleDelete = async () => {
     if (itemToDelete !== null) {
       try {
-        await axios.delete(`/api/LaboratorioApoio/${itemToDelete}`);
+        await axios.delete(`/api/Plano/${itemToDelete}`);
         setSnackbar(new SnackbarState('Registro excluído com sucesso!', 'success', true));
         loadItems();
         setDeleteConfirmOpen(false);
@@ -133,16 +137,15 @@ export default function LaboratorioApoioList() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Menu />
+    // <div className="flex h-screen bg-gray-100">
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Laboratório de Apoio</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Planos</h1>
           <button
             onClick={handleCreate}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
           >
-            Novo Laboratório de Apoio
+            Novo Plano
           </button>
         </div>
 
@@ -173,16 +176,14 @@ export default function LaboratorioApoioList() {
         <table className="min-w-full bg-white border border-gray-300 rounded-lg">
           <thead>
             <tr className="bg-gray-50">
-              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Nome do Laboratório</th>
-              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">CNPJ</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Descrição</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
             </tr>
           </thead>
           <tbody>
             {currentItems.map((item) => (
               <tr key={item.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{item.nomeLaboratorio}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{item.cpfCnpj}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{item.descricao}</td>
                 <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
                     onClick={() => toggleDropdown(item.id!)}
@@ -241,7 +242,7 @@ export default function LaboratorioApoioList() {
 
           <button
             onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === Math.ceil(filtered.length / recordsPerPage)}
+            disabled={currentPage === Math.ceil(filteredItems.length / recordsPerPage)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
           >
             Próxima
@@ -269,14 +270,23 @@ export default function LaboratorioApoioList() {
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
           {isEditing ? (
-            <LaboratorioApoioEditForm
-              laboratorioApoio={editingItem!}
+            <PlanoEditForm
+              plano={editingItem!}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
             />
           ) : (
-            <LaboratorioApoioCreateForm
+            <PlanoEditForm
+              plano={{
+                id: 0, // ou undefined
+                descricao: '',
+                tabelaPrecoId: 0,
+                convenioId: convenioId, // Usa o convenioId como parte do novo plano
+                custoHorario: 0,
+                filme: 0,
+                codigoArnb: ''
+              }}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
@@ -287,7 +297,7 @@ export default function LaboratorioApoioList() {
         <ConfirmationModal
           isOpen={deleteConfirmOpen}
           title="Confirmação de Exclusão"
-          message="Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita."
+          message="Tem certeza de que deseja excluir este plano? Esta ação não pode ser desfeita."
           onConfirm={handleDelete}
           onCancel={() => setDeleteConfirmOpen(false)}
           confirmText="Excluir"
@@ -298,6 +308,6 @@ export default function LaboratorioApoioList() {
           <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
         )}
       </div>
-    </div>
+    // </div>
   );
 }

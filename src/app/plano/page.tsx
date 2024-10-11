@@ -274,6 +274,7 @@ export default function PlanoList() {
             />
           ) : (
             <PlanoCreateForm
+              convenioId={0}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}

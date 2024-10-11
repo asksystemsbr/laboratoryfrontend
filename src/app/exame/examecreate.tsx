@@ -25,6 +25,7 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
   const [laboratorioApoio, setLaboratorioApoio] = useState<LaboratorioApoio[]>([]);  
   // Estados para controlar abas
   const [activeTab, setActiveTab] = useState<'info' | 'preparos' | 'coletas'  | 'apoio'>('info'); // Define abas
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadEspecialidades = async () => {
@@ -87,6 +88,8 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
     };
 
   const onSubmit = async (data: Exame) => {
+    if (isSubmitting) return;
+
     const camposObrigatoriosAbaInfo = [
       'codigoExame',
       'nomeExame',
@@ -117,10 +120,10 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
         clicarNoBotaoSalvar();  // Simula o clique no botão de salvar após a aba info renderizar
       }, 0);  
       return;
-    }
-
+    }    
 
     try {
+      setIsSubmitting(true); 
       await axios.post('/api/Exame', data);
       reset();
       onSave();
@@ -128,6 +131,8 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
     } catch (error) {
       console.log(error);
       setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true));
+    }finally {
+      setIsSubmitting(false); 
     }
   };
 

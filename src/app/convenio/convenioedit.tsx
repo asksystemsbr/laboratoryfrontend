@@ -5,12 +5,12 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { Convenio } from '../../models/convenio';
 import { SnackbarState } from '@/models/snackbarState';
-import { PlanoEditForm } from '../plano/planoedit';
 import { Plano } from '../../models/plano'; // Importa o tipo Plano
 import { Endereco } from '@/models/endereco';
 import { UF } from '@/models/uf';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
 import InputMask from 'react-input-mask-next';
+import PlanoList from '../plano/planoList';
 
 interface ConvenioEditFormProps {
   convenio: Convenio;
@@ -171,6 +171,11 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
           <>
             <form onSubmit={handleSubmit(onSubmit)} className="p-4">
               <h2 className="text-xl font-bold mb-4">Editar Convênio</h2>
+              <div className="flex justify-end">
+                <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
+                  Salvar
+                </button>
+              </div>
               <div className="mb-4">
                 <label className="block text-gray-700">Descrição</label>
                 <textarea
@@ -266,23 +271,20 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
                     {!endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
                   </div>
                 </div>
-              <div className="flex justify-end">
-                <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
-                  Cancelar
-                </button>
-                <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
-                  Salvar
-                </button>
-              </div>
             </form>
           </>
         )}
 
         {/* Aba de TabelaPrecoItens */}
         {activeTab === 'planos' && plano && (
-          <PlanoEditForm plano={plano} onClose={onClose} onSave={onSave} setSnackbar={setSnackbar} />
+          <PlanoList convenioId={convenio.id!} />
         )}
       
+      <div className="flex justify-end">
+          <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -20,6 +20,8 @@ export const ExameApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: ExameAp
   const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
   const [setores, setSetores] = useState<Setor[]>([]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     const loadEspecialidades = async () => {
       try {
@@ -46,13 +48,18 @@ export const ExameApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: ExameAp
   }, [setSnackbar]);
 
   const onSubmit = async (data: ExameApoio) => {
+    
+   if (isSubmitting) return;
     try {
+      setIsSubmitting(true); 
         await axios.post('/api/ExameApoio', data);
         reset();
         onSave();
       } catch (error) {
         console.log(error);
         setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true)); // Exibe erro via snackbar
+      }finally {
+        setIsSubmitting(false); 
       }
   };
 
