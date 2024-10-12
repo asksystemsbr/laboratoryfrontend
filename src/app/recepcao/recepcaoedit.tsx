@@ -46,7 +46,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     setActiveTab(tab);
     if (tab === 'conveniosPlanos') {
       try {
-        const response = await axios.get(`/api/RecepcaoConvenioPlano`);
+        const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcao.id}`);
         setConveniosEPlanos(response.data);
       } catch (error) {
         console.error("Erro ao buscar convênios e planos", error);
@@ -71,7 +71,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
 
     const fetchConveniosEPlanos = async () => {
       try {
-        const response = await axios.get(`/api/RecepcaoConvenioPlano`);
+        const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcao.id}`);
         console.log(response);
         setConveniosEPlanos(response.data);
       } catch (error) {
