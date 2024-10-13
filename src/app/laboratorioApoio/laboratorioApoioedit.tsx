@@ -10,6 +10,7 @@ import InputMask from 'react-input-mask-next';
 import { UF } from '@/models/uf';
 import { Endereco } from '@/models/endereco';
 import { validarCNPJ } from '@/utils/cnpjValidator';
+import { Empresa } from '@/models/empresa';
 
 interface LaboratorioApoioEditFormProps   {
   laboratorioApoio: LaboratorioApoio;
@@ -19,10 +20,11 @@ interface LaboratorioApoioEditFormProps   {
 }
 
 export const LaboratorioApoioEditForm   = ({ laboratorioApoio, onSave, onClose,setSnackbar  }: LaboratorioApoioEditFormProps  ) => {
-  const { register, handleSubmit, reset,formState: { errors },setError } = useForm<LaboratorioApoio>({
+  const { register, handleSubmit, reset,formState: { errors },setError,setValue } = useForm<LaboratorioApoio>({
     defaultValues: laboratorioApoio,
   });
 
+  const [empresas, setEmpresa] = useState<Empresa[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
@@ -48,7 +50,17 @@ export const LaboratorioApoioEditForm   = ({ laboratorioApoio, onSave, onClose,s
     };
     fetchUF();
 
-    Promise.all([fetchUF()]).then(() => setIsLoaded(true));
+    const fetchEmpresa = async () => {
+      try {
+        const response = await axios.get('/api/Empresa'); // Supondo que essa seja a rota da API
+        setEmpresa(response.data);
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar Empresas', 'error', true));
+      }
+    };
+
+    Promise.all([fetchUF(),fetchEmpresa()]).then(() => setIsLoaded(true));
   }, [setSnackbar]);
 
   useEffect(() => {
@@ -64,6 +76,7 @@ export const LaboratorioApoioEditForm   = ({ laboratorioApoio, onSave, onClose,s
 
     if (isLoaded) {
       fetchEndereco();
+      setValue('empresaId', laboratorioApoio.empresaId);
     }
   }, [isLoaded,laboratorioApoio.enderecoId, setSnackbar]);
 
@@ -248,6 +261,21 @@ export const LaboratorioApoioEditForm   = ({ laboratorioApoio, onSave, onClose,s
           />
         </div>  
 
+        {/* Empresa */}
+        <div>
+          <label className="block text-gray-700">Empresa</label>
+          <select
+            {...register('empresaId')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          >
+            <option value="">Selecione uma empresa</option>
+            {empresas.map((empresa) => (
+              <option key={empresa.id} value={empresa.id}>
+                {empresa.nomeFantasia}
+              </option>
+            ))}
+          </select>
+        </div>
 
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">

@@ -424,6 +424,28 @@ export const ExameCreateForm = ({ onSave, onClose, setSnackbar }: ExameCreateFor
             className="border rounded w-full py-2 px-3 mt-1 h-12"
           />
         </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Meio de coleta similar */}
+          <div>
+            <label className="block text-gray-700">Meio de coleta similar</label>
+            <input
+            type='text'
+              {...register('meioColetaSimilar')}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+          </div>
+
+          {/* Material Coleta Similar */}
+          <div>
+            <label className="block text-gray-700">Material Coleta Similar</label>
+            <input
+            type='text'
+              {...register('materialColetaSimilar')}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+          </div>
+        </div>
       </div>
       )}
 

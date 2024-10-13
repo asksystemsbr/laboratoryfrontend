@@ -10,6 +10,7 @@ import { UF } from '@/models/uf';
 import { Endereco } from '@/models/endereco';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
 import { validarCNPJ } from '@/utils/cnpjValidator';
+import { Empresa } from '@/models/empresa';
 // import { MaterialApoio } from '../../models/materialApoio'; // Model para MaterialApoio
 // import { ExameApoio } from '../../models/exameApoio'; // Model para ExameApoio
 
@@ -23,6 +24,7 @@ interface LaboratorioApoioCreateFormProps   {
 export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: LaboratorioApoioCreateFormProps  ) => {
   const { register, handleSubmit, reset,formState: { errors } ,setError,clearErrors} = useForm<LaboratorioApoio>();
   
+  const [empresas, setEmpresa] = useState<Empresa[]>([]);
   const [cpfInUse, setCpfInUse] = useState<boolean>(false);
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [cep, setCep] = useState('');
@@ -115,7 +117,19 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
       }
     };
 
+    const fetchEmpresa = async () => {
+      try {
+        const response = await axios.get('/api/Empresa'); // Supondo que essa seja a rota da API
+        setEmpresa(response.data);
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar Empresas', 'error', true));
+      }
+    };
+
+
     fetchUF();
+    fetchEmpresa();
   }, [setSnackbar]);
 
   const onSubmit = async (data: LaboratorioApoio) => {
@@ -352,6 +366,22 @@ export const LaboratorioApoioCreateForm   = ({ onSave, onClose,setSnackbar  }: L
             className="border rounded w-full py-2 px-3 mt-1"
           />
         </div>  
+
+        {/* Empresa */}
+        <div>
+          <label className="block text-gray-700">Empresa</label>
+          <select
+            {...register('empresaId')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          >
+            <option value="">Selecione uma empresa</option>
+            {empresas.map((empresa) => (
+              <option key={empresa.id} value={empresa.id}>
+                {empresa.nomeFantasia}
+              </option>
+            ))}
+          </select>
+        </div>
 
 
       <div className="flex justify-end">

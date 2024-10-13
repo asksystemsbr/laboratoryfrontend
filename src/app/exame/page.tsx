@@ -126,9 +126,11 @@ export default function ExameList() {
     }
   };
 
-  function handleSave(): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleSave = () => {
+    setModalIsOpen(false);
+    setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
+    loadItems();
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">

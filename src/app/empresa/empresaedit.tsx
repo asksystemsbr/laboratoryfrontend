@@ -104,6 +104,7 @@ export const EmpresaEditForm = ({ empresa, onSave, onClose, setSnackbar }: Empre
     ...data,
     endereco,  // Inclui o endereço completo ao enviar o cliente
   };
+  
     try {
       await axios.put(`/api/Empresa/${itemComEndereco.id}`, itemComEndereco);
       setSnackbar(new SnackbarState('Empresa editada com sucesso!', 'success', true));

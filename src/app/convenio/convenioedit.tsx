@@ -11,6 +11,8 @@ import { UF } from '@/models/uf';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
 import InputMask from 'react-input-mask-next';
 import PlanoList from '../plano/planoList';
+import { Empresa } from '@/models/empresa';
+import { formatDateForInput } from '@/utils/formatDateForInput';
 
 interface ConvenioEditFormProps {
   convenio: Convenio;
@@ -20,7 +22,7 @@ interface ConvenioEditFormProps {
 }
 
 export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: ConvenioEditFormProps) => {
-  const { register, handleSubmit, reset,formState: { errors } } = useForm<Convenio>({
+  const { register, handleSubmit, reset,formState: { errors },setValue } = useForm<Convenio>({
     defaultValues: convenio,
   });
 
@@ -28,6 +30,7 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
   const [plano, setPlano] = useState<Plano | null>(null);
   const [isPlanoFetched, setIsPlanoFetched] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [empresas, setEmpresa] = useState<Empresa[]>([]);
 
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [endereco, setEndereco] = useState<Endereco>({
@@ -75,9 +78,20 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
         setSnackbar(new SnackbarState('Erro ao carregar os tipos de solicitante', 'error', true));
       }
     };
-    fetchUF();
 
-    Promise.all([fetchUF()]).then(() => setIsLoaded(true));
+        
+    const fetchEmpresa = async () => {
+      try {
+        const response = await axios.get('/api/Empresa'); // Supondo que essa seja a rota da API
+        setEmpresa(response.data);
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar Empresas', 'error', true));
+      }
+    };
+
+
+    Promise.all([fetchUF(),fetchEmpresa()]).then(() => setIsLoaded(true));
   }, [setSnackbar]);
 
   useEffect(() => {
@@ -100,6 +114,9 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
 
     if (isLoaded) {
       fetchEndereco();
+      setValue('empresaId', convenio.empresaId);
+      setValue('ateCronograma', formatDateForInput(convenio.ateCronograma));
+      setValue('vencimentoCronograma', formatDateForInput(convenio.vencimentoCronograma));
     }
   }, [isLoaded,convenio.enderecoId, setSnackbar]);
 
@@ -149,7 +166,7 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 z-50">
     {/* Abas */}
-    <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6"> {/* Ajusta a largura da modal */}
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl h-full max-h-[90vh] p-6 overflow-y-auto overflow-x-auto"> {/* Ajusta a largura e altura com scroll */}
       <div className="mb-4">
         <button 
           onClick={() => setActiveTab('info')} 
@@ -183,6 +200,183 @@ export const ConvenioEditForm = ({ convenio, onSave, onClose,setSnackbar  }: Con
                   className="border rounded w-full py-2 px-3 mt-1"
                 />
                 {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
+              </div>
+
+              {/* Campos adicionais */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700">Dígitos para Validar Matrícula</label>
+                  <input
+                    type="number"
+                    {...register('digitosValidarMatricula')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Liquidação (Via Fatura ou Caixa)</label>
+                  <input
+                    type="text"
+                    {...register('liquidacao')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Código do Prestador e Versão da TISS */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700">Código do Prestador</label>
+                  <input
+                    type="text"
+                    {...register('codigoPrestador')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Versão da TISS</label>
+                  <input
+                    type="text"
+                    {...register('versaoTiss')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* CNES do Convênio, Código Operadora TISS e Código Operadora Autorize */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700">CNES do Convênio</label>
+                  <input
+                    type="text"
+                    {...register('cnesConvenio')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Código Operadora TISS</label>
+                  <input
+                    type="text"
+                    {...register('codOperadoraTiss')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Código Operadora (Autorize)</label>
+                  <input
+                    type="text"
+                    {...register('codOperadora')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* API de Integração e Início da Numeração */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700">API de Integração (Autorizar/Faturar)</label>
+                  <input
+                    type="text"
+                    {...register('urlIntegracao')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Início da Numeração</label>
+                  <input
+                    type="text"
+                    {...register('inicioNumeracao')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Usuário e Senha Acesso Web */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700">Usuário Acesso Web</label>
+                  <input
+                    type="text"
+                    {...register('usuarioAcessoWeb')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Senha Acesso Web</label>
+                  <input
+                    type="password"
+                    {...register('senhaAcessoWeb')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Cronograma */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700">Envio Cronograma</label>
+                  <input
+                    type="number"
+                    {...register('envioCronograma')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Até Cronograma</label>
+                  <input
+                    type="date"
+                    {...register('ateCronograma')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700">Vencimento Cronograma</label>
+                  <input
+                    type="date"
+                    {...register('vencimentoCronograma')}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Observações e Instruções */}
+              <div className="mb-4">
+                <label className="block text-gray-700">Observações</label>
+                <textarea
+                  {...register('observacoes')}
+                  className="border rounded w-full py-2 px-3 mt-1"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700">Instruções</label>
+                <textarea
+                  {...register('instrucoes')}
+                  className="border rounded w-full py-2 px-3 mt-1"
+                />
+              </div>
+
+              {/* Empresa */}
+              <div>
+                <label className="block text-gray-700">Empresa</label>
+                <select
+                  {...register('empresaId')}
+                  className="border rounded w-full py-2 px-3 mt-1"
+                >
+                  <option value="">Selecione uma empresa</option>
+                  {empresas.map((empresa) => (
+                    <option key={empresa.id} value={empresa.id}>
+                      {empresa.nomeFantasia}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="mb-4">

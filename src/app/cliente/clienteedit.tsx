@@ -200,6 +200,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
         cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
         telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
         foto: previewFoto ? previewFoto.split(",")[1] : cliente.foto, 
+        validadeMatricula: cliente.validadeMatricula || null 
       };
 
     try {
