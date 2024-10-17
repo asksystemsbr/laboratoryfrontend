@@ -21,4 +21,7 @@ export interface Convenio {
     observacoes?: string;  // Campo de observações
     instrucoes?: string;  // Campo de instruções
     empresaId?: number;  // Relacionamento com empresa
+    planos?: Plano[];
   }
+
+  import { Plano } from './plano';
