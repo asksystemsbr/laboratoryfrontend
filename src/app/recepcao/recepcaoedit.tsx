@@ -11,6 +11,8 @@ import { buscarEnderecoViaCep } from '@/utils/endereco';
 import InputMask from 'react-input-mask-next';
 import { Convenio } from '../../models/convenio';
 import { Plano } from '../../models/plano';
+import ConvenioPlanoSelector from './convenioplanoseletor';
+
 
 interface RecepcaoEditFormProps {
   recepcao: Recepcao;
@@ -191,6 +193,30 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     }
   };
 
+  const handleConveniosPlanosSave = (selectedData: { convenioId: number; planos: number[] }[]) => {
+    // Em vez de usar setValue, vamos atualizar o estado local
+    setConveniosEPlanos(prevConvenios => {
+      return prevConvenios.map(convenio => {
+        const selectedConvenio = selectedData.find(sd => sd.convenioId === convenio.id);
+        if (selectedConvenio) {
+          return {
+            ...convenio,
+            selecionado: true,
+            planos: convenio.planos.map(plano => ({
+              ...plano,
+              selecionado: selectedConvenio.planos.includes(plano.id!)
+            }))
+          };
+        }
+        return {
+          ...convenio,
+          selecionado: false,
+          planos: convenio.planos.map(plano => ({ ...plano, selecionado: false }))
+        };
+      });
+    });
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <h2 className="text-xl font-bold mb-4">Editar Recepção</h2>
@@ -362,8 +388,13 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
           </div>
         </div>
       )}
-
-
+      
+      <ConvenioPlanoSelector 
+        onSave={handleConveniosPlanosSave}
+        recepcaoId={recepcao.id} setSnackbar={function (): void {
+          throw new Error('Function not implemented.');
+        } } />
+       
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
           Cancelar
