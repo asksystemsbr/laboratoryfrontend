@@ -11,6 +11,8 @@ import { buscarEnderecoViaCep } from '@/utils/endereco';
 import InputMask from 'react-input-mask-next';
 import { Convenio } from '../../models/convenio';
 import { Plano } from '../../models/plano';
+import ConvenioPlanoSelector from './convenioplanoseletor';
+
 
 interface RecepcaoEditFormProps {
   recepcao: Recepcao;
@@ -20,7 +22,7 @@ interface RecepcaoEditFormProps {
 }
 
 interface ConvenioComPlanos extends Convenio {
-  id: number; // Linha 21
+  id: number;
   planos: (Plano & { selecionado: boolean })[];
   selecionado: boolean;
 }
@@ -42,8 +44,22 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     uf: ''
   });
   const [activeTab, setActiveTab] = useState('informacoes');
+  const handleTabChange = async (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'conveniosPlanos') {
+      try {
+        const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcao.id}`);
+        setConveniosEPlanos(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar convênios e planos", error);
+        setSnackbar(new SnackbarState('Erro ao carregar os convênios e planos', 'error', true));
+      }
+    }
+  };
+  
   const [conveniosEPlanos, setConveniosEPlanos] = useState<ConvenioComPlanos[]>([]);
 
+  // Carrega os dados de UF e os convênios com planos ao montar o componente
   useEffect(() => {
     const fetchUF = async () => {
       try {
@@ -56,39 +72,22 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     };
 
     const fetchConveniosEPlanos = async () => {
-      // Dados fictícios para convenios e planos
-      const dadosFicticios: ConvenioComPlanos[] = [
-        {
-          id: 1,
-          descricao: 'Convênio Teste',
-          enderecoId: 1,
-          selecionado: false,
-          planos: [
-            { id: 1, descricao: 'Plano 1', tabelaPrecoId: 1, convenioId: 1, custoHorario: 100, filme: 50, codigoArnb: 'A1', selecionado: false },
-            { id: 2, descricao: 'Plano 2', tabelaPrecoId: 1, convenioId: 1, custoHorario: 150, filme: 75, codigoArnb: 'A2', selecionado: false },
-            { id: 3, descricao: 'Plano 3', tabelaPrecoId: 1, convenioId: 1, custoHorario: 200, filme: 100, codigoArnb: 'A3', selecionado: false },
-          ]
-        },
-        {
-          id: 2,
-          descricao: 'Convênio Teste2',
-          enderecoId: 2,
-          selecionado: false,
-          planos: [
-            { id: 4, descricao: 'Plano 1', tabelaPrecoId: 2, convenioId: 2, custoHorario: 120, filme: 60, codigoArnb: 'B1', selecionado: false },
-            { id: 5, descricao: 'Plano 2', tabelaPrecoId: 2, convenioId: 2, custoHorario: 180, filme: 90, codigoArnb: 'B2', selecionado: false },
-            { id: 6, descricao: 'Plano 3', tabelaPrecoId: 2, convenioId: 2, custoHorario: 240, filme: 120, codigoArnb: 'B3', selecionado: false },
-          ]
-        },
-      ];
-      setConveniosEPlanos(dadosFicticios);
+      try {
+        const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcao.id}`);
+        console.log(response);
+        setConveniosEPlanos(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar convênios e planos", error);
+        setSnackbar(new SnackbarState('Erro ao carregar os convênios e planos', 'error', true));
+      }
     };
 
     fetchUF();
     fetchConveniosEPlanos();
-    Promise.all([fetchUF(), fetchConveniosEPlanos()]).then(() => setIsLoaded(true));
-  }, [setSnackbar]);
-  
+    setIsLoaded(true);
+  }, [setSnackbar, recepcao.id]);
+
+  // Busca os dados do endereço da recepção
   useEffect(() => {
     const fetchEndereco = async () => {
       try {
@@ -105,9 +104,10 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     }
   }, [isLoaded, recepcao.enderecoId, setSnackbar]);
 
+  // Atualiza os campos de endereço baseado no CEP digitado
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const cepDigitado = e.target.value.replace(/\D/g, '');
-    setEndereco({ ...endereco, cep: e.target.value })
+    setEndereco({ ...endereco, cep: e.target.value });
 
     if (cepDigitado.length === 8) {
       const enderecoAtualizado = await buscarEnderecoViaCep(cepDigitado);
@@ -123,8 +123,10 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     }
   };
 
-    const handleConvenioChange = (convenioId: number | undefined) => {
+  // Atualiza a seleção de convênios e seus planos
+  const handleConvenioChange = (convenioId: number | undefined) => {
     if (convenioId === undefined) return;
+    
     setConveniosEPlanos(prevConvenios =>
       prevConvenios.map(convenio => {
         if (convenio.id === convenioId) {
@@ -132,10 +134,10 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
           return {
             ...convenio,
             selecionado: novoSelecionado,
-            planos: convenio.planos.map(plano => ({
+            planos: convenio.planos ? convenio.planos.map(plano => ({
               ...plano,
               selecionado: novoSelecionado
-            }))
+            })) : [] // Certifique-se de que 'planos' seja um array vazio se for undefined
           };
         }
         return convenio;
@@ -143,6 +145,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     );
   };
 
+  // Atualiza a seleção de um plano específico
   const handlePlanoChange = (convenioId: number | undefined, planoId: number | undefined) => {
     if (convenioId === undefined || planoId === undefined) return;
     setConveniosEPlanos(prevConvenios =>
@@ -162,8 +165,9 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     );
   };
 
+  // Lógica para salvar os dados do formulário
   const onSubmit = async (data: Recepcao) => {
-    if(!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.uf) {
+    if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.uf) {
       return;
     }
 
@@ -171,8 +175,16 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       ...data,
       endereco,
     };
+
     try {
+      // Primeiro salva as informações da recepção
       await axios.put(`/api/Recepcao/${itemComEndereco.id}`, itemComEndereco);
+
+      // Em seguida, atualiza os convênios e planos
+      const planosSelecionados = conveniosEPlanos.filter(c => c.selecionado)
+        .flatMap(c => c.planos.filter(p => p.selecionado));
+      await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, planosSelecionados);
+
       reset();
       onSave();
     } catch (error) {
@@ -181,28 +193,51 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     }
   };
 
+  const handleConveniosPlanosSave = (selectedData: { convenioId: number; planos: number[] }[]) => {
+    // Em vez de usar setValue, vamos atualizar o estado local
+    setConveniosEPlanos(prevConvenios => {
+      return prevConvenios.map(convenio => {
+        const selectedConvenio = selectedData.find(sd => sd.convenioId === convenio.id);
+        if (selectedConvenio) {
+          return {
+            ...convenio,
+            selecionado: true,
+            planos: convenio.planos.map(plano => ({
+              ...plano,
+              selecionado: selectedConvenio.planos.includes(plano.id!)
+            }))
+          };
+        }
+        return {
+          ...convenio,
+          selecionado: false,
+          planos: convenio.planos.map(plano => ({ ...plano, selecionado: false }))
+        };
+      });
+    });
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <h2 className="text-xl font-bold mb-4">Editar Recepção</h2>
-      
-      <div className="mb-4">
-        <div className="flex border-b">
-          <button
-            type="button"
-            className={`py-2 px-4 ${activeTab === 'informacoes' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            onClick={() => setActiveTab('informacoes')}
-          >
-            Informações
-          </button>
-          <button
-            type="button"
-            className={`py-2 px-4 ${activeTab === 'conveniosPlanos' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            onClick={() => setActiveTab('conveniosPlanos')}
-          >
-            Convênios e Planos
-          </button>
-        </div>
+
+      <div className="flex border-b">
+        <button
+          type="button"
+          className={`py-2 px-4 ${activeTab === 'informacoes' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('informacoes')}
+        >
+          Informações
+        </button>
+        <button
+          type="button"
+          className={`py-2 px-4 ${activeTab === 'conveniosPlanos' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('conveniosPlanos')}
+        >
+          Convênios e Planos
+        </button>
       </div>
+
 
       {activeTab === 'informacoes' && (
         <>
@@ -229,22 +264,22 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
           <div className="grid grid-cols-[3fr,1fr] gap-4 mb-4">
             <div>
               <label className="block text-gray-800">Rua (Logradouro) *</label>
-              <input 
-                type='text'
+              <input
+                type="text"
                 value={endereco.rua}
                 onChange={(e) => setEndereco({ ...endereco, rua: e.target.value })}
-                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"        
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
               {!endereco.rua && <p className="text-red-500 text-sm">Rua é obrigatória</p>}
             </div>
 
             <div>
               <label className="block text-gray-800">Número *</label>
-              <input 
-                type='text'
+              <input
+                type="text"
                 value={endereco.numero}
                 onChange={(e) => setEndereco({ ...endereco, numero: e.target.value })}
-                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"   
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
               {!endereco.numero && <p className="text-red-500 text-sm">Número é obrigatório</p>}
             </div>
@@ -253,21 +288,21 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
           <div className="grid grid-cols-[1fr,2fr,2fr,1fr] gap-4 mb-4">
             <div>
               <label className="block text-gray-800">Complemento</label>
-              <input 
-                type='text'
+              <input
+                type="text"
                 value={endereco.complemento}
                 onChange={(e) => setEndereco({ ...endereco, complemento: e.target.value })}
-                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"     
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
             </div>
 
             <div>
               <label className="block text-gray-800">Bairro *</label>
               <input
-                type='text'
+                type="text"
                 value={endereco.bairro}
                 onChange={(e) => setEndereco({ ...endereco, bairro: e.target.value })}
-                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"     
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
               {!endereco.bairro && <p className="text-red-500 text-sm">Bairro é obrigatório</p>}
             </div>
@@ -275,12 +310,12 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
             <div>
               <label className="block text-gray-800">Cidade *</label>
               <input
-                type='text'
+                type="text"
                 value={endereco.cidade}
                 onChange={(e) => setEndereco({ ...endereco, cidade: e.target.value })}
-                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"      
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
-              {!endereco.cidade && <p className="text-red-500 text-sm">Cidade é obrigatório</p>}
+              {!endereco.cidade && <p className="text-red-500 text-sm">Cidade é obrigatória</p>}
             </div>
 
             <div>
@@ -303,10 +338,12 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
         </>
       )}
 
-       {activeTab === 'conveniosPlanos' && (
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Convênios e Planos</h3>
-            <div className="grid grid-cols-2 gap-4">
+      {activeTab === 'conveniosPlanos' && (
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold mb-2">Convênios e Planos</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Se houver convênios */}
+            {conveniosEPlanos.length > 0 ? (
               <div className="border rounded p-4">
                 <h4 className="font-semibold mb-2">Convênios</h4>
                 {conveniosEPlanos.map((convenio) => (
@@ -321,26 +358,43 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
                   </div>
                 ))}
               </div>
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-2">Planos</h4>
-                {conveniosEPlanos.flatMap((convenio) => 
-                  convenio.planos.map((plano) => (
-                    <div key={plano.id ?? `plano-${Math.random()}`} className="flex items-center mb-2">
-                      <input
-                        type="checkbox"
-                        className="form-checkbox h-5 w-5 text-blue-600 mr-2"
-                        checked={plano.selecionado}
-                        onChange={() => handlePlanoChange(convenio.id, plano.id)}
-                      />
-                      <span>{plano.descricao}</span>
-                    </div>
-                  ))
-                )}
-              </div>
+            ) : (
+              <p>Nenhum convênio disponível.</p>
+            )}
+
+            {/* Se houver planos para os convênios */}
+            <div className="border rounded p-4">
+              <h4 className="font-semibold mb-2">Planos</h4>
+              {conveniosEPlanos.some(c => c.planos && c.planos.length > 0) ? (
+                conveniosEPlanos.flatMap((convenio) =>
+                  convenio.planos && convenio.planos.length > 0 ? (
+                    convenio.planos.map((plano) => (
+                      <div key={plano.id ?? `plano-${Math.random()}`} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          className="form-checkbox h-5 w-5 text-blue-600 mr-2"
+                          checked={plano.selecionado}
+                          onChange={() => handlePlanoChange(convenio.id, plano.id)}
+                        />
+                        <span>{plano.descricao}</span>
+                      </div>
+                    ))
+                  ) : null
+                )
+              ) : (
+                <p>Nenhum plano disponível para os convênios selecionados.</p>
+              )}
             </div>
           </div>
-        )}
-
+        </div>
+      )}
+      
+      <ConvenioPlanoSelector 
+        onSave={handleConveniosPlanosSave}
+        recepcaoId={recepcao.id} setSnackbar={function (): void {
+          throw new Error('Function not implemented.');
+        } } />
+       
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
           Cancelar

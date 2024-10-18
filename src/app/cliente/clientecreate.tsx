@@ -164,6 +164,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
        cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
        telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
        foto: previewFoto,
+       validadeMatricula: data.validadeMatricula || null 
     };
 
     if (isSubmitting) return;

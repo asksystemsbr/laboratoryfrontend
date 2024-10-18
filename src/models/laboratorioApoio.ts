@@ -5,4 +5,5 @@ export interface LaboratorioApoio {
     urlApi?: string;                       // Opcional
     cpfCnpj?: string;
     enderecoId: number; 
+    empresaId?: number; 
 }

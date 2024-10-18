@@ -9,6 +9,7 @@ import { SnackbarState } from '@/models/snackbarState';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
 import { Endereco } from '@/models/endereco';
 import { UF } from '@/models/uf';
+import { Empresa } from '@/models/empresa';
 
 interface ConvenioCreateFormProps {
   onSave: () => void;
@@ -19,6 +20,7 @@ interface ConvenioCreateFormProps {
 export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCreateFormProps) => {
   const { register, handleSubmit, reset,formState: { errors } } = useForm<Convenio>();
 
+  const [empresas, setEmpresa] = useState<Empresa[]>([]);
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [cep, setCep] = useState('');
   const [endereco, setEndereco] = useState<Endereco>({
@@ -43,7 +45,19 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
         setSnackbar(new SnackbarState('Erro ao carregar os tipos de solicitante', 'error', true));
       }
     };
+    
+    const fetchEmpresa = async () => {
+      try {
+        const response = await axios.get('/api/Empresa'); // Supondo que essa seja a rota da API
+        setEmpresa(response.data);
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar Empresas', 'error', true));
+      }
+    };
+
     fetchUF();
+    fetchEmpresa();
   }, [setSnackbar]);
 
   const onSubmit = async (data: Convenio) => {
@@ -96,7 +110,8 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+    <form onSubmit={handleSubmit(onSubmit)} 
+    className="p-4 max-h-[75vh] max-w-[90vw] overflow-x-auto overflow-y-auto">
       <h2 className="text-xl font-bold mb-4">Novo Convênio</h2>
       <div className="mb-4">
         <label className="block text-gray-700">Descrição</label>
@@ -105,6 +120,167 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
           className="border rounded w-full py-2 px-3 mt-1"
         />
          {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao?.message}</p>}
+      </div>
+
+ {/* Campos adicionais */}
+ <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-gray-700">Dígitos para Validar Matrícula</label>
+          <input
+            type="number"
+            {...register('digitosValidarMatricula')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Liquidação (Via Fatura ou Caixa)</label>
+          <input
+            type="text"
+            {...register('liquidacao')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* Código do Prestador e Versão da TISS */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-gray-700">Código do Prestador</label>
+          <input
+            type="text"
+            {...register('codigoPrestador')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Versão da TISS</label>
+          <input
+            type="text"
+            {...register('versaoTiss')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* CNES do Convênio, Código Operadora TISS e Código Operadora Autorize */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div>
+          <label className="block text-gray-700">CNES do Convênio</label>
+          <input
+            type="text"
+            {...register('cnesConvenio')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Código Operadora TISS</label>
+          <input
+            type="text"
+            {...register('codOperadoraTiss')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Código Operadora (Autorize)</label>
+          <input
+            type="text"
+            {...register('codOperadora')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* API de Integração e Início da Numeração */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-gray-700">API de Integração (Autorizar/Faturar)</label>
+          <input
+            type="text"
+            {...register('urlIntegracao')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Início da Numeração</label>
+          <input
+            type="text"
+            {...register('inicioNumeracao')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* Usuário e Senha Acesso Web */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-gray-700">Usuário Acesso Web</label>
+          <input
+            type="text"
+            {...register('usuarioAcessoWeb')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Senha Acesso Web</label>
+          <input
+            type="password"
+            {...register('senhaAcessoWeb')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* Cronograma */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div>
+          <label className="block text-gray-700">Envio Cronograma</label>
+          <input
+            type="number"
+            {...register('envioCronograma')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Até Cronograma</label>
+          <input
+            type="date"
+            {...register('ateCronograma')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700">Vencimento Cronograma</label>
+          <input
+            type="date"
+            {...register('vencimentoCronograma')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          />
+        </div>
+      </div>
+
+      {/* Observações e Instruções */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Observações</label>
+        <textarea
+          {...register('observacoes')}
+          className="border rounded w-full py-2 px-3 mt-1"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700">Instruções</label>
+        <textarea
+          {...register('instrucoes')}
+          className="border rounded w-full py-2 px-3 mt-1"
+        />
       </div>
 
       <div className="mb-4">
@@ -192,6 +368,22 @@ export const ConvenioCreateForm = ({ onSave, onClose,setSnackbar  }: ConvenioCre
             </select>
             {!endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
           </div>
+        </div>
+
+        {/* Empresa */}
+        <div>
+          <label className="block text-gray-700">Empresa</label>
+          <select
+            {...register('empresaId')}
+            className="border rounded w-full py-2 px-3 mt-1"
+          >
+            <option value="">Selecione uma empresa</option>
+            {empresas.map((empresa) => (
+              <option key={empresa.id} value={empresa.id}>
+                {empresa.nomeFantasia}
+              </option>
+            ))}
+          </select>
         </div>
 
       <div className="flex justify-end">

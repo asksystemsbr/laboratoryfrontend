@@ -45,4 +45,6 @@ export interface Exame {
     valorApoio?: string;
     versaoApoio?: string;
     diasRealizacaoApoio?: string;
+    meioColetaSimilar?: string;
+    materialColetaSimilar?: string;
   }

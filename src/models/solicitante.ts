@@ -8,4 +8,5 @@ export interface Solicitante {
     email: string;
     telefone: string;
     tipoSolicitanteId: string;
+    especialidadeId?: number;
   }

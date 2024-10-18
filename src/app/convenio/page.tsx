@@ -272,7 +272,7 @@ export default function ConvenioList() {
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={() => setModalIsOpen(false)}
-          className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full"
+          className="bg-white p-6 max-w-[75vw] max-h-[90vh] mx-auto rounded-lg shadow-lg w-full h-full overflow-hidden flex flex-col"
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
           {isEditing ? (

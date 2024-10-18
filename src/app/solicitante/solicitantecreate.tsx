@@ -9,6 +9,7 @@ import { TipoSolicitante } from '../../models/tipoSolicitante';
 import { SnackbarState } from '@/models/snackbarState';
 import { UF } from '@/models/uf';
 import { validateCPF } from '@/utils/cpfValidator';
+import { Especialidade } from '@/models/especialidade';
 
 interface SolicitanteCreateFormProps {
   onSave: () => void;
@@ -21,6 +22,7 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
   const [tipoSolicitanteOptions, setTipoSolicitanteOptions] = useState<TipoSolicitante[]>([]);
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
   const [cpfInUse, setCpfInUse] = useState<boolean>(false);
+  const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,9 +46,20 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
         setSnackbar(new SnackbarState('Erro ao carregar os tipos de solicitante', 'error', true));
       }
     };
+    const loadEspecialidades = async () => {
+      try {
+        const response = await axios.get('/api/Especialidade');
+        setEspecialidades(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        console.log(error);
+        setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
+      }
+    };
 
     fetchTipoSolicitantes();
     fetchUF();
+    loadEspecialidades();
   }, [setSnackbar]);
 
    // Função para verificar se o CPF já existe
@@ -226,7 +239,22 @@ export const SolicitanteCreateForm = ({ onSave, onClose,setSnackbar  }: Solicita
           </select>
           {errors.tipoSolicitanteId && <p className="text-red-500 text-sm">{errors.tipoSolicitanteId?.message}</p>}
         </div>
-
+          {/* Especialidade */}
+          <div className="mb-4">
+            <label className="block text-gray-700">Especialidade *</label>
+            <select
+              {...register('especialidadeId', { required: 'A especialidade é obrigatória' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            >
+              <option value="">Selecione uma especialidade</option>
+              {especialidades.map((especialidade) => (
+                <option key={especialidade.id} value={especialidade.id}>
+                  {especialidade.descricao}
+                </option>
+              ))}
+            </select>
+            {errors.especialidadeId && <p className="text-red-500 text-sm">{errors.especialidadeId?.message}</p>}
+          </div>
         {/* Botões de ação */}
         <div className="flex justify-end">
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
