@@ -11,12 +11,13 @@ type User = {
   senha: string;
   token: string;
   permissions: string[];
+  unidadeId: string;
 };
 
 // Define o tipo do contexto de autenticação
 type AuthContextType = {
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, unidadeId:string) => Promise<void>;
   logout: () => void;
   userCan: (permissions: string[]) => boolean;
   loading: boolean;
@@ -44,6 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         senha: '', // Não há necessidade de armazenar a senha, isso deve ser tratado no backend
         token: savedToken,
         permissions: savedPermissions,
+        unidadeId: savedUser.unidadeId,
       };
         // Atualiza o estado do usuário
         setUser(user);
@@ -58,13 +60,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Função de login
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, unidadeId: string) => {
     try {
       const { data } = await axios.post('/api/Usuarios/authenticate', {
         Nome: username,
         Senha: password,
         token: '',
-        permissions:[]
+        permissions:[],
+        unidadeId
       });
 
       const user = {
@@ -73,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         senha: '', // Não salve a senha por questões de segurança, coloque apenas se for necessário
         token: data.token,
         permissions: data.permissions,
+        unidadeId: data.unidadeId,
       };
 
       // Salve o token em um cookie
@@ -80,6 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);
       localStorage.setItem('permissions', JSON.stringify(data.permissions));
+      localStorage.setItem('unidadeId', JSON.stringify(data.unidadeId));
       setUser(user); // Armazena o usuário autenticado
     } catch (error) {
       console.error('Erro no login', error);
@@ -92,6 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('permissions');
+    localStorage.removeItem('unidadeId');
 
     deleteCookie('token'); 
 
