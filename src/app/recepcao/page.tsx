@@ -27,7 +27,6 @@ export default function RecepcaoList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
-  // Função para carregar os dados
   const loadItems = useCallback(async () => {
     try {
       const response = await axios.get('/api/Recepcao');
@@ -40,16 +39,13 @@ export default function RecepcaoList() {
   }, []);
 
   const hideSnackbar = () => {
-    setSnackbar((prev) => {
-      const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
-      return newSnackbarState;
-    });
+    setSnackbar((prev) => new SnackbarState(prev.message, prev.type, false));
   };
+
   useEffect(() => {
     loadItems();
   }, [loadItems]);
 
-  // Controle do Snackbar
   useEffect(() => {
     if (snackbar.show) {
       const interval = setInterval(() => {
@@ -57,8 +53,7 @@ export default function RecepcaoList() {
       }, 50);
 
       const timer = setTimeout(() => {
-        snackbar.hideSnackbar();
-        setSnackbar(new SnackbarState());
+        hideSnackbar();
         setProgress(100);
       }, 5000);
 
@@ -133,166 +128,137 @@ export default function RecepcaoList() {
   return (
     <div className="flex h-screen bg-gray-100">
       <Menu />
-      <div className="container mx-auto p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Recepção</h1>
-          <button
-            onClick={handleCreate}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
-          >
-            Nova Recepção
-          </button>
-        </div>
-
-        <div className="mb-4 relative">
-          <input
-            type="text"
-            placeholder="Buscar"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border border-gray-300 rounded-lg py-2 px-4 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <span className="absolute right-4 top-2.5 text-gray-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+      <div className="flex-1 pt-4">
+        <div className="container mx-auto px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">Recepção</h1>
+            <button
+              onClick={handleCreate}
+              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
             >
-              <path
-                fillRule="evenodd"
-                d="M12.9 14.32a8 8 0 111.42-1.42l4.28 4.29a1 1 0 11-1.42 1.42l-4.28-4.29zM8 14a6 6 0 100-12 6 6 0 000 12z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </span>
-        </div>
+              Nova Recepção
+            </button>
+          </div>
 
-        <table className="min-w-full bg-white border border-gray-300 rounded-lg">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Nome Recepção</th>
-              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map((item) => (
-              <tr key={item.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{item.nomeRecepcao}</td>
-                <td className="py-3 px-6 text-left relative dropdown-actions">
-                  <button
-                    onClick={() => toggleDropdown(item.id!)}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded-lg shadow-sm transition-all duration-200"
-                  >
-                    Ações
-                  </button>
-                  {dropdownVisible[item.id!] && (
-                    <div className="absolute mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
-                      <ul className="py-1">
-                        <li
-                          className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleEdit(item)}
-                        >
-                          Editar
-                        </li>
-                        <li
-                          className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => openDeleteConfirm(item.id!)}
-                        >
-                          Excluir
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                </td>
+          <div className="mb-4 relative">
+            <input
+              type="text"
+              placeholder="Buscar"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border border-gray-300 rounded-lg py-2 px-4 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <span className="absolute right-4 top-2.5 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </span>
+          </div>
+
+          <table className="min-w-full bg-white border border-gray-300 rounded-lg">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Nome Recepção</th>
+                <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentItems.map((item) => (
+                <tr key={item.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
+                  <td className="py-3 px-6 text-left text-sm text-gray-800">{item.nomeRecepcao}</td>
+                  <td className="py-3 px-6 text-left relative dropdown-actions">
+                    <button
+                      onClick={() => toggleDropdown(item.id!)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded-lg shadow-sm transition-all duration-200"
+                    >
+                      Ações
+                    </button>
+                    {dropdownVisible[item.id!] && (
+                      <div className="absolute mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
+                        <ul className="py-1">
+                          <li
+                            className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
+                            onClick={() => handleEdit(item)}
+                          >
+                            Editar
+                          </li>
+                          <li
+                            className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
+                            onClick={() => openDeleteConfirm(item.id!)}
+                          >
+                            Excluir
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-        <div className="flex justify-between mt-4">
-          <button
-            onClick={() => paginate(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex justify-between mt-4">
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Anterior
-          </button>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Anterior
+            </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+            <span className="text-gray-600">Página {currentPage}</span>
 
-          <button
-            onClick={() => paginate(currentPage + 1)}
-            disabled={currentPage === Math.ceil(filteredItems.length / recordsPerPage)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
-          >
-            Próxima
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 ml-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === Math.ceil(filteredItems.length / recordsPerPage)}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg flex items-center justify-center shadow-sm transition-all duration-200"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-        </div>
+              Próxima
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 011.414-1.414l4 4a1 1 010 1.414l-4 4a1 1 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
 
-        <Modal
-          isOpen={modalIsOpen}
-          onRequestClose={() => setModalIsOpen(false)}
-          className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full"
-          overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-        >
-          {isEditing ? (
-            <RecepcaoEditForm
-              recepcao={editingItem!}
-              onSave={handleSave}
-              onClose={() => setModalIsOpen(false)}
-              setSnackbar={setSnackbar}
-            />
-          ) : (
-            <RecepcaoCreateForm
-              onSave={handleSave}
-              onClose={() => setModalIsOpen(false)}
-              setSnackbar={setSnackbar}
-            />
+          <Modal
+            isOpen={modalIsOpen}
+            onRequestClose={() => setModalIsOpen(false)}
+            className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full"
+            overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+          >
+            {isEditing ? (
+              <RecepcaoEditForm
+                recepcao={editingItem!}
+                onSave={handleSave}
+                onClose={() => setModalIsOpen(false)}
+                setSnackbar={setSnackbar}
+              />
+            ) : (
+              <RecepcaoCreateForm
+                onSave={handleSave}
+                onClose={() => setModalIsOpen(false)}
+                setSnackbar={setSnackbar}
+              />
+            )}
+          </Modal>
+
+          <ConfirmationModal
+            isOpen={deleteConfirmOpen}
+            title="Confirmação de Exclusão"
+            message="Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita."
+            onConfirm={handleDelete}
+            onCancel={() => setDeleteConfirmOpen(false)}
+            confirmText="Excluir"
+            cancelText="Cancelar"
+          />
+
+          {snackbar.show && (
+            <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
           )}
-        </Modal>
-
-        <ConfirmationModal
-          isOpen={deleteConfirmOpen}
-          title="Confirmação de Exclusão"
-          message="Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita."
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteConfirmOpen(false)}
-          confirmText="Excluir"
-          cancelText="Cancelar"
-        />
-
-        {snackbar.show && (
-          <Snackbar message={snackbar.message} type={snackbar.type} progress={progress} onClose={hideSnackbar} />
-        )}
+        </div>
       </div>
     </div>
   );
