@@ -1,7 +1,7 @@
 //src/app/ClientAuthWrapper.tsx
 "use client"; // This is required for using hooks in Next.js 13
+import React, { useEffect} from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useAuth } from './auth'; // Adjust the path as needed
 
 export default function ClientAuthWrapper({ children }: { children: React.ReactNode }) {

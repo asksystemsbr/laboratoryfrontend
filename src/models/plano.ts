@@ -1,6 +1,6 @@
 // src/models/plano.ts
 export interface Plano {
-    id?: number;    
+    id: number;    
     descricao: string;
     tabelaPrecoId: number;
     convenioId: number;

@@ -103,7 +103,7 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
           .filter(plano => plano.convenioId === convenio.id && selectedPlanos[plano.id!])
           .map(plano => plano.id!)
       }));
-
+  
     onSave(selectedData);
   };
 

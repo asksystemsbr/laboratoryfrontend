@@ -1,4 +1,3 @@
-//src/app/recepcao/recepcaoedit.tsx
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -12,7 +11,6 @@ import InputMask from 'react-input-mask-next';
 import { Convenio } from '../../models/convenio';
 import { Plano } from '../../models/plano';
 import ConvenioPlanoSelector from './convenioplanoseletor';
-
 
 interface RecepcaoEditFormProps {
   recepcao: Recepcao;
@@ -44,6 +42,9 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     uf: ''
   });
   const [activeTab, setActiveTab] = useState('informacoes');
+  const [conveniosEPlanos, setConveniosEPlanos] = useState<ConvenioComPlanos[]>([]);
+
+  // Função para alterar a aba ativa (informações ou convênios e planos)
   const handleTabChange = async (tab: string) => {
     setActiveTab(tab);
     if (tab === 'conveniosPlanos') {
@@ -56,10 +57,8 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       }
     }
   };
-  
-  const [conveniosEPlanos, setConveniosEPlanos] = useState<ConvenioComPlanos[]>([]);
 
-  // Carrega os dados de UF e os convênios com planos ao montar o componente
+  // Carrega os dados de UF e convênios ao montar o componente
   useEffect(() => {
     const fetchUF = async () => {
       try {
@@ -71,19 +70,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       }
     };
 
-    const fetchConveniosEPlanos = async () => {
-      try {
-        const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcao.id}`);
-        console.log(response);
-        setConveniosEPlanos(response.data);
-      } catch (error) {
-        console.error("Erro ao buscar convênios e planos", error);
-        setSnackbar(new SnackbarState('Erro ao carregar os convênios e planos', 'error', true));
-      }
-    };
-
     fetchUF();
-    fetchConveniosEPlanos();
     setIsLoaded(true);
   }, [setSnackbar, recepcao.id]);
 
@@ -123,51 +110,10 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     }
   };
 
-  // Atualiza a seleção de convênios e seus planos
-  const handleConvenioChange = (convenioId: number | undefined) => {
-    if (convenioId === undefined) return;
-    
-    setConveniosEPlanos(prevConvenios =>
-      prevConvenios.map(convenio => {
-        if (convenio.id === convenioId) {
-          const novoSelecionado = !convenio.selecionado;
-          return {
-            ...convenio,
-            selecionado: novoSelecionado,
-            planos: convenio.planos ? convenio.planos.map(plano => ({
-              ...plano,
-              selecionado: novoSelecionado
-            })) : [] // Certifique-se de que 'planos' seja um array vazio se for undefined
-          };
-        }
-        return convenio;
-      })
-    );
-  };
-
-  // Atualiza a seleção de um plano específico
-  const handlePlanoChange = (convenioId: number | undefined, planoId: number | undefined) => {
-    if (convenioId === undefined || planoId === undefined) return;
-    setConveniosEPlanos(prevConvenios =>
-      prevConvenios.map(convenio => {
-        if (convenio.id === convenioId) {
-          const planosAtualizados = convenio.planos.map(plano =>
-            plano.id === planoId ? { ...plano, selecionado: !plano.selecionado } : plano
-          );
-          return {
-            ...convenio,
-            selecionado: planosAtualizados.every(plano => plano.selecionado),
-            planos: planosAtualizados
-          };
-        }
-        return convenio;
-      })
-    );
-  };
-
-  // Lógica para salvar os dados do formulário
+  // Lógica para salvar os dados da recepção
   const onSubmit = async (data: Recepcao) => {
     if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.uf) {
+      setSnackbar(new SnackbarState('Todos os campos de endereço são obrigatórios', 'error', true));
       return;
     }
 
@@ -180,10 +126,16 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       // Primeiro salva as informações da recepção
       await axios.put(`/api/Recepcao/${itemComEndereco.id}`, itemComEndereco);
 
-      // Em seguida, atualiza os convênios e planos
-      const planosSelecionados = conveniosEPlanos.filter(c => c.selecionado)
-        .flatMap(c => c.planos.filter(p => p.selecionado));
-      await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, planosSelecionados);
+      // Depois, atualiza os convênios e planos
+      const conveniosPlanosSelecionados = conveniosEPlanos
+        .filter(c => c.selecionado)
+        .flatMap(c => c.planos.filter(p => p.selecionado).map(p => ({
+          recepcaoId: itemComEndereco.id,
+          convenioId: c.id,
+          planoId: p.id
+        })));
+
+      await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, conveniosPlanosSelecionados);
 
       reset();
       onSave();
@@ -193,32 +145,39 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
     }
   };
 
-  const handleConveniosPlanosSave = (selectedData: { convenioId: number; planos: number[] }[]) => {
-    // Em vez de usar setValue, vamos atualizar o estado local
-    setConveniosEPlanos(prevConvenios => {
-      return prevConvenios.map(convenio => {
-        const selectedConvenio = selectedData.find(sd => sd.convenioId === convenio.id);
-        if (selectedConvenio) {
-          return {
-            ...convenio,
-            selecionado: true,
-            planos: convenio.planos.map(plano => ({
-              ...plano,
-              selecionado: selectedConvenio.planos.includes(plano.id!)
-            }))
-          };
-        }
+  // Função que atualiza o estado local de convênios e planos
+  const handleConveniosPlanosSave = async (selectedData: { convenioId: number; planos: number[] }[]) => {
+    const updatedConveniosEPlanos = conveniosEPlanos.map(convenio => {
+      const selectedConvenio = selectedData.find(sd => sd.convenioId === convenio.id);
+      if (selectedConvenio) {
         return {
           ...convenio,
-          selecionado: false,
-          planos: convenio.planos.map(plano => ({ ...plano, selecionado: false }))
+          selecionado: true,
+          planos: convenio.planos.map(plano => ({
+            ...plano,
+            selecionado: selectedConvenio.planos.includes(plano.id!)
+          }))
         };
-      });
+      }
+      return {
+        ...convenio,
+        selecionado: false,
+        planos: convenio.planos.map(plano => ({ ...plano, selecionado: false }))
+      };
     });
+    setConveniosEPlanos(updatedConveniosEPlanos);
+  
+    try {
+      await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${recepcao.id}`, selectedData);
+      setSnackbar(new SnackbarState('Convênios e planos atualizados com sucesso!', 'success', true));
+    } catch (error) {
+      console.error('Erro ao atualizar convênios e planos:', error);
+      setSnackbar(new SnackbarState('Erro ao atualizar convênios e planos!', 'error', true));
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-6">
       <h2 className="text-xl font-bold mb-4">Editar Recepção</h2>
 
       <div className="flex border-b">
@@ -237,7 +196,6 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
           Convênios e Planos
         </button>
       </div>
-
 
       {activeTab === 'informacoes' && (
         <>
@@ -339,62 +297,16 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       )}
 
       {activeTab === 'conveniosPlanos' && (
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">Convênios e Planos</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Se houver convênios */}
-            {conveniosEPlanos.length > 0 ? (
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-2">Convênios</h4>
-                {conveniosEPlanos.map((convenio) => (
-                  <div key={convenio.id ?? `convenio-${Math.random()}`} className="flex items-center mb-2">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-5 w-5 text-blue-600 mr-2"
-                      checked={convenio.selecionado}
-                      onChange={() => handleConvenioChange(convenio.id)}
-                    />
-                    <span>{convenio.descricao}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>Nenhum convênio disponível.</p>
-            )}
-
-            {/* Se houver planos para os convênios */}
-            <div className="border rounded p-4">
-              <h4 className="font-semibold mb-2">Planos</h4>
-              {conveniosEPlanos.some(c => c.planos && c.planos.length > 0) ? (
-                conveniosEPlanos.flatMap((convenio) =>
-                  convenio.planos && convenio.planos.length > 0 ? (
-                    convenio.planos.map((plano) => (
-                      <div key={plano.id ?? `plano-${Math.random()}`} className="flex items-center mb-2">
-                        <input
-                          type="checkbox"
-                          className="form-checkbox h-5 w-5 text-blue-600 mr-2"
-                          checked={plano.selecionado}
-                          onChange={() => handlePlanoChange(convenio.id, plano.id)}
-                        />
-                        <span>{plano.descricao}</span>
-                      </div>
-                    ))
-                  ) : null
-                )
-              ) : (
-                <p>Nenhum plano disponível para os convênios selecionados.</p>
-              )}
-            </div>
-          </div>
+        <div className="w-full">
+          <h3 className="text-lg font-semibold mb-4">Convênios e Planos</h3>
+          <ConvenioPlanoSelector
+            onSave={handleConveniosPlanosSave}
+            recepcaoId={recepcao.id}
+            setSnackbar={setSnackbar}
+          />
         </div>
       )}
-      
-      <ConvenioPlanoSelector 
-        onSave={handleConveniosPlanosSave}
-        recepcaoId={recepcao.id} setSnackbar={function (): void {
-          throw new Error('Function not implemented.');
-        } } />
-       
+
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
           Cancelar
