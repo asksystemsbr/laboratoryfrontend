@@ -130,7 +130,13 @@ export default function CadastroMenu() {
         label: 'Tabela Preço',
         icon: 'queue',
         route: '/tabelaPreco',
-      },                                        
+      },    
+      {
+        permissions: ['formaPagamento.Read', 'formaPagamento.Write'],
+        label: 'Formas de Pagamento',
+        icon: 'queue',
+        route: '/formaPagamento',
+      },                                
   ];
 
   // Renderiza os itens de menu com base nas permissões

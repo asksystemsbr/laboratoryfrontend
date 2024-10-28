@@ -263,8 +263,19 @@ export default function Menu() {
                 </ul>
               )} } */}
             </li>
-
-
+            <li>
+              <button
+                onClick={() => {
+                console.log("Abrindo/fechando Orçamentos");
+                //setIsCadastrosOpen(!isCadastrosOpen);
+                goToPage('/orcamentosMenu');
+                }}
+                className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
+                >
+                <span className="material-icons">shopping_cart</span>
+                <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Orçamentos</span>
+              </button>
+            </li>
             <li>
             <button
                 onClick={() => {
