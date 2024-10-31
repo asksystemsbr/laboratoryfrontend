@@ -21,6 +21,7 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
     try {
       const response = await axios.get('/api/Convenio');
       setConvenios(response.data);
+      console.log("Convenios carregados:", response.data); // Log convenios carregados
     } catch (error) {
       console.error('Erro ao carregar convênios:', error);
       setSnackbar(new SnackbarState('Erro ao carregar convênios!', 'error', true));
@@ -31,6 +32,7 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
     try {
       const response = await axios.get('/api/Plano');
       setPlanos(response.data);
+      console.log("Planos carregados:", response.data); // Log planos carregados
     } catch (error) {
       console.error('Erro ao carregar planos:', error);
       setSnackbar(new SnackbarState('Erro ao carregar planos!', 'error', true));
@@ -42,19 +44,16 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
       try {
         const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcaoId}`);
         const selectedData = response.data;
-        
+        console.log("Dados selecionados carregados:", selectedData); // Log dados selecionados
+
         const newSelectedConvenios: { [key: number]: boolean } = {};
         const newSelectedPlanos: { [key: number]: boolean } = {};
 
         selectedData.forEach((item: { convenioId: number; planos: number[] }) => {
           newSelectedConvenios[item.convenioId] = true;
-          if (Array.isArray(item.planos) && item.planos.length > 0) {
-            item.planos.forEach(planoId => {
-              newSelectedPlanos[planoId] = true;
-            });
-          } else {
-            console.warn(`Invalid or empty planos for convenioId: ${item.convenioId}`);
-          }
+          item.planos.forEach(planoId => {
+            newSelectedPlanos[planoId] = true;
+          });
         });
 
         setSelectedConvenios(newSelectedConvenios);
@@ -77,33 +76,52 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
   }, [loadConvenios, loadPlanos, loadSelectedData]);
 
   const handleConvenioChange = (convenioId: number) => {
-    setSelectedConvenios(prev => ({ ...prev, [convenioId]: !prev[convenioId] }));
-    
-    // Selecionar/deselecionar todos os planos deste convênio
+    const isConvenioSelected = !selectedConvenios[convenioId];
+    console.log(`Convenio ${convenioId} selecionado:`, isConvenioSelected); // Log mudança de seleção de convênio
+
+    setSelectedConvenios(prev => ({ ...prev, [convenioId]: isConvenioSelected }));
+
     const convenioPlanos = planos.filter(plano => plano.convenioId === convenioId);
     setSelectedPlanos(prev => {
       const newState = { ...prev };
       convenioPlanos.forEach(plano => {
-        newState[plano.id!] = !selectedConvenios[convenioId];
+        newState[plano.id!] = isConvenioSelected;
+        console.log(`Plano ${plano.id} de Convenio ${convenioId} definido para:`, isConvenioSelected); // Log mudança de seleção de planos
       });
       return newState;
     });
   };
 
-  const handlePlanoChange = (planoId: number) => {
+  const handlePlanoChange = (planoId: number, convenioId: number) => {
     setSelectedPlanos(prev => ({ ...prev, [planoId]: !prev[planoId] }));
+    console.log(`Plano ${planoId} do Convenio ${convenioId} selecionado:`, !selectedPlanos[planoId]); // Log mudança de seleção de plano individual
+
+    const convenioPlanos = planos.filter(plano => plano.convenioId === convenioId);
+    const allPlanosSelected = convenioPlanos.every(plano => selectedPlanos[plano.id!] || plano.id === planoId);
+
+    setSelectedConvenios(prev => ({ ...prev, [convenioId]: allPlanosSelected }));
+    console.log(`Convenio ${convenioId} selecionado automaticamente:`, allPlanosSelected); // Log atualização automática do convênio
   };
 
   const handleSave = () => {
-    const selectedData = convenios
-      .filter(convenio => selectedConvenios[convenio.id!])
-      .map(convenio => ({
-        convenioId: convenio.id!,
-        planos: planos
-          .filter(plano => plano.convenioId === convenio.id && selectedPlanos[plano.id!])
-          .map(plano => plano.id!)
-      }));
-  
+    const selectedData = convenios.reduce((acc, convenio) => {
+      const convenioPlanos = planos.filter(plano => plano.convenioId === convenio.id);
+      const planosSelecionados = convenioPlanos
+        .filter(plano => selectedPlanos[plano.id!])
+        .map(plano => plano.id!);
+
+      if (planosSelecionados.length === convenioPlanos.length) {
+        acc.push({ convenioId: convenio.id!, planos: [] });
+      } else if (planosSelecionados.length > 0) {
+        acc.push({ convenioId: convenio.id!, planos: planosSelecionados });
+      }
+
+      console.log(`Convênio ${convenio.id} preparado para salvar:`, { convenioId: convenio.id, planos: planosSelecionados.length === convenioPlanos.length ? [] : planosSelecionados }); // Log de dados prontos para salvar
+
+      return acc;
+    }, [] as { convenioId: number; planos: number[] }[]);
+
+    console.log("Dados formatados para enviar à API:", selectedData); // Log dos dados finais antes do envio
     onSave(selectedData);
   };
 
@@ -135,13 +153,12 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
                     type="checkbox"
                     id={`plano-${plano.id}`}
                     checked={selectedPlanos[plano.id!] || false}
-                    onChange={() => handlePlanoChange(plano.id!)}
+                    onChange={() => handlePlanoChange(plano.id!, convenio.id!)}
                     className="mr-2"
                   />
                   <label htmlFor={`plano-${plano.id}`}>{plano.descricao}</label>
                 </div>
-              ))
-            }
+              ))}
           </div>
         </div>
       ))}

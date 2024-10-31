@@ -116,27 +116,25 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       setSnackbar(new SnackbarState('Todos os campos de endereço são obrigatórios', 'error', true));
       return;
     }
-
+  
     const itemComEndereco = {
       ...data,
       endereco,
     };
-
+  
     try {
-      // Primeiro salva as informações da recepção
+      // Salva as informações da recepção
       await axios.put(`/api/Recepcao/${itemComEndereco.id}`, itemComEndereco);
-
-      // Depois, atualiza os convênios e planos
-      const conveniosPlanosSelecionados = conveniosEPlanos
-        .filter(c => c.selecionado)
-        .flatMap(c => c.planos.filter(p => p.selecionado).map(p => ({
-          recepcaoId: itemComEndereco.id,
-          convenioId: c.id,
-          planoId: p.id
-        })));
-
+  
+      // Salva os convênios e planos
+      const conveniosPlanosSelecionados = conveniosEPlanos.map(c => ({
+        recepcaoId: itemComEndereco.id,
+        convenioId: c.id,
+        planos: c.planos.filter(p => p.selecionado).map(p => p.id)
+      }));
+  
       await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, conveniosPlanosSelecionados);
-
+  
       reset();
       onSave();
     } catch (error) {
@@ -144,6 +142,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true));
     }
   };
+  
 
   // Função que atualiza o estado local de convênios e planos
   const handleConveniosPlanosSave = async (selectedData: { convenioId: number; planos: number[] }[]) => {
