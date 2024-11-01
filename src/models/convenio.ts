@@ -1,6 +1,7 @@
 // src/models/convenio.ts
 export interface Convenio {
-    id: number;    
+    id: number; 
+    convenioId: number;   
     descricao: string;
     enderecoId: number;
 

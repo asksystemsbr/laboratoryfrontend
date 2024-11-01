@@ -148,7 +148,7 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
   // Função que atualiza o estado local de convênios e planos
   const handleConveniosPlanosSave = async (selectedData: { convenioId: number; planos: number[] }[]) => {
     const updatedConveniosEPlanos = conveniosEPlanos.map(convenio => {
-      const selectedConvenio = selectedData.find(sd => sd.convenioId === convenio.id);
+      const selectedConvenio = selectedData.find(sd => sd.convenioId  === convenio.convenioId);
       if (selectedConvenio) {
         return {
           ...convenio,
