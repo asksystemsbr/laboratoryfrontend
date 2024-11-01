@@ -47,4 +47,8 @@ export interface Exame {
     diasRealizacaoApoio?: string;
     meioColetaSimilar?: string;
     materialColetaSimilar?: string;
+
+    //orçamento/pedido
+    preco: number;
+    dataColeta: Date | string;
   }

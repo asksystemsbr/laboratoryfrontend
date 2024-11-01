@@ -14,3 +14,17 @@ export const validateDate = (value: string | Date | undefined): true | string =>
     return true;
   };
   
+  export const validateDateEmpty = (value: string | Date | null|  undefined): true | string => {
+    if (!value || typeof value !== 'string') {
+      return true;
+    }
+    
+    const date = new Date(value);
+    const year = date.getFullYear();
+
+    if (isNaN(date.getTime()) || year < 1900 || year > 2999) {
+        return 'Data deve estar entre 1900 e 2999';
+    }
+
+    return true;
+  };

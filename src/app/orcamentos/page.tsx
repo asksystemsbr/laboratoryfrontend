@@ -9,19 +9,21 @@ import { OrcamentoCabecalho } from '../../models/orcamentoCabecalho';
 import { SnackbarState } from '../../models/snackbarState';
 import Menu from '../../components/menu';
 import ConfirmationModal from '../../components/confirmationModal';
+import { formatDateTimeForGrid } from '@/utils/formatDateForInput';
+import { formatCurrencyBRL } from '@/utils/numbers';
 
 Modal.setAppElement('#__next');
 
 export default function EspecialidadeList() {
-  const [especialidades, setEspecialidades] = useState<OrcamentoCabecalho[]>([]);
+  const [orcamentos, setorcamentos] = useState<OrcamentoCabecalho[]>([]);
   const [filtered, setFiltered] = useState<OrcamentoCabecalho[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingEspecialidade, setEditingEspecialidade] = useState<OrcamentoCabecalho | null>(null);
+  const [editingOrcamento, seteditingOrcamento] = useState<OrcamentoCabecalho | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [especialidadeToDelete, setEspecialidadeToDelete] = useState<number | null>(null);
+  const [orcamentoToDelete, setorcamentoToDelete] = useState<number | null>(null);
   const [progress, setProgress] = useState(100); // Barra de progresso para o snackbar
   const recordsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,7 +33,7 @@ export default function EspecialidadeList() {
   const loadOrcamentos = async () => {
     try {
       const response = await axios.get('/api/Orcamento');
-      setEspecialidades(response.data);
+      setorcamentos(response.data);
       setFiltered(response.data);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
@@ -72,17 +74,17 @@ export default function EspecialidadeList() {
 
   const applySearch = useCallback(() => {
     const searchTermLower = searchTerm.toLowerCase();
-    const filteredEspecialidades = especialidades.filter((especialidade) =>
-      Object.values(especialidade).some((value) =>
+    const filteredEspecialidades = orcamentos.filter((orcamento) =>
+      Object.values(orcamento).some((value) =>
         String(value).toLowerCase().includes(searchTermLower)
       )
     );
     setFiltered(filteredEspecialidades);
-  }, [searchTerm, especialidades]);
+  }, [searchTerm, orcamentos]);
 
   useEffect(() => {
     applySearch();
-  }, [searchTerm, especialidades, applySearch]);
+  }, [searchTerm, orcamentos, applySearch]);
 
   const handleSave = () => {
     setModalIsOpen(false);
@@ -91,29 +93,29 @@ export default function EspecialidadeList() {
   };
 
   const handleDelete = async () => {
-    if (especialidadeToDelete !== null) {
+    if (orcamentoToDelete !== null) {
       try {
-        await axios.delete(`/api/Especialidade/${especialidadeToDelete}`);
-        setSnackbar(new SnackbarState('Especialidade excluída com sucesso!', 'success', true));
+        await axios.delete(`/api/Orcamento/${orcamentoToDelete}`);
+        setSnackbar(new SnackbarState('Orcamento excluído com sucesso!', 'success', true));
         setDeleteConfirmOpen(false);
         loadOrcamentos();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao excluir especialidade!', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao excluir orcamento!', 'error', true));
       }
     }
   };
 
   const handleEdit = (orcamentoCabecalho: OrcamentoCabecalho) => {
-    setEditingEspecialidade(orcamentoCabecalho);
+    seteditingOrcamento(orcamentoCabecalho);
     setIsEditing(true);
     setModalIsOpen(true);
     setDropdownVisible({});
   };
 
-  const handleNewEspecialidade = () => {
+  const handleNewOrcamento = () => {
     setIsEditing(false);
-    setEditingEspecialidade(null);
+    seteditingOrcamento(null);
     setModalIsOpen(true);
   };
 
@@ -125,14 +127,14 @@ export default function EspecialidadeList() {
   };
 
   const handleDeleteConfirmation = (id: number) => {
-    setEspecialidadeToDelete(id);
+    setorcamentoToDelete(id);
     setDeleteConfirmOpen(true);
     setDropdownVisible({});
   };
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentEspecialidades = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentOrcamentos = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -155,7 +157,7 @@ export default function EspecialidadeList() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Orçamentos</h1>
           <button
-            onClick={handleNewEspecialidade}
+            onClick={handleNewOrcamento}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
           >
             Novo Orçamento
@@ -186,33 +188,39 @@ export default function EspecialidadeList() {
         <table className="min-w-full bg-white border border-gray-300 rounded-lg">
           <thead>
             <tr className="bg-gray-50">
-              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Descrição</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Nº</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Paciente</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Data</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Total</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {currentEspecialidades.map((especialidade) => (
-              <tr key={especialidade.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{especialidade.id}</td>
+            {currentOrcamentos.map((orcamento) => (
+              <tr key={orcamento.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{orcamento.id}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{orcamento.nomePaciente}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatDateTimeForGrid(orcamento.dataHora)}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatCurrencyBRL(orcamento.total?? 0)}</td>
                 <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
-                    onClick={() => toggleDropdown(especialidade.id!)}
+                    onClick={() => toggleDropdown(orcamento.id!)}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded-lg shadow-sm transition-all duration-200"
                   >
                     Ações
                   </button>
-                  {dropdownVisible[especialidade.id!] && (
+                  {dropdownVisible[orcamento.id!] && (
                     <div className="absolute mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
                       <ul className="py-1">
                         <li
                           className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleEdit(especialidade)}
+                          onClick={() => handleEdit(orcamento)}
                         >
                           Editar
                         </li>
                         <li
                           className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleDeleteConfirmation(especialidade.id!)}
+                          onClick={() => handleDeleteConfirmation(orcamento.id!)}
                         >
                           Excluir
                         </li>
@@ -261,7 +269,7 @@ export default function EspecialidadeList() {
         >
           {isEditing ? (
             <OrcamentoEditForm
-              orcamentoCabecalho={editingEspecialidade!}
+              orcamentoCabecalhoData={editingOrcamento!}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
