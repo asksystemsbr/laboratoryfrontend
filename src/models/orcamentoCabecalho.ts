@@ -3,7 +3,7 @@ export interface OrcamentoCabecalho {
     id?: number;
     pacienteId?: number;
     convenioId?: number;
-    dataHora?: Date;
+    dataHora?: Date | string;
     nomePaciente?: string;
     status?: string;
     solicitanteId?: number;

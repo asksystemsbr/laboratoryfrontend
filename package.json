@@ -9,14 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.1.5",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
     "cookies-next": "^4.2.1",
     "date-fns": "^4.1.0",
     "next": "^14.2.13",
     "react": "^18.3.1",
-    "react-dom": "^18",
-    "react-hook-form": "^7.53.0",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.53.1",
     "react-input-mask": "^2.0.4",
     "react-input-mask-next": "^3.0.0-alpha.12",
     "react-modal": "^3.16.1",
