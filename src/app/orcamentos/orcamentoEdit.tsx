@@ -6,9 +6,8 @@ import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import { SnackbarState } from '@/models/snackbarState';
 import OrcamentoClienteForm from './forms/OrcamentoClienteForm';
 import OrcamentoConvenioForm from './forms/OrcamentoConvenioForm';
-import { validateDate } from '@/utils/validateDate';
+import { validateDateEmpty } from '@/utils/validateDate';
 import OrcamentoExameForm from './forms/OrcamentoExameForm';
-import { Exame } from '@/models/exame';
 import OrcamentoResumoValoresForm from './forms/OrcamentoResumoValores';
 import OrcamentoPagamentosForm from './forms/OrcamentoPagamentosForm';
 import { useAuth } from '@/app/auth';
@@ -38,6 +37,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
   const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
   const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
+  const [loading, setLoading] = useState(true);
 
     // Função para buscar o orçamento completo
     useEffect(() => {
@@ -55,7 +55,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           const novoSubtotal = orcamentoDetalhe.reduce((acc: number, item: OrcamentoDetalhe) => acc + (item.valor || 0), 0);
           setSubtotal(novoSubtotal);
           setTotal(novoSubtotal - desconto);
-  
+          setLoading(false);
         } catch (error) {
           console.error('Erro ao buscar o orçamento completo:', error);
           setSnackbar(new SnackbarState('Erro ao carregar o orçamento!', 'error', true));
@@ -84,10 +84,10 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setPlanoId(id);
   };
 
-  const handleExameSelected = (exames: Exame[],observacoes: string |null, medicamento: string | null) => {
+  const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
 
     // Calcular subtotal com base nos preços dos exames
-    const novoSubtotal = exames.reduce((acc, exame) => acc + (exame.preco || 0), 0);
+    const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
     setSubtotal(novoSubtotal);
 
     // Calcular total com base no subtotal e desconto
@@ -96,10 +96,12 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setValue('observacoes', observacoes || '');
     setValue('medicamento', medicamento || '');
 
-    const detalhes = exames.map((exame) => ({
-      exameId: exame.id,
-      valor: exame.preco,
-      dataColeta: new Date() // ou alguma outra data relacionada
+    const detalhes = detalhesOrcamento.map((detalhe) => ({
+      exameId: detalhe.exameId,
+      valor: detalhe.valor,
+      dataColeta: new Date(),
+      orcamentoId:orcamentoCabecalhoData.id,
+      id: detalhe.id
     }));
 
     setOrcamentoDetalhes(detalhes);
@@ -109,9 +111,10 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     console.log(pagamentos);
     // Criar lista de `OrcamentoPagamento` a partir dos pagamentos selecionados
     const pagamentosData = pagamentos.map((pagamento) => ({
-      pagamentoId: pagamento.id,
+      pagamentoId: pagamento.pagamentoId,
       valor: pagamento.valor,
-      orcamentoId: orcamentoCabecalhoData.id
+      orcamentoId: orcamentoCabecalhoData.id,
+      id: 0
     }));
 
     setOrcamentoPagamentos(pagamentosData);
@@ -129,6 +132,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
     const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
       ...detalhe,
+      orcamentoId : orcamentoCabecalhoData.id,
+      id:detalhe.id
     }));
 
     // Preparar o objeto final que contém cabeçalho, detalhes e pagamentos
@@ -154,10 +159,13 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
       <form onSubmit={handleSubmit(onSubmit)} className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+      {!loading && (
         <OrcamentoClienteForm 
           onClienteSelected={handleClienteSelected} 
           nomePaciente={orcamentoCabecalhoData.nomePaciente || ''}
-          pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  />
+          pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
+      )}
+      {!loading && (     
         <OrcamentoConvenioForm 
             onSolicitanteSelected={handleSolicitanteSelected} 
             onConvenioSelected={handleConvenioSelected} 
@@ -166,12 +174,13 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
             convenioId= {orcamentoCabecalhoData.convenioId || 0}
             planoId= {orcamentoCabecalhoData.planoId || 0}
             />
+      )}
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="basis-2/12">
             <input
               type="date"
               {...register('validadeCartao',{
-                validate: validateDate
+                validate: validateDateEmpty
               }
               )}
               className="border rounded w-full py-1 px-2 text-sm"
@@ -203,16 +212,26 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
             />
           </div>                
         </div>
-        <OrcamentoExameForm 
-            onExameSelected={handleExameSelected} 
-            planoId={planoId} 
-            orcamentoDetalhes={orcamentoDetalhes}
-            medicamentosParam={orcamentoCabecalhoData.medicamento || ''} 
-            observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
-            />   
+        {!loading && (
+          <OrcamentoExameForm 
+              onExameSelected={handleExameSelected} 
+              planoId={planoId} 
+              orcamentoDetalhes={orcamentoDetalhes}
+              medicamentosParam={orcamentoCabecalhoData.medicamento || ''} 
+              observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
+              orcamentoCabecalhoData={orcamentoCabecalhoData}
+              />   
+          )}
         <div className="grid grid-cols-2 gap-20 mt-1">
-            <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  orcamentoPagamentos={orcamentoPagamentos}/>
+        {!loading && (
+            <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
+                orcamentoPagamentos={orcamentoPagamentos} 
+                orcamentoCabecalhoData={orcamentoCabecalhoData}
+                />
+        )}
+        {!loading && (
             <OrcamentoResumoValoresForm subtotal={subtotal} desconto={desconto} total={total}/>           
+        )}
           </div>
         <div className="buttons text-center mt-8">
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
@@ -220,6 +239,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           </button>
           <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
             Salvar
+          </button>
+          <button type="button" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+            Transformar em Pedido
           </button>
         </div>
       </form>

@@ -37,7 +37,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
         try {
           const response = await axios.get(`/api/cliente/${pacienteIdData}`);
           const cliente = response.data;
-          preencherDadosCliente(cliente);
+          preencherDadosCliente(cliente,cliente.nome);
         } catch (error) {
           console.error('Erro ao buscar dados do paciente:', error);
           setClienteData(null);
@@ -54,7 +54,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       if (!cpf || cpf.length < 11) return;
       const response = await axios.get(`/api/Cliente/clienteByCPF/${cpf}`);
       const cliente = response.data;
-      preencherDadosCliente(cliente);
+      preencherDadosCliente(cliente,'');
     } catch (error) {
       console.error('Cliente não encontrado', error);
       setClienteData(null);
@@ -67,7 +67,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       if (!rg || rg.length < 9) return;
       const response = await axios.get(`/api/Cliente/clienteByRG/${rg}`);
       const cliente = response.data;
-      preencherDadosCliente(cliente);
+      preencherDadosCliente(cliente,'');
     } catch (error) {
       console.error('Cliente não encontrado', error);
       setClienteData(null);
@@ -87,8 +87,8 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     }
   };
 
-  const preencherDadosCliente = async (cliente: Cliente) => {
-    if(nomePaciente != null && nomePaciente !== ''){
+  const preencherDadosCliente = async (cliente: Cliente, nome: string) => {
+    if(nomePaciente != null && nomePaciente !== '' && nome !== ''){
       cliente.nome = nomePaciente
     }
     setClienteData(cliente);

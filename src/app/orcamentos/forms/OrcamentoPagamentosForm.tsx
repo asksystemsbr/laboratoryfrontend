@@ -5,19 +5,22 @@ import { PlusIcon,TrashIcon } from '@heroicons/react/24/solid';
 import { formatDecimal } from '@/utils/numbers';
 import { FormaPagamento } from '@/models/formaPagamento';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
+import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 
 
 interface PagamentosFormProps {
   onPagamentosSelected: (exames: FormaPagamento[]) => void;
-  orcamentoPagamentos?: OrcamentoPagamento[]; // Lista de pagamentos no modo de edição
+  orcamentoPagamentos?: OrcamentoPagamento[];
+  orcamentoCabecalhoData?: OrcamentoCabecalho; // Lista de pagamentos no modo de edição
 }
 
-const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelected,orcamentoPagamentos =[]  }) => {  
+const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelected,orcamentoPagamentos =[],orcamentoCabecalhoData  }) => {  
   const [formasPagamentos, setformasPagamentos] = useState<FormaPagamento[]>([]);
   const [formaPagamentoData, setformaPagamentoData] = useState<FormaPagamento | null>(null);
   const [valorPagamento, setvalorPagamento] = useState(0);  
   const [isLoaded, setIsLoaded] = useState(false);
   const [addedFormaPagamento, setaddedFormaPagamento] = useState<FormaPagamento[]>([]);
+  const [isComponentMounted, setIsComponentMounted] = useState(false);
 
   useEffect(() => {
     const loadFormasPagamentos = async () => {
@@ -34,10 +37,10 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
   },[]);
 
   useEffect(() => {
-   
+    if (isComponentMounted) return;
     // Carregar exames do orçamento (modo de edição) ao iniciar
     const loadOrcamentoPagamentos = async () => {          
-      if (orcamentoPagamentos.length === 0  || addedFormaPagamento.length > 0) return;
+      if ( !orcamentoCabecalhoData?.id || orcamentoPagamentos.length === 0) return;
 
       try {
         // Obtém o `OrcamentoId` e chama a API para obter os exames associados
@@ -53,12 +56,14 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
           return {
             ...formaPagamento,
             valor: pagamentoDetalhe ? pagamentoDetalhe.valor : 0,
-            id: pagamentoDetalhe ? pagamentoDetalhe.id : formaPagamento.id
+            id: pagamentoDetalhe ? pagamentoDetalhe.id : formaPagamento.id,
+            pagamentoId: formaPagamento.id
           };
         });
         // Define a lista de exames já adicionados a partir dos exames do orçamento
         setaddedFormaPagamento(pagamentosComDetalhes);
         onPagamentosSelected(pagamentosComDetalhes);
+        setIsComponentMounted(true);
 
       } catch (error) {
         console.error('Erro ao carregar pagamentos do orçamento:', error);
@@ -80,12 +85,13 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
     }
   }, [isLoaded]);
 
-  const adicionarFormaPagamento = async () => {
+  const adicionarFormaPagamento = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (!formaPagamentoData ) return;
 
     try {
 
-      const pagamentoComDetalhes = { ...formaPagamentoData, valor:valorPagamento };
+      const pagamentoComDetalhes = { ...formaPagamentoData, valor:valorPagamento,pagamentoId:formaPagamentoData.id };
       setaddedFormaPagamento([...addedFormaPagamento, pagamentoComDetalhes]);
 
       onPagamentosSelected([...addedFormaPagamento, pagamentoComDetalhes]);

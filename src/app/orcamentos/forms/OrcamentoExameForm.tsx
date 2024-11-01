@@ -6,17 +6,25 @@ import { PlusIcon,TrashIcon } from '@heroicons/react/24/solid';
 import { formatDecimal } from '@/utils/numbers';
 import { formatDateForInput } from '@/utils/formatDateForInput';
 import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
+import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 
 
 interface ExameFormProps {
-  onExameSelected: (exames: Exame[],observacoes: string |null, medicamento: string | null) => void;
+  onExameSelected: (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => void;
   planoId: number | null;
   orcamentoDetalhes?: OrcamentoDetalhe[]; 
   medicamentosParam?: string; 
-  observacoesParam?: string; 
+  observacoesParam?: string;   
+  orcamentoCabecalhoData?: OrcamentoCabecalho;
 }
 
-const OrcamentoExameForm: React.FC<ExameFormProps> = ({ onExameSelected, planoId,orcamentoDetalhes = [],medicamentosParam='',observacoesParam='' }) => {
+const OrcamentoExameForm: React.FC<ExameFormProps> = ({ 
+      onExameSelected, 
+      planoId,
+      orcamentoDetalhes = [],
+      medicamentosParam='',
+      observacoesParam='',  
+      orcamentoCabecalhoData}) => {
   const [exameData, setexameData] = useState<Exame | null>(null);
   const [codigoExame, setcodigoExame] = useState('');
   const [exames, setexames] = useState<Exame[]>([]);
@@ -24,7 +32,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({ onExameSelected, planoId
   const [addedExames, setAddedExames] = useState<Exame[]>([]);
   const [medicamentos, setMedicamentos] = useState('');
   const [observacoes, setObservacoes] = useState('');
-
+  const [isComponentMounted, setIsComponentMounted] = useState(false);
   
   useEffect(() => {
     const loadExames = async () => {
@@ -41,14 +49,14 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({ onExameSelected, planoId
   },[]);
 
   useEffect(() => {
-    if(!isLoaded) return;
+    if (isComponentMounted) return;
     // Carregar exames do orçamento (modo de edição) ao iniciar
     const loadOrcamentoExames = async () => {
-      if (orcamentoDetalhes.length === 0) return;
+      if ( !orcamentoCabecalhoData?.id || orcamentoDetalhes.length === 0) return;
 
       try {
         // Obtém o `OrcamentoId` e chama a API para obter os exames associados
-        const idCabecalho = orcamentoDetalhes[0].orcamentoId;
+        const idCabecalho = orcamentoCabecalhoData?.id;
         const response = await axios.get(`/api/Orcamento/GetExamesList/${idCabecalho}`);
         
       // Combinar detalhes do orçamento com os exames
@@ -56,24 +64,32 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({ onExameSelected, planoId
           // Encontrar o detalhe correspondente pelo ExameId
           const detalhe = orcamentoDetalhes.find(d => d.exameId === exame.id);
           
-          // Retornar o exame com os detalhes de preço e data de coleta
           return {
-            ...exame,
-            preco: detalhe?.valor || 0,
-            dataColeta: detalhe?.dataColeta  ? new Date(detalhe.dataColeta).toISOString().split('T')[0] : '' // Formato YYYY-MM-DD
-          };
+            ...detalhe,
+            exame,
+            id: detalhe?.id || 0,
+            orcamentoId: idCabecalho,
+            exameId: exame.id,
+            valor: detalhe?.valor || exame.preco || 0,
+            nomeExame: exame.nomeExame,  
+            codigoExame: exame.codigoExame,
+            preco: detalhe?.valor || exame.preco || 0, 
+            dataColeta: detalhe?.dataColeta || new Date().toISOString().split('T')[0]
+          } as OrcamentoDetalhe;
         });
         // Define a lista de exames já adicionados a partir dos exames do orçamento
         setAddedExames(examesComDetalhes);
+
         setObservacoes(observacoesParam);
         setMedicamentos(medicamentosParam);
+        setIsComponentMounted(true);
       } catch (error) {
         console.error('Erro ao carregar exames do orçamento:', error);
       }
     };
 
     loadOrcamentoExames();
-  }, [isLoaded,orcamentoDetalhes, observacoesParam, medicamentosParam]);
+  }, []);
 
   const buscarExamePorCodigo = async () => {
     try {
@@ -99,7 +115,8 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({ onExameSelected, planoId
     }
   }, [isLoaded]);
 
-  const adicionarExame = async () => {
+  const adicionarExame = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (!exameData || !planoId) return;
 
     try {
@@ -125,7 +142,8 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({ onExameSelected, planoId
         .join(', ');
       setObservacoes(newObservacoes);
 
-      const exameComDetalhes = { ...exameData, preco, dataColeta: new Date().toISOString().split('T')[0] };
+      const exameComDetalhes = { ...exameData, id:0, valor:preco,exameId:exameData.id,preco:preco, dataColeta: new Date().toISOString().split('T')[0] };
+
       setAddedExames([...addedExames, exameComDetalhes]);
 
       onExameSelected([...addedExames, exameComDetalhes],observacoes,medicamentos);

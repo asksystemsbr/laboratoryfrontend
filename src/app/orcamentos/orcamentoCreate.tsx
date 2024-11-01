@@ -6,9 +6,8 @@ import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import { SnackbarState } from '@/models/snackbarState';
 import OrcamentoClienteForm from './forms/OrcamentoClienteForm';
 import OrcamentoConvenioForm from './forms/OrcamentoConvenioForm';
-import { validateDate } from '@/utils/validateDate';
+import { validateDateEmpty } from '@/utils/validateDate';
 import OrcamentoExameForm from './forms/OrcamentoExameForm';
-import { Exame } from '@/models/exame';
 import OrcamentoResumoValoresForm from './forms/OrcamentoResumoValores';
 import OrcamentoPagamentosForm from './forms/OrcamentoPagamentosForm';
 import { FormaPagamento } from '@/models/formaPagamento';
@@ -23,7 +22,7 @@ interface OrcamentoCreateFormProps {
 }
 
 export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoCreateFormProps) => {
-  const { register,handleSubmit, setValue, reset } = useForm<OrcamentoCabecalho>();
+  const { register, setValue, reset,getValues  } = useForm<OrcamentoCabecalho>();
   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
 
@@ -56,10 +55,10 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     setPlanoId(id);
   };
 
-  const handleExameSelected = (exames: Exame[],observacoes: string |null, medicamento: string | null) => {
+  const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
 
     // Calcular subtotal com base nos preços dos exames
-    const novoSubtotal = exames.reduce((acc, exame) => acc + (exame.preco || 0), 0);
+    const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
     setSubtotal(novoSubtotal);
 
     // Calcular total com base no subtotal e desconto
@@ -68,9 +67,9 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     setValue('observacoes', observacoes || '');
     setValue('medicamento', medicamento || '');
 
-    const detalhes = exames.map((exame) => ({
-      exameId: exame.id,
-      valor: exame.preco,
+    const detalhes = detalhesOrcamento.map((detalhe) => ({
+      exameId: detalhe.exameId,
+      valor: detalhe.valor,
       dataColeta: new Date() // ou alguma outra data relacionada
     }));
 
@@ -88,29 +87,32 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     setOrcamentoPagamentos(pagamentosData);
   };
   
-  const onSubmit = async (data: OrcamentoCabecalho) => {
+  const submitOrcamento = async () => {
     if (isSubmitting) return;
+
+    const data = getValues();  // Pega valores atuais do formulário
+
     const orcamentoData: OrcamentoCabecalho = {
       ...data,
       usuarioId: user?.id || 0,
       recepcaoId: parseInt(user?.unidadeId || '0', 10),
       status: '1',
       dataHora: new Date().toISOString().split('T')[0],
-      total
+      total,
+      validadeCartao: data.validadeCartao || undefined
     };
 
     const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
       ...detalhe,
       id: 0,
-      orcamentoId:  0 
+      orcamentoId: 0 
     }));
 
-    // Preparar o objeto final que contém cabeçalho, detalhes e pagamentos
-  const orcamentoCompleto = {
-    orcamentoCabecalho: orcamentoData,
-    orcamentoDetalhe: orcamentoDetalheData,
-    orcamentoPagamento: orcamentoPagamentos
-  };
+    const orcamentoCompleto = {
+      orcamentoCabecalho: orcamentoData,
+      orcamentoDetalhe: orcamentoDetalheData,
+      orcamentoPagamento: orcamentoPagamentos
+    };
 
     try {
       setIsSubmitting(true);
@@ -127,7 +129,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-      <form onSubmit={handleSubmit(onSubmit)} className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+      <form className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
         <OrcamentoClienteForm 
           onClienteSelected={handleClienteSelected}
           nomePaciente={''}
@@ -145,7 +147,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
             <input
               type="date"
               {...register('validadeCartao',{
-                validate: validateDate
+                validate: validateDateEmpty
               }
               )}
               className="border rounded w-full py-1 px-2 text-sm"
@@ -186,7 +188,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+          <button type="button" onClick={submitOrcamento} className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
             Salvar
           </button>
         </div>

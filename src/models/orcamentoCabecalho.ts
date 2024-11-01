@@ -9,7 +9,7 @@ export interface OrcamentoCabecalho {
     solicitanteId?: number;
     codConvenio?: string;
     planoId?: number;
-    validadeCartao?: Date;
+    validadeCartao?: Date | string | null;
     guia?: string;
     titular?: string;
     senhaAutorizacao?: string;
