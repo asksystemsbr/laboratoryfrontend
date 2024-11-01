@@ -5,7 +5,7 @@ import { Plano } from '../../models/plano';
 import { SnackbarState } from '../../models/snackbarState';
 
 interface ConvenioPlanoSelectorProps {
-  onSave: (selectedData: { convenioId: number; planos: number[] }[]) => void;
+  onSave: (selectedData: { convenioId: number; planosId: number[] }[]) => void;
   recepcaoId?: number;
   setSnackbar: (snackbar: SnackbarState) => void;
 }
@@ -102,28 +102,43 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
     setSelectedConvenios(prev => ({ ...prev, [convenioId]: allPlanosSelected }));
     console.log(`Convenio ${convenioId} selecionado automaticamente:`, allPlanosSelected); // Log atualização automática do convênio
   };
-
+  
   const handleSave = () => {
-    const selectedData = convenios.reduce((acc, convenio) => {
+    const selectedData = convenios.map(convenio => {
+      // Obtém todos os planos do convênio atual
       const convenioPlanos = planos.filter(plano => plano.convenioId === convenio.id);
+      // Filtra apenas os planos selecionados para o convênio atual
       const planosSelecionados = convenioPlanos
         .filter(plano => selectedPlanos[plano.id!])
         .map(plano => plano.id!);
-
-      if (planosSelecionados.length === convenioPlanos.length) {
-        acc.push({ convenioId: convenio.id!, planos: [] });
-      } else if (planosSelecionados.length > 0) {
-        acc.push({ convenioId: convenio.id!, planos: planosSelecionados });
+  
+      console.log(`Convênio ${convenio.id}:`, {
+        convenioSelecionado: selectedConvenios[convenio.id!],
+        totalPlanos: convenioPlanos.length,
+        planosSelecionados: planosSelecionados.length,
+        planosSelecionadosIds: planosSelecionados
+      });
+  
+      // Condição 1: Todos os planos do convênio estão selecionados
+      if (selectedConvenios[convenio.id!] && planosSelecionados.length === convenioPlanos.length) {
+        console.log(`Todos os planos do Convênio ${convenio.id} selecionados.`);
+        return { convenioId: convenio.id!, planosId: [] }; // Envia lista vazia para indicar todos os planos
       }
-
-      console.log(`Convênio ${convenio.id} preparado para salvar:`, { convenioId: convenio.id, planos: planosSelecionados.length === convenioPlanos.length ? [] : planosSelecionados }); // Log de dados prontos para salvar
-
-      return acc;
-    }, [] as { convenioId: number; planos: number[] }[]);
-
+  
+      // Condição 2: Apenas alguns planos do convênio estão selecionados
+      else if (planosSelecionados.length > 0) {
+        console.log(`Alguns planos do Convênio ${convenio.id} selecionados:`, planosSelecionados);
+        return { convenioId: convenio.id!, planosId: planosSelecionados }; // Envia apenas os IDs selecionados
+      }
+  
+      // Caso contrário, retorna null para convênios não selecionados
+      return null;
+    }).filter(item => item !== null); // Remove itens null
+  
     console.log("Dados formatados para enviar à API:", selectedData); // Log dos dados finais antes do envio
-    onSave(selectedData);
+    onSave(selectedData as { convenioId: number; planosId: number[] }[]);
   };
+  
 
   if (isLoading) {
     return <div>Carregando convênios e planos...</div>;
