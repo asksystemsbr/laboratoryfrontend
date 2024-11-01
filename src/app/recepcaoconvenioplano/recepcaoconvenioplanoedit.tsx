@@ -57,31 +57,31 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
 
     const fetchConveniosEPlanos = async () => {
       // Dados fictícios para convenios e planos
-      const dadosFicticios: ConvenioComPlanos[] = [
-        {
-          id: 1,
-          descricao: 'Convênio Teste',
-          enderecoId: 1,
-          selecionado: false,
-          planos: [
-            { id: 1, descricao: 'Plano 1', tabelaPrecoId: 1, convenioId: 1, custoHorario: 100, filme: 50, codigoArnb: 'A1', selecionado: false },
-            { id: 2, descricao: 'Plano 2', tabelaPrecoId: 1, convenioId: 1, custoHorario: 150, filme: 75, codigoArnb: 'A2', selecionado: false },
-            { id: 3, descricao: 'Plano 3', tabelaPrecoId: 1, convenioId: 1, custoHorario: 200, filme: 100, codigoArnb: 'A3', selecionado: false },
-          ]
-        },
-        {
-          id: 2,
-          descricao: 'Convênio Teste2',
-          enderecoId: 2,
-          selecionado: false,
-          planos: [
-            { id: 4, descricao: 'Plano 1', tabelaPrecoId: 2, convenioId: 2, custoHorario: 120, filme: 60, codigoArnb: 'B1', selecionado: false },
-            { id: 5, descricao: 'Plano 2', tabelaPrecoId: 2, convenioId: 2, custoHorario: 180, filme: 90, codigoArnb: 'B2', selecionado: false },
-            { id: 6, descricao: 'Plano 3', tabelaPrecoId: 2, convenioId: 2, custoHorario: 240, filme: 120, codigoArnb: 'B3', selecionado: false },
-          ]
-        },
-      ];
-      setConveniosEPlanos(dadosFicticios);
+      // const dadosFicticios: ConvenioComPlanos[] = [
+      //   {
+      //   //   id: 1,
+      //   //   descricao: 'Convênio Teste',
+      //   //   enderecoId: 1,
+      //   //   selecionado: false,
+      //   //   planos: [
+      //   //     { id: 1, descricao: 'Plano 1', tabelaPrecoId: 1, convenioId: 1, custoHorario: 100, filme: 50, codigoArnb: 'A1', selecionado: false },
+      //   //     { id: 2, descricao: 'Plano 2', tabelaPrecoId: 1, convenioId: 1, custoHorario: 150, filme: 75, codigoArnb: 'A2', selecionado: false },
+      //   //     { id: 3, descricao: 'Plano 3', tabelaPrecoId: 1, convenioId: 1, custoHorario: 200, filme: 100, codigoArnb: 'A3', selecionado: false },
+      //   //   ]
+      //   // },
+      //   // {
+      //   //   id: 2,
+      //   //   descricao: 'Convênio Teste2',
+      //   //   enderecoId: 2,
+      //   //   selecionado: false,
+      //   //   planos: [
+      //   //     { id: 4, descricao: 'Plano 1', tabelaPrecoId: 2, convenioId: 2, custoHorario: 120, filme: 60, codigoArnb: 'B1', selecionado: false },
+      //   //     { id: 5, descricao: 'Plano 2', tabelaPrecoId: 2, convenioId: 2, custoHorario: 180, filme: 90, codigoArnb: 'B2', selecionado: false },
+      //   //     { id: 6, descricao: 'Plano 3', tabelaPrecoId: 2, convenioId: 2, custoHorario: 240, filme: 120, codigoArnb: 'B3', selecionado: false },
+      //   //   ]
+      //    },
+      // ];
+      // setConveniosEPlanos(dadosFicticios);
     };
 
     fetchUF();
