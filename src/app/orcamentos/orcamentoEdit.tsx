@@ -1,278 +1,250 @@
+//src/app/orcamentos/orcamentoCreate.tsx
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form'; 
-import { Exame } from '../../models/exame';
-import { Convenio } from '../../models/convenio';
-import { Plano } from '../../models/plano';
-import { FormaPagamento } from '../../models/formaPagamento';
-import { SnackbarState } from '@/models/snackbarState';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
+import { SnackbarState } from '@/models/snackbarState';
+import OrcamentoClienteForm from './forms/OrcamentoClienteForm';
+import OrcamentoConvenioForm from './forms/OrcamentoConvenioForm';
+import { validateDateEmpty } from '@/utils/validateDate';
+import OrcamentoExameForm from './forms/OrcamentoExameForm';
+import OrcamentoResumoValoresForm from './forms/OrcamentoResumoValores';
+import OrcamentoPagamentosForm from './forms/OrcamentoPagamentosForm';
+import { useAuth } from '@/app/auth';
+import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
+import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
 
-interface OrcamentoEditFormProps {
-  orcamentoCabecalho: OrcamentoCabecalho;
+interface OrcamentoCreateFormProps {
+  orcamentoCabecalhoData: OrcamentoCabecalho
   onSave: () => void;
   onClose: () => void;
-  setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
+  setSnackbar: (state: SnackbarState) => void;
 }
 
-export const OrcamentoEditForm= ({ orcamentoCabecalho, onSave, onClose,setSnackbar  }: OrcamentoEditFormProps) => {
-  const [exames, setExames] = useState<Exame[]>([]);
-  const [formasPagamento, setFormasPagamento] = useState<FormaPagamento[]>([]);
-  const [convenios, setConvenios] = useState<Convenio[]>([]);
-  const [planos, setPlanos] = useState<Plano[]>([]);
-  const { register,reset,handleSubmit } = useForm(); // Mantendo apenas o `register`
+export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSnackbar }: OrcamentoCreateFormProps) => {
+  const { register,handleSubmit, setValue, reset } = useForm<OrcamentoCabecalho>({
+    defaultValues: orcamentoCabecalhoData,
+  });
+  const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
+  const user = auth?.user; // Verifica se auth é nulo antes de acessar user
 
-  const loadExames = async () => {
-    try {
-      const response = await axios.get('/api/Exames');
-      setExames(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar exames', error);
-    }
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [planoId, setPlanoId] = useState<number | null>(null);
+
+  const [subtotal, setSubtotal] = useState(0);
+  const [desconto] = useState(0); // Adicione lógica para desconto se necessário
+  const [total, setTotal] = useState(0);
+
+  const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
+  const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
+  const [loading, setLoading] = useState(true);
+
+    // Função para buscar o orçamento completo
+    useEffect(() => {
+      const fetchOrcamentoCompleto = async () => {
+        if (!orcamentoCabecalhoData) return; // Apenas busca se idCabecalho for fornecido
+        try {
+          const response = await axios.get(`/api/Orcamento/getOrcamentoCompleto/${orcamentoCabecalhoData.id}`);
+          const { orcamentoCabecalho, orcamentoDetalhe, orcamentoPagamento } = response.data;
+  
+          reset(orcamentoCabecalho); // Preenche o formulário com os dados do cabeçalho
+          setOrcamentoDetalhes(orcamentoDetalhe);
+          setOrcamentoPagamentos(orcamentoPagamento);
+  
+          // Calcula subtotal e total com base nos detalhes
+          const novoSubtotal = orcamentoDetalhe.reduce((acc: number, item: OrcamentoDetalhe) => acc + (item.valor || 0), 0);
+          setSubtotal(novoSubtotal);
+          setTotal(novoSubtotal - desconto);
+          setLoading(false);
+        } catch (error) {
+          console.error('Erro ao buscar o orçamento completo:', error);
+          setSnackbar(new SnackbarState('Erro ao carregar o orçamento!', 'error', true));
+        }
+      };
+  
+      fetchOrcamentoCompleto();
+    }, [orcamentoCabecalhoData, reset, setSnackbar, desconto]);
+    
+  const handleClienteSelected = (id: number | null, nomePaciente: string | null) => {
+    setValue('pacienteId', id || 0);
+    setValue('nomePaciente', nomePaciente || '');
   };
 
-  const loadConvenios = async () => {
-    try {
-      const response = await axios.get('/api/Convenios');
-      setConvenios(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar convênios', error);
-    }
+  const handleSolicitanteSelected = (id: number | null) => {
+    setValue('solicitanteId', id || 0);  
   };
 
-  const loadPlanos = async (convenioId: number) => {
-    try {
-      const response = await axios.get(`/api/Convenios/${convenioId}/Planos`);
-      setPlanos(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar planos', error);
-    }
+  const handleConvenioSelected = (id: number | null, codConvenio: string | null) => {
+    setValue('convenioId', id || 0);
+    setValue('codConvenio', codConvenio || '');
   };
 
-  const loadFormasPagamento = async () => {
-    try {
-      const response = await axios.get('/api/FormasPagamento');
-      setFormasPagamento(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar formas de pagamento', error);
-    }
+  const handlePlanoSelected = (id: number | null) => {
+    setValue('planoId', id || 0);
+    setPlanoId(id);
   };
 
-  useEffect(() => {
-    loadExames();
-    loadFormasPagamento();
-    loadConvenios();
-  }, []);
+  const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
 
-  const ClienteForm = () => (
-    <div className="form-section">
-      <h3>Dados do Cliente</h3>
-      <input type="text" placeholder="Nome" />
-      <input type="text" placeholder="Sexo" />
-      <input type="date" placeholder="Data de Nascimento" />
-      <input type="text" placeholder="RG" />
-      <input type="text" placeholder="CPF" />
-      <input type="text" placeholder="CEP" />
-      <input type="text" placeholder="Endereço" />
-      <input type="text" placeholder="Cidade" />
-      <input type="text" placeholder="Telefone" />
-      <input type="text" placeholder="Celular" />
-      <input type="email" placeholder="Email" />
-    </div>
-  );
+    // Calcular subtotal com base nos preços dos exames
+    const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
+    setSubtotal(novoSubtotal);
 
-  const ConvenioForm = () => (
-    <div className="form-section">
-      <h3>Dados do Convênio e Plano</h3>
-      <input type="text" placeholder="Nome do Solicitante" />
-      <input type="text" placeholder="CRM" />
-      <input type="text" placeholder="Código do Convênio" />
-      <select {...register('codigoConvenio')} onChange={(e) => loadPlanos(parseInt(e.target.value))}>
-        <option value="">Selecione um Convênio</option>
-        {convenios.map((convenio) => (
-          <option key={convenio.id} value={convenio.id}>
-            {convenio.descricao}
-          </option>
-        ))}
-      </select>
-      <select {...register('plano')}>
-        <option value="">Selecione um Plano</option>
-        {planos.map((plano) => (
-          <option key={plano.id} value={plano.id}>
-            {plano.descricao}
-          </option>
-        ))}
-      </select>
-      <input type="date" placeholder="Validade do Cartão" />
-      <input type="text" placeholder="Guia" />
-      <input type="text" placeholder="Titular" />
-      <input type="text" placeholder="Senha de Autorização" />
-    </div>
-  );
+    // Calcular total com base no subtotal e desconto
+    setTotal(novoSubtotal - desconto);
 
-  const ExamesForm = () => {
-    const [codigoExame, setCodigoExame] = useState('');
-    const [nomeExame, setNomeExame] = useState('');
-    const [valorExame, setValorExame] = useState('');
-    const [dataColeta, setDataColeta] = useState('');
+    setValue('observacoes', observacoes || '');
+    setValue('medicamento', medicamento || '');
 
-    const adicionarExame = () => {
-      setExames([...exames, {
-        id: exames.length + 1,
-        codigo: codigoExame,
-        nomeExame: nomeExame,
-        prazo: 0,  // Defina valores padrão ou inputs
-        sLExamesRefTabelaValor: 0,
-        materialApoioId: 0,
-        especialidadeId: 0,
-        setorId: 0
-      }]);
-      setCodigoExame('');
-      setNomeExame('');
-      setValorExame('');
-      setDataColeta('');
-    };
+    const detalhes = detalhesOrcamento.map((detalhe) => ({
+      exameId: detalhe.exameId,
+      valor: detalhe.valor,
+      dataColeta: new Date(),
+      orcamentoId:orcamentoCabecalhoData.id,
+      id: detalhe.id
+    }));
 
-    return (
-      <div className="form-section">
-        <h3>Lista de Exames</h3>
-        <input
-          type="text"
-          value={codigoExame}
-          placeholder="Código do Exame"
-          onChange={(e) => setCodigoExame(e.target.value)}
-        />
-        <input
-          type="text"
-          value={nomeExame}
-          placeholder="Nome do Exame"
-          onChange={(e) => setNomeExame(e.target.value)}
-        />
-        <input
-          type="date"
-          value={dataColeta}
-          placeholder="Data Coleta"
-          onChange={(e) => setDataColeta(e.target.value)}
-        />
-        <input
-          type="number"
-          value={valorExame}
-          placeholder="Valor do Exame"
-          onChange={(e) => setValorExame(e.target.value)}
-        />
-        <button onClick={adicionarExame}>Adicionar Exame</button>
-
-        <select {...register('codigoExame')}>
-          <option value="">Selecione um Exame</option>
-          {exames.map((exame) => (
-            <option key={exame.id} value={exame.nomeExame}>
-              {exame.nomeExame}
-            </option>
-          ))}
-        </select>
-
-        <textarea placeholder="Medicamentos"></textarea>
-        <textarea placeholder="Observações"></textarea>
-      </div>
-    );
+    setOrcamentoDetalhes(detalhes);
   };
 
-  const PagamentoForm = () => {
-    const [pagamentos, setPagamentos] = useState<{ formaPagamento: string; valorPagamento: string }[]>([]);
-    const [formaPagamento, setFormaPagamento] = useState('');
-    const [valorPagamento, setValorPagamento] = useState('');
+  const handlePagamentosSelected = (pagamentos: OrcamentoPagamento[]) => {
+    console.log(pagamentos);
+    // Criar lista de `OrcamentoPagamento` a partir dos pagamentos selecionados
+    const pagamentosData = pagamentos.map((pagamento) => ({
+      pagamentoId: pagamento.pagamentoId,
+      valor: pagamento.valor,
+      orcamentoId: orcamentoCabecalhoData.id,
+      id: 0
+    }));
 
-    const adicionarPagamento = () => {
-      setPagamentos([...pagamentos, { formaPagamento, valorPagamento }]);
-      setFormaPagamento('');
-      setValorPagamento('');
-    };
-
-    return (
-      <div className="form-section">
-        <h3>Forma de Pagamento</h3>
-        <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value as string)}>
-          <option value="">Selecione a forma de pagamento</option>
-          {formasPagamento.map((pagamento) => (
-            <option key={pagamento.id} value={pagamento.descricao}>
-              {pagamento.descricao}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          value={valorPagamento}
-          placeholder="Valor a ser pago"
-          onChange={(e) => setValorPagamento(e.target.value)}
-        />
-        <button onClick={adicionarPagamento}>Adicionar Pagamento</button>
-
-        <ul>
-          {pagamentos.map((pagamento, index) => (
-            <li key={index}>
-              {pagamento.formaPagamento} - R$ {pagamento.valorPagamento}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
+    setOrcamentoPagamentos(pagamentosData);
   };
-
-  const ResumoValores = () => {
-    const [subtotal, setSubtotal] = useState(0);
-    const [desconto, setDesconto] = useState(0);
-
-    const total = subtotal - desconto;
-
-    return (
-      <div className="form-section">
-        <h3>Resumo</h3>
-        <input
-          type="number"
-          value={subtotal}
-          placeholder="Subtotal"
-          onChange={(e) => setSubtotal(parseFloat(e.target.value) || 0)}
-        />
-        <input
-          type="number"
-          value={desconto}
-          placeholder="Desconto"
-          onChange={(e) => setDesconto(parseFloat(e.target.value) || 0)}
-        />
-        <input type="number" value={total} placeholder="Total" readOnly />
-      </div>
-    );
-  };
-
+  
   const onSubmit = async (data: OrcamentoCabecalho) => {
+    if (isSubmitting) return;
+    const orcamentoData: OrcamentoCabecalho = {
+      ...data,
+      usuarioId: user?.id || 0,
+      recepcaoId: parseInt(user?.unidadeId || '0', 10),
+      dataHora: new Date().toISOString().split('T')[0],
+      total
+    };
+
+    const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
+      ...detalhe,
+      orcamentoId : orcamentoCabecalhoData.id,
+      id:detalhe.id
+    }));
+
+    // Preparar o objeto final que contém cabeçalho, detalhes e pagamentos
+  const orcamentoCompleto = {
+    orcamentoCabecalho: orcamentoData,
+    orcamentoDetalhe: orcamentoDetalheData,
+    orcamentoPagamento: orcamentoPagamentos
+  };
+
     try {
-        await axios.put(`/api/Orcamento/${orcamentoCabecalho.id}`, data);
-        reset();
-        onSave();
-      } catch (error) {
-        console.log(error);
-        setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
-      }
+      setIsSubmitting(true);
+      await axios.put('/api/Orcamento', orcamentoCompleto);
+      reset();
+      onSave();
+    } catch (error) {
+      console.error(error);
+      setSnackbar(new SnackbarState('Erro ao criar o registro!', 'error', true));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="container">
-      <ClienteForm />
-      <ConvenioForm />
-      <ExamesForm />
-      <ResumoValores />
-      <PagamentoForm />
-      <div className="buttons">
-        <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+      <form onSubmit={handleSubmit(onSubmit)} className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+      {!loading && (
+        <OrcamentoClienteForm 
+          onClienteSelected={handleClienteSelected} 
+          nomePaciente={orcamentoCabecalhoData.nomePaciente || ''}
+          pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
+      )}
+      {!loading && (     
+        <OrcamentoConvenioForm 
+            onSolicitanteSelected={handleSolicitanteSelected} 
+            onConvenioSelected={handleConvenioSelected} 
+            onPlanoSelected={handlePlanoSelected}
+            solicitanteId={orcamentoCabecalhoData.solicitanteId || 0}
+            convenioId= {orcamentoCabecalhoData.convenioId || 0}
+            planoId= {orcamentoCabecalhoData.planoId || 0}
+            />
+      )}
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div className="basis-2/12">
+            <input
+              type="date"
+              {...register('validadeCartao',{
+                validate: validateDateEmpty
+              }
+              )}
+              className="border rounded w-full py-1 px-2 text-sm"
+              placeholder="Validade Cartão"
+            />
+          </div>
+          <div className="basis-2/12">
+            <input
+              type="text"
+              {...register('guia')}
+              className="border rounded w-full py-1 px-2 text-sm"
+              placeholder="Guia"
+            />
+          </div>          
+          <div className="basis-5/12">
+            <input
+              type="text"
+              {...register('titular')}
+              className="border rounded w-full py-1 px-2 text-sm"
+              placeholder="Titular"
+            />
+          </div>      
+          <div className="basis-2/12 flex-grow">
+            <input
+              type="text"
+              {...register('senhaAutorizacao')}
+              className="border rounded w-full py-1 px-2 text-sm"
+              placeholder="Senha Autorização"
+            />
+          </div>                
+        </div>
+        {!loading && (
+          <OrcamentoExameForm 
+              onExameSelected={handleExameSelected} 
+              planoId={planoId} 
+              orcamentoDetalhes={orcamentoDetalhes}
+              medicamentosParam={orcamentoCabecalhoData.medicamento || ''} 
+              observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
+              orcamentoCabecalhoData={orcamentoCabecalhoData}
+              />   
+          )}
+        <div className="grid grid-cols-2 gap-20 mt-1">
+        {!loading && (
+            <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
+                orcamentoPagamentos={orcamentoPagamentos} 
+                orcamentoCabecalhoData={orcamentoCabecalhoData}
+                />
+        )}
+        {!loading && (
+            <OrcamentoResumoValoresForm subtotal={subtotal} desconto={desconto} total={total}/>           
+        )}
+          </div>
+        <div className="buttons text-center mt-8">
+          <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          <button type="submit" className="mr-2 py-2 px-4 rounded bg-blue-500 text-white">
-          Salvar
-        </button>
-        <button type="button" className="py-2 px-4 rounded bg-blue-500 text-white">
-          Transformar em Pedido
+          <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+            Salvar
           </button>
-      </div>
-    </form>
+          <button type="button" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+            Transformar em Pedido
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };

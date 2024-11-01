@@ -4,6 +4,6 @@ export interface OrcamentoDetalhe {
     orcamentoId?: number;
     exameId?: number;
     valor?: number;
-    dataColeta?: Date;
+    dataColeta?: Date |string;
   }
   
