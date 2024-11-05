@@ -11,6 +11,7 @@ import InputMask from 'react-input-mask-next';
 import { Convenio } from '../../models/convenio';
 import { Plano } from '../../models/plano';
 import ConvenioPlanoSelector from './convenioplanoseletor';
+import EspecialidadeExameSelector from './EspecialidadeExameSelector';
 
 interface RecepcaoEditFormProps {
   recepcao: Recepcao;
@@ -177,6 +178,16 @@ const onSubmit = async (data: Recepcao) => {
     }
   };
   
+  const handleEspecialidadesExamesSave = async (selectedData: { especialidadeId: number; examesId: number[] }[]) => {
+    try {
+      await axios.post(`/api/RecepcaoEspecialidadeExame/addOrUpdate/${recepcao.id}`, selectedData);
+      setSnackbar(new SnackbarState('Especialidades e exames atualizados com sucesso!', 'success', true));
+    } catch (error) {
+      console.error('Erro ao atualizar especialidades e exames:', error);
+      setSnackbar(new SnackbarState('Erro ao atualizar especialidades e exames!', 'error', true));
+    }
+  };
+  
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-6">
@@ -196,6 +207,13 @@ const onSubmit = async (data: Recepcao) => {
           onClick={() => handleTabChange('conveniosPlanos')}
         >
           Convênios e Planos
+        </button>
+        <button
+            type="button"
+            className={`py-2 px-4 ${activeTab === 'especialidadesExames' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => handleTabChange('especialidadesExames')}
+        >
+          Especialidades e Exames
         </button>
       </div>
 
@@ -308,6 +326,18 @@ const onSubmit = async (data: Recepcao) => {
           />
         </div>
       )}
+
+        {activeTab === 'especialidadesExames' && (
+          <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4">Especialidades e Exames</h3>
+            <EspecialidadeExameSelector
+              onSave={handleEspecialidadesExamesSave}
+              recepcaoId={recepcao.id}
+              setSnackbar={setSnackbar}
+            />
+          </div>
+        )}
+
 
       <div className="flex justify-end">
         <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
