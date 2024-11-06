@@ -1,5 +1,5 @@
 //src/app/orcamentos/orcamentoCreate.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
@@ -32,29 +32,53 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   const [planoId, setPlanoId] = useState<number | null>(null);
 
   const [subtotal, setSubtotal] = useState(0);
-  const [desconto] = useState(0); // Adicione lógica para desconto se necessário
-  const [total, setTotal] = useState(0);
+  const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
+  //const [total, setTotal] = useState(0);
+  const [isPercentage, setIsPercentage] = useState(false);
+  const [totalComDesconto, setTotalComDesconto] = useState(0);
+  const [isDescontoEditable, setIsDescontoEditable] = useState(false);
 
   const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
   const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchComplete = useRef(false);
+
+  const isPercentageRef = useRef<boolean>(false); 
+
+// Memoize the discount calculation function
+  const calcularTotalComDesconto = useCallback((subtotal: number, desconto: number, isPercentage: boolean) => {
+    return isPercentage ? subtotal - ((subtotal * desconto) / 100) : subtotal - desconto;
+  }, []);
 
     // Função para buscar o orçamento completo
     useEffect(() => {
       const fetchOrcamentoCompleto = async () => {
-        if (!orcamentoCabecalhoData) return; // Apenas busca se idCabecalho for fornecido
+        if (!orcamentoCabecalhoData || fetchComplete.current) return; // Fetch only once
+        fetchComplete.current = true;
+
         try {
           const response = await axios.get(`/api/Orcamento/getOrcamentoCompleto/${orcamentoCabecalhoData.id}`);
           const { orcamentoCabecalho, orcamentoDetalhe, orcamentoPagamento } = response.data;
   
           reset(orcamentoCabecalho); // Preenche o formulário com os dados do cabeçalho
+
+           // Initialize values directly from API response
+          const initialIsPercentage = orcamentoCabecalho.tipoDesconto === '1';
+          isPercentageRef.current = initialIsPercentage; // Set reference to stabilize `isPercentage`
+          setIsPercentage(initialIsPercentage);
+
+
+          setDesconto(orcamentoCabecalho.desconto);
+
           setOrcamentoDetalhes(orcamentoDetalhe);
           setOrcamentoPagamentos(orcamentoPagamento);
   
           // Calcula subtotal e total com base nos detalhes
           const novoSubtotal = orcamentoDetalhe.reduce((acc: number, item: OrcamentoDetalhe) => acc + (item.valor || 0), 0);
           setSubtotal(novoSubtotal);
-          setTotal(novoSubtotal - desconto);
+          //setTotalComDesconto(novoSubtotal - desconto);
+          const totalAtualizado = calcularTotalComDesconto(novoSubtotal, orcamentoCabecalho.desconto,initialIsPercentage );
+          setTotalComDesconto(totalAtualizado);          
           setLoading(false);
         } catch (error) {
           console.error('Erro ao buscar o orçamento completo:', error);
@@ -63,8 +87,35 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       };
   
       fetchOrcamentoCompleto();
-    }, [orcamentoCabecalhoData, reset, setSnackbar, desconto]);
+    }, [orcamentoCabecalhoData.id, reset, setSnackbar]);
     
+
+  useEffect(() => {
+    const checkDescontoPermission = async () => {
+      try {
+        const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
+        setIsDescontoEditable(response.data);
+      } catch (error) {
+        console.error('Erro ao verificar permissão para editar desconto:', error);
+      }
+    };
+    checkDescontoPermission();
+  }, []);
+
+  useEffect(() => {
+    if (!loading && (subtotal > 0 || desconto > 0)) { 
+      const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
+      if (totalAtualizado !== totalComDesconto) {
+        setTotalComDesconto(totalAtualizado);
+      }
+    }
+  }, [subtotal, desconto, isPercentage, loading, calcularTotalComDesconto]);
+
+  const onDescontoChange = (novoDesconto: number, percentual: boolean) => {
+    setDesconto(novoDesconto);
+    setIsPercentage(percentual);
+  };
+
   const handleClienteSelected = (id: number | null, nomePaciente: string | null) => {
     setValue('pacienteId', id || 0);
     setValue('nomePaciente', nomePaciente || '');
@@ -91,7 +142,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setSubtotal(novoSubtotal);
 
     // Calcular total com base no subtotal e desconto
-    setTotal(novoSubtotal - desconto);
+    const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
+    setTotalComDesconto(totalAtualizado);
+    //setTotalComDesconto(novoSubtotal - desconto);
 
     setValue('observacoes', observacoes || '');
     setValue('medicamento', medicamento || '');
@@ -127,7 +180,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       usuarioId: user?.id || 0,
       recepcaoId: parseInt(user?.unidadeId || '0', 10),
       dataHora: new Date().toISOString().split('T')[0],
-      total
+      total: totalComDesconto,
+      desconto:desconto,
+      tipoDesconto: isPercentage ? '1': '0'
     };
 
     const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
@@ -166,11 +221,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
       )}
       {!loading && (     
-        <OrcamentoConvenioForm 
-            onSolicitanteSelected={handleSolicitanteSelected} 
+        <OrcamentoConvenioForm             
             onConvenioSelected={handleConvenioSelected} 
-            onPlanoSelected={handlePlanoSelected}
-            solicitanteId={orcamentoCabecalhoData.solicitanteId || 0}
+            onPlanoSelected={handlePlanoSelected}            
             convenioId= {orcamentoCabecalhoData.convenioId || 0}
             planoId= {orcamentoCabecalhoData.planoId || 0}
             />
@@ -215,11 +268,13 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
         {!loading && (
           <OrcamentoExameForm 
               onExameSelected={handleExameSelected} 
+              onSolicitanteSelected={handleSolicitanteSelected} 
               planoId={planoId} 
               orcamentoDetalhes={orcamentoDetalhes}
               medicamentosParam={orcamentoCabecalhoData.medicamento || ''} 
               observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
               orcamentoCabecalhoData={orcamentoCabecalhoData}
+              solicitanteId={orcamentoCabecalhoData.solicitanteId || 0}
               />   
           )}
         <div className="grid grid-cols-2 gap-20 mt-1">
@@ -227,10 +282,18 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
             <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
                 orcamentoPagamentos={orcamentoPagamentos} 
                 orcamentoCabecalhoData={orcamentoCabecalhoData}
+                total={totalComDesconto}
                 />
         )}
         {!loading && (
-            <OrcamentoResumoValoresForm subtotal={subtotal} desconto={desconto} total={total}/>           
+            <OrcamentoResumoValoresForm 
+                subtotal={subtotal} 
+                desconto={desconto} 
+                total={totalComDesconto}
+                isEditable={isDescontoEditable}
+                onDescontoChange={onDescontoChange}
+                isPercentageRef ={isPercentage}
+                />           
         )}
           </div>
         <div className="buttons text-center mt-8">

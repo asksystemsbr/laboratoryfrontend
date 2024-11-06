@@ -2,25 +2,29 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { PlusIcon,TrashIcon } from '@heroicons/react/24/solid';
-import { formatDecimal } from '@/utils/numbers';
+import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
 import { FormaPagamento } from '@/models/formaPagamento';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
+import InformativeModal from '@/components/InformativeModal';
 
 
 interface PagamentosFormProps {
   onPagamentosSelected: (exames: FormaPagamento[]) => void;
   orcamentoPagamentos?: OrcamentoPagamento[];
   orcamentoCabecalhoData?: OrcamentoCabecalho; // Lista de pagamentos no modo de edição
+  total: number;
 }
 
-const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelected,orcamentoPagamentos =[],orcamentoCabecalhoData  }) => {  
+const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelected,orcamentoPagamentos =[],orcamentoCabecalhoData, total  }) => {  
   const [formasPagamentos, setformasPagamentos] = useState<FormaPagamento[]>([]);
   const [formaPagamentoData, setformaPagamentoData] = useState<FormaPagamento | null>(null);
   const [valorPagamento, setvalorPagamento] = useState(0);  
   const [isLoaded, setIsLoaded] = useState(false);
   const [addedFormaPagamento, setaddedFormaPagamento] = useState<FormaPagamento[]>([]);
   const [isComponentMounted, setIsComponentMounted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const loadFormasPagamentos = async () => {
@@ -83,13 +87,47 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
       // setCRM()
       // setValue('codigoExame', exame.codigoExame);
     }
-  }, [isLoaded]);
+  }, [isLoaded]); 
+
 
   const adicionarFormaPagamento = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!formaPagamentoData ) return;
+    if (!formaPagamentoData )
+      { 
+        setModalMessage("Selecione uma forma de pagamento.");
+        setIsModalOpen(true);
+        return;
+      }
 
     try {
+
+      if (valorPagamento <= 0) {
+        setModalMessage('O valor do pagamento deve ser maior que zero.');
+        setIsModalOpen(true);
+        return;
+      }
+
+      // Check if the payment type already exists in the list
+      const alreadyExists = (addedFormaPagamento as OrcamentoPagamento[]).some(
+        (pagamento) => pagamento.pagamentoId === formaPagamentoData.id
+      );
+
+      if (alreadyExists) {
+        setModalMessage('Essa forma de pagamento já foi adicionada.');
+        setIsModalOpen(true);
+        return;
+      }
+
+
+      const novoTotal = addedFormaPagamento.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0) + valorPagamento;
+
+      console.log(total);
+      console.log(novoTotal);
+      if (novoTotal > total) {
+        setModalMessage("A soma dos valores dos pagamentos excede o total permitido.");
+        setIsModalOpen(true);
+        return;
+      }
 
       const pagamentoComDetalhes = { ...formaPagamentoData, valor:valorPagamento,pagamentoId:formaPagamentoData.id };
       setaddedFormaPagamento([...addedFormaPagamento, pagamentoComDetalhes]);
@@ -154,7 +192,7 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
     {addedFormaPagamento.length > 0 && (
       <div className="overflow-x-auto mt-4">
         <table className="min-w-full bg-white border border-gray-300">
-          <thead>
+          <thead className="bg-blue-100">
             <tr>
               <th className="px-2 py-1 border-b text-left font-semibold">Pagamento</th>
               <th className="px-2 py-1 border-b text-right font-semibold">Valor</th>
@@ -163,9 +201,9 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
           </thead>
           <tbody>
           {addedFormaPagamento.map((pagamento, index) => (
-            <tr key={pagamento.id} className="hover:bg-gray-100">
+            <tr key={pagamento.id} className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
             <td className="px-2 py-1 border-b">{pagamento.descricao}</td>
-            <td className="px-2 py-1 border-b text-right">{formatDecimal(pagamento.valor || 0, 2)}</td>
+            <td className="px-2 py-1 border-b text-right">{formatCurrencyBRL(formatDecimal(pagamento.valor || 0, 2))}</td>
             <td className="px-2 py-1 border-b text-center">
               <button
                 onClick={() => removerPagamento(index)}
@@ -180,6 +218,13 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
         </table>
       </div>        
     )}
+    {/* Informative Modal */}
+    <InformativeModal
+        isOpen={isModalOpen}
+        title="Atenção"
+        message={modalMessage}
+        onClose={() => setIsModalOpen(false)}
+      />
   </div>
   );
 };
