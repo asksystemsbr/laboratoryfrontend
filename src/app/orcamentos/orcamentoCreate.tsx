@@ -1,5 +1,5 @@
 //src/app/orcamentos/orcamentoCreate.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
@@ -30,11 +30,43 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
   const [planoId, setPlanoId] = useState<number | null>(null);
 
   const [subtotal, setSubtotal] = useState(0);
-  const [desconto] = useState(0); // Adicione lógica para desconto se necessário
-  const [total, setTotal] = useState(0);
+  const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
+  const [isPercentage, setIsPercentage] = useState(false);
+  const [totalComDesconto, setTotalComDesconto] = useState(0);
+  const [isDescontoEditable, setIsDescontoEditable] = useState(false);
 
   const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
   const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
+
+  useEffect(() => {
+    const checkDescontoPermission = async () => {
+      try {
+        const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
+        setIsDescontoEditable(response.data);
+      } catch (error) {
+        console.error('Erro ao verificar permissão para editar desconto:', error);
+      }
+    };
+    checkDescontoPermission();
+  }, []);
+
+  const calcularTotalComDesconto = (subtotal: number, desconto: number, isPercentage: boolean) => {
+    return isPercentage ? subtotal - ((subtotal * desconto) / 100) : subtotal - desconto;
+  };
+
+
+
+  useEffect(() => {
+    const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
+    //setTotalComDesconto(Math.max(totalAtualizado, 0));
+    setTotalComDesconto(totalAtualizado);
+  }, [subtotal, desconto, isPercentage]);
+
+  const onDescontoChange = (novoDesconto: number, percentual: boolean) => {
+    setDesconto(novoDesconto);
+    setIsPercentage(percentual);
+  };
+  
 
   const handleClienteSelected = (id: number | null, nomePaciente: string | null) => {
     setValue('pacienteId', id || 0);
@@ -60,9 +92,11 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     // Calcular subtotal com base nos preços dos exames
     const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
     setSubtotal(novoSubtotal);
-
     // Calcular total com base no subtotal e desconto
-    setTotal(novoSubtotal - desconto);
+    //setTotal(novoSubtotal - desconto);
+
+    const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
+    setTotalComDesconto(totalAtualizado);
 
     setValue('observacoes', observacoes || '');
     setValue('medicamento', medicamento || '');
@@ -98,8 +132,10 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
       recepcaoId: parseInt(user?.unidadeId || '0', 10),
       status: '1',
       dataHora: new Date().toISOString().split('T')[0],
-      total,
-      validadeCartao: data.validadeCartao || undefined
+      total:totalComDesconto,
+      validadeCartao: data.validadeCartao || undefined,
+      desconto:desconto,
+      tipoDesconto: isPercentage ? '1': '0'
     };
 
     const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
@@ -134,11 +170,9 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
           onClienteSelected={handleClienteSelected}
           nomePaciente={''}
           pacienteId={ ''}  />
-        <OrcamentoConvenioForm 
-            onSolicitanteSelected={handleSolicitanteSelected} 
+        <OrcamentoConvenioForm             
             onConvenioSelected={handleConvenioSelected} 
-            onPlanoSelected={handlePlanoSelected}
-            solicitanteId= {undefined}
+            onPlanoSelected={handlePlanoSelected}            
             convenioId= {undefined}
             planoId= {undefined}
             />
@@ -179,10 +213,24 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
             />
           </div>                
         </div>
-        <OrcamentoExameForm onExameSelected={handleExameSelected} planoId={planoId}  />       
+        <OrcamentoExameForm 
+            onExameSelected={handleExameSelected} 
+            onSolicitanteSelected={handleSolicitanteSelected} 
+            planoId={planoId}
+            solicitanteId= {undefined}  />       
         <div className="grid grid-cols-2 gap-20 mt-1">
-            <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}/>
-            <OrcamentoResumoValoresForm subtotal={subtotal} desconto={desconto} total={total}/>           
+            <OrcamentoPagamentosForm  
+                onPagamentosSelected={handlePagamentosSelected} 
+                total={totalComDesconto}
+                />
+            <OrcamentoResumoValoresForm 
+                subtotal={subtotal} 
+                desconto={desconto} 
+                total={totalComDesconto}
+                isEditable={isDescontoEditable}
+                onDescontoChange={onDescontoChange}
+                isPercentageRef={isPercentage}
+                />           
           </div>
         <div className="buttons text-center mt-8">
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">

@@ -18,5 +18,7 @@ export interface OrcamentoCabecalho {
     total?: number;
     recepcaoId?: number;
     usuarioId?: number;
+    desconto?: number;
+    tipoDesconto?: string;
   }
   
