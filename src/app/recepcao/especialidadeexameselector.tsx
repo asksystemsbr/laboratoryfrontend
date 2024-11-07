@@ -10,7 +10,7 @@ interface Especialidade {
 interface Exame {
   id: number;
   especialidadeId: number;
-  descricao: string;
+  nomeExame: string;
 }
 
 interface EspecialidadeExameSelectorProps {
@@ -148,7 +148,7 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
                     onChange={() => handleExameChange(exame.id, especialidade.id)}
                     className="mr-2"
                   />
-                  <label htmlFor={`exame-${exame.id}`}>{exame.descricao}</label>
+                  <label htmlFor={`exame-${exame.id}`}>{exame.nomeExame}</label>
                 </div>
               ))}
           </div>

@@ -11,7 +11,7 @@ import InputMask from 'react-input-mask-next';
 import { Convenio } from '../../models/convenio';
 import { Plano } from '../../models/plano';
 import ConvenioPlanoSelector from './convenioplanoseletor';
-import EspecialidadeExameSelector from './EspecialidadeExameSelector';
+import EspecialidadeExameSelector from './especialidadeexameselector';
 
 interface RecepcaoEditFormProps {
   recepcao: Recepcao;
@@ -329,7 +329,6 @@ const onSubmit = async (data: Recepcao) => {
 
         {activeTab === 'especialidadesExames' && (
           <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Especialidades e Exames</h3>
             <EspecialidadeExameSelector
               onSave={handleEspecialidadesExamesSave}
               recepcaoId={recepcao.id}
