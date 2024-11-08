@@ -1,62 +1,37 @@
 //src/app/orcamentos/forms/OrcamentoConvenioForm.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Solicitante } from '@/models/solicitante';
 import { Convenio } from '@/models/convenio';
 import { Plano } from '@/models/plano';
+import { useAuth } from '@/app/auth';
 
-interface OrcamentoConvenioFormProps {
-  onSolicitanteSelected: (id: number| null) => void;
+interface OrcamentoConvenioFormProps {  
   onConvenioSelected: (id: number| null,codConvenio: string | null) => void;
-  onPlanoSelected: (id: number| null) => void;
-  solicitanteId?: number;
+  onPlanoSelected: (id: number| null) => void;  
   convenioId?: number;
   planoId?: number;
 }
 
-const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({ 
-    onSolicitanteSelected,
+const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({     
     onConvenioSelected,
-    onPlanoSelected,
-    solicitanteId,
+    onPlanoSelected,    
     convenioId,
-    planoId 
-  }) => {
-  const [solicitanteData, setSolicitanteData] = useState<Solicitante | null>(null);
-  const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);  
+    planoId
+  }) => {  
   const [convenioData, setConvenioData] = useState<Convenio | null>(null);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
-  const [planoData, setPlanoData] = useState<Plano | null>(null);
-  const [crm, setCRM] = useState('');
+  const [planoData, setPlanoData] = useState<Plano | null>(null);  
   const [codigoConvenio, setcodigoConvenio] = useState('');
+  const [recepcaoId,setrecepcaoId]= useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
-
-
-  const buscarSolicitantePorCRM = async () => {
-    try {
-      if (!crm || crm.length < 3) return;
-      const response = await axios.get(`/api/Solicitante/solicitanteByCRM/${crm}`);
-      const item = response.data;
-      preencherDadosSolicitante(item);
-    } catch (error) {
-      console.error('Solicitante não encontrado', error);
-      setSolicitanteData(null);
-      onSolicitanteSelected(null);
-    }
-  };
-
-  const preencherDadosSolicitante = async (solicitante: Solicitante) => {
-    setSolicitanteData(solicitante);
-    setCRM(solicitante.crm??"");
-    onSolicitanteSelected(solicitante.id ?? null);
-  };
-
+  const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
+  const user = auth?.user; // Verifica se auth é nulo antes de acessar user
 
   const buscarConvenioPorCodigo = async () => {
     try {
       if (!codigoConvenio ) return;
-      const response = await axios.get(`/api/Convenio/getConvenioByCodigo/${codigoConvenio}`);
+      const response = await axios.get(`/api/Convenio/getConvenioByCodigoAndRecepcao/${codigoConvenio}/${recepcaoId}`);
       const item = response.data;
       preencherDadosConvenio(item);
     } catch (error) {
@@ -76,7 +51,7 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
 
   const loadPlanosByConvenio = async (convenioId: number) => {
     try {
-      const response = await axios.get(`/api/Plano/getListByConvenio/${convenioId}`);
+      const response = await axios.get(`/api/Plano/getListByConvenioAndRecepcao/${convenioId}/${recepcaoId}`);
       setPlanos(response.data);
       setPlanoData(null); // Reset plano selection
       onPlanoSelected(null);
@@ -90,14 +65,6 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
     setPlanos([]);
     setPlanoData(null);
     onPlanoSelected(null);
-  };
-
-  const handleSelectSolicitanteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedId = Number(event.target.value);
-    const selectedSolicitante = solicitantes.find(s => s.id === selectedId) || null;
-    setSolicitanteData(selectedSolicitante);
-    setCRM(selectedSolicitante?.crm ?? '');
-    onSolicitanteSelected(selectedSolicitante?.id ?? null);
   };
 
   const handleSelectConvenioChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -121,43 +88,30 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
     onPlanoSelected(selectedPlano?.id ?? null);
   };
   
-  useEffect(() => {
-    const loadSolicitantes = async () => {
-      try {
-        const response = await axios.get('/api/Solicitante');
-        setSolicitantes(response.data);
-      } catch (error) {
-        console.log(error);
-        //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
-      }
-    };
+  useEffect(() => {    
+  // Usa uma variável para controlar a execução e evitar chamadas duplicadas
 
     const loadConvenios = async () => {
-      try {
-        const response = await axios.get('/api/Convenio');
-        setConvenios(response.data);
+      const recepcaoCod= parseInt(user?.unidadeId || '0', 10);
+      setrecepcaoId(recepcaoCod)
+      try {        
+          setIsLoaded(true);
+          const response = await axios.get(`/api/Convenio/getConvenioByRecepcao/${recepcaoCod}`);
+          setConvenios(response.data);                 
       } catch (error) {
         console.log(error);
         //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
-      }
+      } 
+      
     };
 
-    Promise.all([loadSolicitantes(),loadConvenios()]).then(() => setIsLoaded(true));
-  },[]);
-
-  useEffect(() => {
-    // Carrega o solicitante inicial quando `solicitantes` estiverem carregados e `solicitanteId` for passado
-    if (isLoaded && solicitanteId && solicitantes.length > 0 && !solicitanteData) {
-      const selectedSolicitante = solicitantes.find(s => s.id === solicitanteId) || null;
-      setSolicitanteData(selectedSolicitante);
-      setCRM(selectedSolicitante?.crm ?? '');
-      onSolicitanteSelected(selectedSolicitante?.id ?? null);
-    }
-  }, [isLoaded, solicitanteId, solicitantes]);
+    Promise.all([loadConvenios()]).then(() => setIsLoaded(true));    
+  },[isLoaded]);
 
   useEffect(() => {
     // Carrega o convenio inicial quando `convenios` estiverem carregados e `convenioId` for passado
-    if (isLoaded && convenioId && convenios.length > 0 && !convenioData) {
+    //if (isLoaded && convenioId && convenios.length > 0 && !convenioData) {
+    if (isLoaded && convenioId && convenios.length > 0) {
       const selectedConvenio = convenios.find(c => c.id === convenioId) || null;
       setConvenioData(selectedConvenio);
       setcodigoConvenio(selectedConvenio?.codOperadora ?? '');
@@ -166,7 +120,8 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
       // Carregar os planos relacionados ao convênio
       if (selectedConvenio) loadPlanosByConvenio(selectedConvenio.id);
     }
-  }, [isLoaded, convenioId, convenios]);
+  //}, [isLoaded, convenioId, convenios]);
+  }, [isLoaded, convenioId, convenios.length]);
 
 
 useEffect(() => {
@@ -176,39 +131,16 @@ useEffect(() => {
     setPlanoData(selectedPlano);
     onPlanoSelected(selectedPlano?.id ?? null);
   }
-}, [planoId, planos]);
+//}, [planoId, planos]);
+}, [planoId, planos.length]);
 
 
   return (
     <div className="form-section mt-1 border-t border-gray-300 py-1">
-    <h3 className="text-lg font-semibold text-center mb-2">Solicitante e Plano</h3>
+    <h3 className="text-lg font-semibold text-center mb-2">Convênios / Planos</h3>
 
     {/* Primeira linha */}
     <div className="flex flex-wrap gap-4 mb-4">
-      <div className="basis-1/12">
-          <input
-            type="text"
-            value={crm}
-            onChange={(e) => setCRM(e.target.value)}
-            onBlur={buscarSolicitantePorCRM}
-            className="border rounded w-full py-1 px-2 text-sm"
-            placeholder="CRM"
-          />         
-      </div>
-      <div className="basis-3/12">
-      <select
-          value={solicitanteData?.id || ''}        
-          onChange={handleSelectSolicitanteChange}  
-          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
-        >
-          <option value="">Selecione um solicitante</option>
-          {solicitantes.map((solicitante) => (
-            <option key={solicitante.id} value={solicitante.id}>
-              {solicitante.descricao}
-            </option>
-          ))}
-        </select>
-      </div>   
       <div className="basis-1/12">
           <input
             type="text"

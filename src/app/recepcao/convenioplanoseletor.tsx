@@ -1,3 +1,4 @@
+//src/app/recepcao/convenioplanoseletor.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Convenio } from '../../models/convenio';
@@ -5,9 +6,14 @@ import { Plano } from '../../models/plano';
 import { SnackbarState } from '../../models/snackbarState';
 
 interface ConvenioPlanoSelectorProps {
-  onSave: (selectedData: { convenioId: number; planos: number[] }[]) => void;
+  onSave: (selectedData: { convenioId: number; planosId: number[] }[]) => void;
   recepcaoId?: number;
   setSnackbar: (snackbar: SnackbarState) => void;
+}
+
+interface SelectedDataResponse {
+  convenioId: number;
+  planos: number[];
 }
 
 const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, recepcaoId, setSnackbar }) => {
@@ -17,94 +23,87 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
   const [selectedPlanos, setSelectedPlanos] = useState<{ [key: number]: boolean }>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadConvenios = useCallback(async () => {
-    try {
-      const response = await axios.get('/api/Convenio');
-      setConvenios(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar convênios:', error);
-      setSnackbar(new SnackbarState('Erro ao carregar convênios!', 'error', true));
-    }
-  }, [setSnackbar]);
+  const initializeSelection = useCallback((conveniosData: Convenio[], planosData: Plano[], selectedData: SelectedDataResponse[]) => {
+    const newSelectedConvenios: { [key: number]: boolean } = {};
+    const newSelectedPlanos: { [key: number]: boolean } = {};
 
-  const loadPlanos = useCallback(async () => {
-    try {
-      const response = await axios.get('/api/Plano');
-      setPlanos(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar planos:', error);
-      setSnackbar(new SnackbarState('Erro ao carregar planos!', 'error', true));
-    }
-  }, [setSnackbar]);
+    selectedData.forEach((item) => {
+      item.planos.forEach(planoId => {
+        newSelectedPlanos[planoId] = true;
+      });
+      const convenioPlanos = planosData.filter(plano => plano.convenioId === item.convenioId);
+      const allPlanosSelected = convenioPlanos.every(plano => newSelectedPlanos[plano.id!]);
+      newSelectedConvenios[item.convenioId] = allPlanosSelected;
+    });
 
-  const loadSelectedData = useCallback(async () => {
-    if (recepcaoId) {
-      try {
-        const response = await axios.get(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcaoId}`);
-        const selectedData = response.data;
-        
-        const newSelectedConvenios: { [key: number]: boolean } = {};
-        const newSelectedPlanos: { [key: number]: boolean } = {};
-
-        selectedData.forEach((item: { convenioId: number; planos: number[] }) => {
-          newSelectedConvenios[item.convenioId] = true;
-          if (Array.isArray(item.planos) && item.planos.length > 0) {
-            item.planos.forEach(planoId => {
-              newSelectedPlanos[planoId] = true;
-            });
-          } else {
-            console.warn(`Invalid or empty planos for convenioId: ${item.convenioId}`);
-          }
-        });
-
-        setSelectedConvenios(newSelectedConvenios);
-        setSelectedPlanos(newSelectedPlanos);
-      } catch (error) {
-        console.error('Erro ao carregar dados selecionados:', error);
-        setSnackbar(new SnackbarState('Erro ao carregar dados selecionados!', 'error', true));
-      }
-    }
-  }, [recepcaoId, setSnackbar]);
+    setSelectedConvenios(newSelectedConvenios);
+    setSelectedPlanos(newSelectedPlanos);
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      await Promise.all([loadConvenios(), loadPlanos(), loadSelectedData()]);
-      setIsLoading(false);
+      try {
+        const [conveniosResponse, planosResponse, selectedDataResponse] = await Promise.all([
+          axios.get<Convenio[]>('/api/Convenio'),
+          axios.get<Plano[]>('/api/Plano'),
+          recepcaoId ? axios.get<SelectedDataResponse[]>(`/api/RecepcaoConvenioPlano/byRecepcao/${recepcaoId}`) : Promise.resolve({ data: [] as SelectedDataResponse[] })
+        ]);
+
+        setConvenios(conveniosResponse.data);
+        setPlanos(planosResponse.data);
+        initializeSelection(conveniosResponse.data, planosResponse.data, selectedDataResponse.data);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        setSnackbar(new SnackbarState('Erro ao carregar dados!', 'error', true));
+      }
     };
 
     fetchData();
-  }, [loadConvenios, loadPlanos, loadSelectedData]);
+  }, [recepcaoId, setSnackbar, initializeSelection]);
 
   const handleConvenioChange = (convenioId: number) => {
-    setSelectedConvenios(prev => ({ ...prev, [convenioId]: !prev[convenioId] }));
-    
-    // Selecionar/deselecionar todos os planos deste convênio
+    const isConvenioSelected = !selectedConvenios[convenioId];
+
+    setSelectedConvenios(prev => ({ ...prev, [convenioId]: isConvenioSelected }));
+
     const convenioPlanos = planos.filter(plano => plano.convenioId === convenioId);
     setSelectedPlanos(prev => {
       const newState = { ...prev };
       convenioPlanos.forEach(plano => {
-        newState[plano.id!] = !selectedConvenios[convenioId];
+        newState[plano.id!] = isConvenioSelected;
       });
       return newState;
     });
   };
 
-  const handlePlanoChange = (planoId: number) => {
+  const handlePlanoChange = (planoId: number, convenioId: number) => {
     setSelectedPlanos(prev => ({ ...prev, [planoId]: !prev[planoId] }));
+
+    const convenioPlanos = planos.filter(plano => plano.convenioId === convenioId);
+    const allPlanosSelected = convenioPlanos.every(plano => selectedPlanos[plano.id!] || plano.id === planoId);
+
+    setSelectedConvenios(prev => ({ ...prev, [convenioId]: allPlanosSelected }));
   };
 
   const handleSave = () => {
-    const selectedData = convenios
-      .filter(convenio => selectedConvenios[convenio.id!])
-      .map(convenio => ({
-        convenioId: convenio.id!,
-        planos: planos
-          .filter(plano => plano.convenioId === convenio.id && selectedPlanos[plano.id!])
-          .map(plano => plano.id!)
-      }));
-  
-    onSave(selectedData);
+    const selectedData = convenios.map(convenio => {
+      const convenioPlanos = planos.filter(plano => plano.convenioId === convenio.id);
+      const planosSelecionados = convenioPlanos
+        .filter(plano => selectedPlanos[plano.id!])
+        .map(plano => plano.id!);
+
+      if (selectedConvenios[convenio.id!] && planosSelecionados.length === convenioPlanos.length) {
+        return { convenioId: convenio.id!, planosId: [] };
+      } else if (planosSelecionados.length > 0) {
+        return { convenioId: convenio.id!, planosId: planosSelecionados };
+      }
+      return null;
+    }).filter(item => item !== null);
+
+    console.log("Dados formatados para enviar à API:", selectedData);
+    onSave(selectedData as { convenioId: number; planosId: number[] }[]);
   };
 
   if (isLoading) {
@@ -135,13 +134,12 @@ const ConvenioPlanoSelector: React.FC<ConvenioPlanoSelectorProps> = ({ onSave, r
                     type="checkbox"
                     id={`plano-${plano.id}`}
                     checked={selectedPlanos[plano.id!] || false}
-                    onChange={() => handlePlanoChange(plano.id!)}
+                    onChange={() => handlePlanoChange(plano.id!, convenio.id!)}
                     className="mr-2"
                   />
                   <label htmlFor={`plano-${plano.id}`}>{plano.descricao}</label>
                 </div>
-              ))
-            }
+              ))}
           </div>
         </div>
       ))}

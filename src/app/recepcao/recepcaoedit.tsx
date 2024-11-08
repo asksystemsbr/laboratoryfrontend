@@ -1,3 +1,4 @@
+//src/app/recepcao/recepcaoedit.tsx
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,6 +12,7 @@ import InputMask from 'react-input-mask-next';
 import { Convenio } from '../../models/convenio';
 import { Plano } from '../../models/plano';
 import ConvenioPlanoSelector from './convenioplanoseletor';
+import EspecialidadeExameSelector from './especialidadeexameselector';
 
 interface RecepcaoEditFormProps {
   recepcao: Recepcao;
@@ -111,51 +113,51 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
   };
 
   // Lógica para salvar os dados da recepção
-  const onSubmit = async (data: Recepcao) => {
-    if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.uf) {
-      setSnackbar(new SnackbarState('Todos os campos de endereço são obrigatórios', 'error', true));
-      return;
-    }
+  // Função para salvar os dados da recepção
+const onSubmit = async (data: Recepcao) => {
+  if (!endereco.cep || !endereco.rua || !endereco.numero || !endereco.bairro || !endereco.cidade || !endereco.uf) {
+    setSnackbar(new SnackbarState('Todos os campos de endereço são obrigatórios', 'error', true));
+    return;
+  }
 
-    const itemComEndereco = {
-      ...data,
-      endereco,
-    };
-
-    try {
-      // Primeiro salva as informações da recepção
-      await axios.put(`/api/Recepcao/${itemComEndereco.id}`, itemComEndereco);
-
-      // Depois, atualiza os convênios e planos
-      const conveniosPlanosSelecionados = conveniosEPlanos
-        .filter(c => c.selecionado)
-        .flatMap(c => c.planos.filter(p => p.selecionado).map(p => ({
-          recepcaoId: itemComEndereco.id,
-          convenioId: c.id,
-          planoId: p.id
-        })));
-
-      await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, conveniosPlanosSelecionados);
-
-      reset();
-      onSave();
-    } catch (error) {
-      console.log(error);
-      setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true));
-    }
+  const itemComEndereco = {
+    ...data,
+    endereco,
   };
 
+  try {
+    // Salva as informações da recepção
+    await axios.put(`/api/Recepcao/${itemComEndereco.id}`, itemComEndereco);
+
+    // Salva os convênios e planos com a nova estrutura
+    // const conveniosPlanosSelecionados = conveniosEPlanos.map(c => ({
+    //   recepcaoId: itemComEndereco.id,
+    //   convenioId: c.id,
+    //   planosId: c.planos.filter(p => p.selecionado).map(p => p.id) // Use planosId ao invés de planos
+    // }));
+
+    //await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, conveniosPlanosSelecionados);
+
+    reset();
+    onSave();
+  } catch (error) {
+    console.log(error);
+    setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true));
+  }
+};
+
+
   // Função que atualiza o estado local de convênios e planos
-  const handleConveniosPlanosSave = async (selectedData: { convenioId: number; planos: number[] }[]) => {
+  const handleConveniosPlanosSave = async (selectedData: { convenioId: number; planosId: number[] }[]) => {
     const updatedConveniosEPlanos = conveniosEPlanos.map(convenio => {
-      const selectedConvenio = selectedData.find(sd => sd.convenioId  === convenio.convenioId);
+      const selectedConvenio = selectedData.find(sd => sd.convenioId === convenio.id);
       if (selectedConvenio) {
         return {
           ...convenio,
           selecionado: true,
           planos: convenio.planos.map(plano => ({
             ...plano,
-            selecionado: selectedConvenio.planos.includes(plano.id!)
+            selecionado: selectedConvenio.planosId.includes(plano.id!) // Use planosId aqui
           }))
         };
       }
@@ -165,8 +167,8 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
         planos: convenio.planos.map(plano => ({ ...plano, selecionado: false }))
       };
     });
-    setConveniosEPlanos(updatedConveniosEPlanos);
   
+    setConveniosEPlanos(updatedConveniosEPlanos);
     try {
       await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${recepcao.id}`, selectedData);
       setSnackbar(new SnackbarState('Convênios e planos atualizados com sucesso!', 'success', true));
@@ -175,6 +177,17 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
       setSnackbar(new SnackbarState('Erro ao atualizar convênios e planos!', 'error', true));
     }
   };
+  
+  const handleEspecialidadesExamesSave = async (selectedData: { especialidadeId: number; examesId: number[] }[]) => {
+    try {
+      await axios.post(`/api/RecepcaoEspecialidadeExame/addOrUpdate/${recepcao.id}`, selectedData);
+      setSnackbar(new SnackbarState('Especialidades e exames atualizados com sucesso!', 'success', true));
+    } catch (error) {
+      console.error('Erro ao atualizar especialidades e exames:', error);
+      setSnackbar(new SnackbarState('Erro ao atualizar especialidades e exames!', 'error', true));
+    }
+  };
+  
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-6">
@@ -194,6 +207,13 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
           onClick={() => handleTabChange('conveniosPlanos')}
         >
           Convênios e Planos
+        </button>
+        <button
+            type="button"
+            className={`py-2 px-4 ${activeTab === 'especialidadesExames' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => handleTabChange('especialidadesExames')}
+        >
+          Especialidades e Exames
         </button>
       </div>
 
@@ -293,12 +313,17 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
               {!endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
             </div>
           </div>
+          <div className="flex justify-end">
+            <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
+              Salvar
+            </button>
+          </div>          
         </>
       )}
 
       {activeTab === 'conveniosPlanos' && (
         <div className="w-full">
-          <h3 className="text-lg font-semibold mb-4">Convênios e Planos</h3>
+          <h3 className="text-lg font-semibold mb-4">Restrições</h3>
           <ConvenioPlanoSelector
             onSave={handleConveniosPlanosSave}
             recepcaoId={recepcao.id}
@@ -307,14 +332,22 @@ export const RecepcaoEditForm = ({ recepcao, onSave, onClose, setSnackbar }: Rec
         </div>
       )}
 
-      <div className="flex justify-end">
-        <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
-          Cancelar
-        </button>
-        <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
-          Salvar
-        </button>
-      </div>
+        {activeTab === 'especialidadesExames' && (
+          <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4">Restrições</h3>
+            <EspecialidadeExameSelector
+              onSave={handleEspecialidadesExamesSave}
+              recepcaoId={recepcao.id}
+              setSnackbar={setSnackbar}
+            />
+          </div>
+        )}
+          <div className="flex justify-end">
+            <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+              Fechar
+            </button>
+          </div>
+
     </form>
   );
 };

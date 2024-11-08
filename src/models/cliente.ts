@@ -3,14 +3,14 @@ export interface Cliente {
     id?: number;
     nome: string;
     cpfCnpj?: string;
-    enderecoId: number; // Corrigido para int e alinhado com o backend
+    enderecoId?: number; // Corrigido para int e alinhado com o backend
     telefone?: string;
-    email: string;
+    email?: string;
     situacaoId: number;
     dataCadastro: Date | string;
 
     sexo?: string; 
-    nascimento?: Date | string;
+    nascimento?: Date | string | null;
     convenioId?: number; 
     planoId?: number; 
     rg?: string; 
@@ -26,7 +26,7 @@ export interface Cliente {
     foto?: ArrayBuffer | string |  null; // Usando ArrayBuffer para representar binário em TS
     profissao?: string;
     matricula?: string;
-    validadeMatricula?: Date | string;
+    validadeMatricula?: Date | string | null;
     titularConvenio?: string;
 
     nomeFantasia?: string;

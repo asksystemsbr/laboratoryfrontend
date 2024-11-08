@@ -67,7 +67,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         Senha: password,
         token: '',
         permissions:[],
-        unidadeId
+        unidadeId,
+        id: '0'
       });
 
       const user = {

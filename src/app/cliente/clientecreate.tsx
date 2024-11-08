@@ -12,7 +12,7 @@ import { Plano } from '@/models/plano';
 import { Cliente } from '@/models/cliente'; 
 import { validateCPF } from '@/utils/cpfValidator';
 import { validarCNPJ } from '@/utils/cnpjValidator';
-import { validateDate } from '@/utils/validateDate';
+import { validateDateEmpty } from '@/utils/validateDate';
 import { UF } from '@/models/uf';
 import { buscarEnderecoViaCep} from '@/utils/endereco';
 import { Endereco } from '@/models/endereco';
@@ -20,13 +20,28 @@ import { validatePhone } from '@/utils/phone';
 import Image from 'next/image';
 
 interface ClienteCreateFormProps {
-  onSave: () => void;
+  onSave: (newClient: Cliente) => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void;
+  isSimpleMode?: boolean;
+  initialCpf?: string; 
+  initialRg?: string;  
 }
 
-export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreateFormProps) => {
-  const { register, handleSubmit, reset, formState: { errors }, watch, setError,clearErrors } = useForm<Cliente>();
+export const ClienteCreateForm = ({ 
+      onSave, 
+      onClose, 
+      setSnackbar,  
+      isSimpleMode = false, // Default to false for full validation
+      initialCpf = '',  // Default empty if not passed
+      initialRg = ''    // Default empty if not passed
+   }: ClienteCreateFormProps) => {
+  const { register, handleSubmit, reset,setValue, formState: { errors }, watch, setError,clearErrors } = useForm<Cliente>({
+    defaultValues: {
+      cpfCnpj: initialCpf,  // Usar o valor inicial do CPF
+      rg: initialRg         // Usar o valor inicial do RG
+    }
+  });
   const [cep, setCep] = useState('');
   const [isCNPJ, setIsCNPJ] = useState(false);
   const [isPhoneFixo, setIsPhoneFixo] = useState(false);
@@ -49,8 +64,15 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
   const nascimento = watch('nascimento');
   const isMenorDeIdade = nascimento ? differenceInYears(new Date(), new Date(nascimento)) < 18 : false;
 
-    // Novo estado para indicar se está processando a requisição
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  // Novo estado para indicar se está processando a requisição
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const ContainerElement = isSimpleMode ? 'div' : 'form';
+
+
+    useEffect(() => {
+      if (initialCpf) setValue('cpfCnpj', initialCpf); // Preencher CPF se fornecido
+      if (initialRg) setValue('rg', initialRg);        // Preencher RG se fornecido
+    }, [initialCpf, initialRg, setValue]);
 
   useEffect(() => {
     const fetchConvenios = async () => {
@@ -128,29 +150,53 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
 
   const onSubmit = async (data: Cliente) => {
 
-    if(!endereco.cep  
-        || !endereco.rua 
-        || !endereco.numero  
-        || !endereco.bairro
-        || !endereco.cidade
-        || !endereco.uf  
-    ){
-      return;
+    if(!isSimpleMode){    
+      if(!endereco.cep  
+          || !endereco.rua 
+          || !endereco.numero  
+          || !endereco.bairro
+          || !endereco.cidade
+          || !endereco.uf  
+      ){
+        return;
+      }
+    }
+    else
+    {
+        if(endereco.cep  
+          || endereco.rua 
+          || endereco.numero  
+          || endereco.bairro
+          || endereco.cidade
+          || endereco.uf  
+      ){
+          if(!endereco.cep  
+            || !endereco.rua 
+            || !endereco.numero  
+            || !endereco.bairro
+            || !endereco.cidade
+            || !endereco.uf  
+          ){
+            return;
+          }
+      }
     }
     // Validação de CPF/CNPJ
     const cpfCnpj = data.cpfCnpj || '';
-    if (!isCNPJ && !validateCPF(cpfCnpj)) {
-      setError('cpfCnpj', { type: 'manual', message: 'CPF inválido!' });
-      return;
-    } else if (isCNPJ && !validarCNPJ(cpfCnpj)) {
-      setError('cpfCnpj', { type: 'manual', message: 'CNPJ inválido!' });
-      return;
-    }
+    if(cpfCnpj!=''){
+      if (!isCNPJ && !validateCPF(cpfCnpj)) {
+        setError('cpfCnpj', { type: 'manual', message: 'CPF inválido!' });
+        return;
+      } else if (isCNPJ && !validarCNPJ(cpfCnpj)) {
+        setError('cpfCnpj', { type: 'manual', message: 'CNPJ inválido!' });
+        return;
+      }
 
-    checkCpfExists(cpfCnpj);
-    if (cpfInUse) {
-      setSnackbar(new SnackbarState('O CPF/CNPJ já está em uso', 'error', true));
-      return;
+      checkCpfExists(cpfCnpj);
+      if (cpfInUse) {
+        setSnackbar(new SnackbarState('O CPF/CNPJ já está em uso', 'error', true));
+        return;
+      }
     }
     const clienteComEndereco = {
       ...data,
@@ -164,16 +210,19 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
        cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
        telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
        foto: previewFoto,
-       validadeMatricula: data.validadeMatricula || null 
+       validadeMatricula: data.validadeMatricula || null,
+       dataCadastro: new Date().toISOString(),
+       nascimento: data.nascimento || null,  // Garantir que `nascimento` seja null
     };
+
 
     if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-      await axios.post('/api/Cliente', clienteComEndereco);
+      const response = await axios.post('/api/Cliente', clienteComEndereco);
       reset();
-      onSave();
+      onSave(response.data);
     } catch {
       setSnackbar(new SnackbarState('Erro ao criar o cliente!', 'error', true));
     } finally {
@@ -198,11 +247,11 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         setPreviewFoto(null); // Limpa a pré-visualização se o arquivo for removido
       }
     };
-
+    
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-      <form 
-        onSubmit={handleSubmit(onSubmit)} 
+      <ContainerElement  
+        {...(!isSimpleMode && { onSubmit: handleSubmit(onSubmit) })} 
         className="p-4 max-w-4xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
         
         <h2 className="text-xl font-bold mb-2 text-gray-800">Novo Cliente</h2>
@@ -262,11 +311,11 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         {/* E-mail e Telefone */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-gray-800">Email *</label>
+            <label className="block text-gray-800">Email {!isSimpleMode?'*':''}</label>
             <input 
             type='text'
               {...register('email', { 
-                required: 'O e-mail é obrigatório',
+                required:!isSimpleMode && 'O e-mail é obrigatório',
                 pattern: {
                   value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                   message: 'E-mail inválido'
@@ -409,11 +458,11 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         {/* CPF/CNPJ, RG, CEP e Data de Nascimento */}
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-gray-800">CPF *</label>
+            <label className="block text-gray-800">CPF {!isSimpleMode?'*':''}</label>
             <div className="flex items-center">
               <InputMask
                 {...register('cpfCnpj', { 
-                  required: !isMenorDeIdade &&  'CPF é obrigatório' 
+                  required: !isSimpleMode && !isMenorDeIdade &&  'CPF é obrigatório' 
                 })}
                 mask={isCNPJ ? '99.999.999/9999-99' : '999.999.999-99'}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
@@ -457,23 +506,23 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
 
           <div>
-            <label className="block text-gray-800">CEP *</label>
+            <label className="block text-gray-800">CEP {!isSimpleMode?'*':''}</label>
             <InputMask
               value={cep}
               mask="99999-999"
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               onChange={handleCepChange}
             />
-            {!endereco.cep && <p className="text-red-500 text-sm">CEP é obrigatório</p>}
+            {!isSimpleMode && !endereco.cep && <p className="text-red-500 text-sm">CEP é obrigatório</p>}
           </div>
 
           <div>
-            <label className="block text-gray-800">Data de Nascimento *</label>
+            <label className="block text-gray-800">Data de Nascimento {!isSimpleMode?'*':''}</label>
             <input
               type="date"
               {...register('nascimento', { 
-                required: 'Obrigatória',
-                validate: validateDate
+                required: !isSimpleMode && 'Obrigatória',
+                validate: validateDateEmpty
                })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
             />
@@ -485,10 +534,10 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         {isCNPJ && (
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-gray-800">Nome Fantasia *</label>
+              <label className="block text-gray-800">Nome Fantasia {!isSimpleMode?'*':''}</label>
               <input 
               type='text'
-                 {...register('nomeFantasia', { required: isCNPJ && 'Nome fantasia obrigatório' })}
+                 {...register('nomeFantasia', { required: !isSimpleMode && isCNPJ && 'Nome fantasia obrigatório' })}
                 className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
               />
               {errors.nomeFantasia && <p className="text-red-500 text-sm">{errors.nomeFantasia?.message}</p>}
@@ -548,7 +597,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
             </div>
 
             <div>
-              <label className="block text-gray-800">Telefone do Responsável *</label>
+              <label className="block text-gray-800">Telefone do Responsável {!isSimpleMode?'*':''}</label>
               <InputMask
                 {...register('telefoneResponsavel', { 
                   required: isMenorDeIdade && 'Telefone do responsável obrigatório',
@@ -582,25 +631,25 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
         {/* Endereço Completo */}
         <div className="grid grid-cols-[3fr,1fr] gap-4 mb-4">
           <div>
-            <label className="block text-gray-800">Rua (Logradouro) *</label>
+            <label className="block text-gray-800">Rua (Logradouro) {!isSimpleMode?'*':''}</label>
             <input 
             type='text'
               value={endereco.rua}
               onChange={(e) => setEndereco({ ...endereco, rua: e.target.value })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"        
             />
-             {!endereco.rua && <p className="text-red-500 text-sm">Rua é obrigatória</p>}
+             {!isSimpleMode && !endereco.rua && <p className="text-red-500 text-sm">Rua é obrigatória</p>}
           </div>
 
           <div>
-            <label className="block text-gray-800">Número *</label>
+            <label className="block text-gray-800">Número {!isSimpleMode?'*':''}</label>
             <input 
             type='text'
               value={endereco.numero}
               onChange={(e) => setEndereco({ ...endereco, numero: e.target.value })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"   
             />
-             {!endereco.numero && <p className="text-red-500 text-sm">Número é obrigatório</p>}
+             {!isSimpleMode && !endereco.numero && <p className="text-red-500 text-sm">Número é obrigatório</p>}
           </div>
         </div>
 
@@ -616,29 +665,29 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           </div>
 
           <div>
-            <label className="block text-gray-800">Bairro *</label>
+            <label className="block text-gray-800">Bairro {!isSimpleMode?'*':''}</label>
             <input
             type='text'
               value={endereco.bairro}
               onChange={(e) => setEndereco({ ...endereco, bairro: e.target.value })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"     
             />
-            {!endereco.bairro && <p className="text-red-500 text-sm">Bairro é obrigatório</p>}
+            {!isSimpleMode && !endereco.bairro && <p className="text-red-500 text-sm">Bairro é obrigatório</p>}
           </div>
 
           <div>
-            <label className="block text-gray-800">Cidade *</label>
+            <label className="block text-gray-800">Cidade {!isSimpleMode?'*':''}</label>
             <input
             type='text'
               value={endereco.cidade}
               onChange={(e) => setEndereco({ ...endereco, cidade: e.target.value })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"      
             />
-            {!endereco.cidade && <p className="text-red-500 text-sm">Cidade é obrigatório</p>}
+            {!isSimpleMode && !endereco.cidade && <p className="text-red-500 text-sm">Cidade é obrigatório</p>}
           </div>
 
           <div>
-            <label className="block text-gray-800">UF *</label>
+            <label className="block text-gray-800">UF {!isSimpleMode?'*':''}</label>
             <select
               value={endereco.uf}
               onChange={(e) => setEndereco({ ...endereco, uf: e.target.value })}
@@ -651,7 +700,7 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
                 </option>
               ))}
             </select>
-            {!endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
+            {!isSimpleMode && !endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
           </div>
         </div>
 
@@ -659,11 +708,17 @@ export const ClienteCreateForm = ({ onSave, onClose, setSnackbar }: ClienteCreat
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
-            Salvar
-          </button>
+          {isSimpleMode ? (
+            <button type="button" onClick={handleSubmit(onSubmit)} className="py-2 px-4 rounded bg-blue-500 text-white">
+              Salvar
+            </button>
+          ) : (
+            <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
+              Salvar
+            </button>
+          )}
         </div>
-      </form>
+      </ContainerElement >
     </div>
   );
 };
