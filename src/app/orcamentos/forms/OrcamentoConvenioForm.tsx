@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Convenio } from '@/models/convenio';
 import { Plano } from '@/models/plano';
+import { useAuth } from '@/app/auth';
 
 interface OrcamentoConvenioFormProps {  
   onConvenioSelected: (id: number| null,codConvenio: string | null) => void;
@@ -15,20 +16,22 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
     onConvenioSelected,
     onPlanoSelected,    
     convenioId,
-    planoId 
+    planoId
   }) => {  
   const [convenioData, setConvenioData] = useState<Convenio | null>(null);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [planoData, setPlanoData] = useState<Plano | null>(null);  
   const [codigoConvenio, setcodigoConvenio] = useState('');
+  const [recepcaoId,setrecepcaoId]= useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
-
+  const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
+  const user = auth?.user; // Verifica se auth é nulo antes de acessar user
 
   const buscarConvenioPorCodigo = async () => {
     try {
       if (!codigoConvenio ) return;
-      const response = await axios.get(`/api/Convenio/getConvenioByCodigo/${codigoConvenio}`);
+      const response = await axios.get(`/api/Convenio/getConvenioByCodigoAndRecepcao/${codigoConvenio}/${recepcaoId}`);
       const item = response.data;
       preencherDadosConvenio(item);
     } catch (error) {
@@ -48,7 +51,7 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
 
   const loadPlanosByConvenio = async (convenioId: number) => {
     try {
-      const response = await axios.get(`/api/Plano/getListByConvenio/${convenioId}`);
+      const response = await axios.get(`/api/Plano/getListByConvenioAndRecepcao/${convenioId}/${recepcaoId}`);
       setPlanos(response.data);
       setPlanoData(null); // Reset plano selection
       onPlanoSelected(null);
@@ -87,16 +90,14 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
   
   useEffect(() => {    
   // Usa uma variável para controlar a execução e evitar chamadas duplicadas
-  let isCancelled = false;
 
     const loadConvenios = async () => {
-      try {
-        if (!isCancelled) { // Somente define os dados se não estiver cancelado
+      const recepcaoCod= parseInt(user?.unidadeId || '0', 10);
+      setrecepcaoId(recepcaoCod)
+      try {        
           setIsLoaded(true);
-          const response = await axios.get('/api/Convenio');
-          setConvenios(response.data);          
-        }
-        
+          const response = await axios.get(`/api/Convenio/getConvenioByRecepcao/${recepcaoCod}`);
+          setConvenios(response.data);                 
       } catch (error) {
         console.log(error);
         //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
@@ -104,9 +105,7 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
       
     };
 
-    //Promise.all([loadConvenios()]).then(() => setIsLoaded(true));
-    if (isLoaded) loadConvenios(); // Executa apenas se estiver carregando
-    return () => { isCancelled = true; }; 
+    Promise.all([loadConvenios()]).then(() => setIsLoaded(true));    
   },[isLoaded]);
 
   useEffect(() => {

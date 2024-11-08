@@ -164,8 +164,8 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-      <form className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-750 bg-opacity-50 z-50">
+      <form className="p-4 max-w-6xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
         <OrcamentoClienteForm 
           onClienteSelected={handleClienteSelected}
           nomePaciente={''}
@@ -238,6 +238,9 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
           </button>
           <button type="button" onClick={submitOrcamento} className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
             Salvar
+          </button>
+          <button type="button"  className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+            OCR
           </button>
         </div>
       </form>

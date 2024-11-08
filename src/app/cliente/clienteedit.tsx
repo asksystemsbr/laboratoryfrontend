@@ -12,7 +12,7 @@ import { Endereco } from '@/models/endereco';
 import { Cliente } from '@/models/cliente'; 
 import { validateCPF } from '@/utils/cpfValidator';
 import { validarCNPJ } from '@/utils/cnpjValidator';
-import { validateDate } from '@/utils/validateDate';
+import { validateDateEmpty } from '@/utils/validateDate';
 import { UF } from '@/models/uf';
 import { formatDateForInput } from '@/utils/formatDateForInput';
 import { buscarEnderecoViaCep } from '@/utils/endereco';
@@ -105,8 +105,8 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
     if (isLoaded) {
       setValue('convenioId', cliente.convenioId);
       setValue('planoId', cliente.planoId);
-      setValue('nascimento', formatDateForInput(cliente.nascimento)); // Converter a data para o formato correto
-      setValue('validadeMatricula', formatDateForInput(cliente.validadeMatricula));
+      setValue('nascimento',cliente.nascimento ?  formatDateForInput(cliente.nascimento):''); // Converter a data para o formato correto
+      setValue('validadeMatricula',cliente.validadeMatricula ?  formatDateForInput(cliente.validadeMatricula): '');
       if ((cliente?.cpfCnpj ?? '').length > 14) {
         setIsCNPJ(true);
       }
@@ -200,7 +200,8 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
         cpfResponsavel: data.cpfResponsavel === '' ? null : data.cpfResponsavel,
         telefoneResponsavel: data.telefoneResponsavel === '' ? null : data.telefoneResponsavel,
         foto: previewFoto ? previewFoto.split(",")[1] : cliente.foto, 
-        validadeMatricula: cliente.validadeMatricula || null 
+        validadeMatricula: cliente.validadeMatricula || null ,
+        nascimento: data.nascimento || null,  // Garantir que `nascimento` seja null
       };
 
     try {
@@ -499,7 +500,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
               type="date"
               {...register('nascimento', { 
                 required: 'Obrigatória',
-                validate: validateDate
+                validate: validateDateEmpty
                })}
               className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
             />

@@ -4,6 +4,8 @@ import axios from 'axios';
 import InputMask from 'react-input-mask-next';
 import { Cliente } from '@/models/cliente';
 import { Endereco } from '@/models/endereco';
+import { ClienteCreateForm } from '@/app/cliente/clientecreate'; // Import the ClienteCreateForm component
+import ConfirmationModal from '@/components/confirmationModal';
 
 interface ClienteFormProps {
   onClienteSelected: (id: number| null, nomePaciente: string | null) => void;
@@ -20,6 +22,11 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
   const [pacienteIdData] = useState(pacienteId || '');
   const [cpf, setCpf] = useState('');
   const [rg, setRg] = useState('');
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Tracks the modal visibility
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  //const [newClienteId, setNewClienteId] = useState<number | null>(null); // Holds the newly created client ID
+
   const [endereco, setEndereco] = useState<Endereco>({
     cep: '',
     rua: '',
@@ -29,6 +36,22 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     cidade: '',
     uf: ''
   });
+
+    // Opens the create modal if no client is found
+    const openCreateModal = () => setIsCreateModalOpen(true);
+    const closeCreateModal = () => setIsCreateModalOpen(false);
+    const openConfirmationModal = () => {
+      setIsConfirmationModalOpen(true);
+    };
+  
+    const closeConfirmationModal = () => {
+      setIsConfirmationModalOpen(false);
+    };
+  
+    const confirmCreateClient = () => {
+      closeConfirmationModal();
+      openCreateModal();
+    };
 
   useEffect(() => {
     // Carrega dados do cliente automaticamente se o CPF estiver preenchido
@@ -51,7 +74,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
 
   const buscarClientePorCpf = async () => {
     try {
-      if (!cpf || cpf.length < 11) return;
+      if (!cpf || cpf.length < 11 || cpf=='___.___.___-__') return;
       const response = await axios.get(`/api/Cliente/clienteByCPF/${cpf}`);
       const cliente = response.data;
       preencherDadosCliente(cliente,'');
@@ -59,12 +82,13 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       console.error('Cliente não encontrado', error);
       setClienteData(null);
       onClienteSelected(null,null);
+      openConfirmationModal(); // Open confirmation modal if no client is found
     }
   };
   
   const buscarClientePorRg = async () => {
     try {
-      if (!rg || rg.length < 9) return;
+      if (!rg || rg.length < 9 || rg=='__.___.___-_') return;
       const response = await axios.get(`/api/Cliente/clienteByRG/${rg}`);
       const cliente = response.data;
       preencherDadosCliente(cliente,'');
@@ -72,6 +96,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       console.error('Cliente não encontrado', error);
       setClienteData(null);
       onClienteSelected(null,null);
+      openConfirmationModal(); // Open confirmation modal if no client is found
     }
   };
 
@@ -98,13 +123,22 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     await fetchEndereco(cliente.enderecoId ?? 0);
   };
 
+    // Callback for when a new client is successfully created
+    const handleClienteCreate = (newClient: Cliente) => {
+      setClienteData(newClient);
+      //setNewClienteId(newClient.id);
+      setCpf(newClient.cpfCnpj ?? '');
+      onClienteSelected(newClient.id?? null, newClient.nome); // Update the parent form with the new client
+      closeCreateModal(); // Close the modal
+    };
+
   return (
     <div className="form-section mt-4 border-t border-gray-300 py-1">
     <h3 className="text-lg font-semibold text-center mb-2">Dados do paciente</h3>
 
     {/* Primeira linha */}
     <div className="flex flex-wrap gap-4 mb-4">
-      <div className="basis-1/7">
+      <div className="basis-2/12">
           <InputMask
             value={cpf}
             onChange={(e) => setCpf(e.target.value)}
@@ -114,7 +148,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
             onBlur= {buscarClientePorCpf}
           />          
       </div>
-      <div className="basis-1/8">
+      <div className="basis-2/12">
         <InputMask
           value={rg }
           onChange={(e) => setRg(e.target.value)}
@@ -124,7 +158,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           placeholder="RG"
         />
       </div>      
-      <div className="basis-2/6 flex-grow">
+      <div className="basis-3/12 flex-grow">
         <input
           type="text"
           value={clienteData?.nome || ''}
@@ -134,7 +168,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           placeholder="Nome"
         />
       </div>
-      <div className="basis-1/6">
+      <div className="basis-1/12">
         <select
           value={clienteData?.sexo || ''}
           disabled
@@ -145,7 +179,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           <option value="F">Feminino</option>
         </select>
       </div>
-      <div className="basis-1/7">
+      <div className="basis-1/12">
         <input
           type="date"
           value={
@@ -222,6 +256,29 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
         />
       </div>
     </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        title="Cliente não encontrado"
+        message="Deseja cadastrar um novo cliente?"
+        onConfirm={confirmCreateClient} // Open create modal on confirm
+        onCancel={closeConfirmationModal}
+      />
+      
+    {/* Modal for ClienteCreateForm */}
+    {isCreateModalOpen && (
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+        <ClienteCreateForm
+          initialCpf={cpf}
+          initialRg={rg}
+          onSave={(newClient) => handleClienteCreate(newClient)} // Callback to handle new client creation
+          onClose={closeCreateModal}
+          setSnackbar={() => {}} // Provide snackbar handler as required
+          isSimpleMode={true}
+        />
+      </div>
+    )}
   </div>
   );
 };

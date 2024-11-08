@@ -9,6 +9,7 @@ import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import { Solicitante } from '@/models/solicitante';
 import InformativeModal from '@/components/InformativeModal';
+import { useAuth } from '@/app/auth';
 
 
 interface ExameFormProps {
@@ -46,6 +47,10 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
+  const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
+  const user = auth?.user; // Verifica se auth é nulo antes de acessar user
+  const [recepcaoId,setrecepcaoId]= useState(0);
+  
 /*star search field exame*/
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredExames, setFilteredExames] = useState(exames);
@@ -124,7 +129,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   const buscarSolicitantePorCRM = async () => {
     try {
       if (!crm || crm.length < 3) return;
-      const response = await axios.get(`/api/Solicitante/solicitanteByCRM/${crm}`);
+      const response = await axios.get(`/api/Solicitante/GetSolicitanteByCRMAndRecepcao/${crm}/${recepcaoId}`);
       const item = response.data;
       preencherDadosSolicitante(item);
     } catch (error) {
@@ -141,9 +146,12 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   };
 
   useEffect(() => {
+    const recepcaoCod= parseInt(user?.unidadeId || '0', 10);
+    setrecepcaoId(recepcaoCod)
+
     const loadExames = async () => {
       try {
-        const response = await axios.get('/api/Exame');
+        const response = await axios.get(`/api/Exame/getExameByRecepcao/${recepcaoCod}`);
         setexames(response.data);
       } catch (error) {
         console.log(error);
@@ -153,7 +161,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
     const loadSolicitantes = async () => {
       try {
-        const response = await axios.get('/api/Solicitante');
+        const response = await axios.get(`/api/Solicitante/getSolicitanteByRecepcao/${recepcaoCod}`);
         setSolicitantes(response.data);
       } catch (error) {
         console.log(error);
@@ -248,7 +256,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
       );
 
       if (alreadyExists) {
-        setModalMessage('Essa exame já foi adicionada.');
+        setModalMessage('Esse exame já foi adicionado.');
         setIsModalOpen(true);
         resetInput();
         return;
