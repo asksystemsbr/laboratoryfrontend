@@ -10,7 +10,7 @@ interface Especialidade {
 interface Exame {
   id: number;
   especialidadeId: number;
-  descricao: string;
+  nomeExame: string;
 }
 
 interface EspecialidadeExameSelectorProps {
@@ -21,7 +21,7 @@ interface EspecialidadeExameSelectorProps {
 
 interface SelectedDataResponse {
   especialidadeId: number;
-  exames: number[];
+  examesId: (number | null)[];  // Array que pode conter números ou null
 }
 
 const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({ onSave, recepcaoId, setSnackbar }) => {
@@ -31,26 +31,50 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
   const [selectedExames, setSelectedExames] = useState<{ [key: number]: boolean }>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  // Inicializar seleção de especialidades e exames com base nos dados carregados
-  const initializeSelection = useCallback((especialidadesData: Especialidade[], examesData: Exame[], selectedData: SelectedDataResponse[]) => {
+  const initializeSelection = useCallback((
+    especialidadesData: Especialidade[], 
+    examesData: Exame[], 
+    selectedData: SelectedDataResponse[]
+  ) => {
     const newSelectedEspecialidades: { [key: number]: boolean } = {};
     const newSelectedExames: { [key: number]: boolean } = {};
-
+  
     selectedData.forEach(item => {
-      item.exames.forEach(exameId => {
+      // Garantir que examesId é um array de números válidos
+      const validExameIds = item.examesId?.filter((id): id is number => 
+        id !== null && id !== undefined
+      ) || [];
+  
+      validExameIds.forEach(exameId => {
         newSelectedExames[exameId] = true;
       });
-      const examesDaEspecialidade = examesData.filter(exame => exame.especialidadeId === item.especialidadeId);
-      const allExamesSelected = examesDaEspecialidade.every(exame => newSelectedExames[exame.id]);
-      newSelectedEspecialidades[item.especialidadeId] = allExamesSelected;
+  
+      const examesDaEspecialidade = examesData.filter(
+        exame => exame.especialidadeId === item.especialidadeId
+      );
+  
+      // Se examesId está vazio, seleciona todos os exames da especialidade
+      if (validExameIds.length === 0) {
+        examesDaEspecialidade.forEach(exame => {
+          if (exame.id !== undefined) {
+            newSelectedExames[exame.id] = true;
+          }
+        });
+        newSelectedEspecialidades[item.especialidadeId] = true;
+      } else {
+        // Verifica se todos os exames da especialidade estão selecionados
+        const allExamesSelected = examesDaEspecialidade.every(exame => 
+          exame.id !== undefined && validExameIds.includes(exame.id)
+        );
+        newSelectedEspecialidades[item.especialidadeId] = allExamesSelected;
+      }
     });
-
+  
     setSelectedEspecialidades(newSelectedEspecialidades);
     setSelectedExames(newSelectedExames);
     setIsLoading(false);
   }, []);
 
-  // Carregar dados das especialidades, exames e seleção inicial da recepção
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -58,27 +82,46 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
         const [especialidadesResponse, examesResponse, selectedDataResponse] = await Promise.all([
           axios.get<Especialidade[]>('/api/Especialidade'),
           axios.get<Exame[]>('/api/Exame'),
-          recepcaoId ? axios.get<SelectedDataResponse[]>(`/api/RecepcaoEspecialidadeExame/byRecepcao/${recepcaoId}`) : Promise.resolve({ data: [] as SelectedDataResponse[] })
+          recepcaoId 
+            ? axios.get<SelectedDataResponse[]>(`/api/RecepcaoEspecialidadeExame/byRecepcao/${recepcaoId}`)
+            : Promise.resolve({ data: [] })
         ]);
+
+        console.log('Dados carregados:', {
+          especialidades: especialidadesResponse.data,
+          exames: examesResponse.data,
+          selecao: selectedDataResponse.data
+        });
 
         setEspecialidades(especialidadesResponse.data);
         setExames(examesResponse.data);
-        initializeSelection(especialidadesResponse.data, examesResponse.data, selectedDataResponse.data);
+        initializeSelection(
+          especialidadesResponse.data,
+          examesResponse.data,
+          selectedDataResponse.data
+        );
       } catch (error) {
-        console.error('Erro ao carregar especialidades e exames:', error);
+        console.error('Erro ao carregar dados:', error);
         setSnackbar(new SnackbarState('Erro ao carregar especialidades e exames!', 'error', true));
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, [recepcaoId, setSnackbar, initializeSelection]);
 
-  // Manipulação de seleção de especialidade
   const handleEspecialidadeChange = (especialidadeId: number) => {
     const isEspecialidadeSelected = !selectedEspecialidades[especialidadeId];
-    setSelectedEspecialidades(prev => ({ ...prev, [especialidadeId]: isEspecialidadeSelected }));
+    
+    setSelectedEspecialidades(prev => ({
+      ...prev,
+      [especialidadeId]: isEspecialidadeSelected
+    }));
 
-    const examesDaEspecialidade = exames.filter(exame => exame.especialidadeId === especialidadeId);
+    const examesDaEspecialidade = exames.filter(
+      exame => exame.especialidadeId === especialidadeId
+    );
+
     setSelectedExames(prev => {
       const newState = { ...prev };
       examesDaEspecialidade.forEach(exame => {
@@ -88,33 +131,52 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
     });
   };
 
-  // Manipulação de seleção de exame individual
   const handleExameChange = (exameId: number, especialidadeId: number) => {
-    setSelectedExames(prev => ({ ...prev, [exameId]: !prev[exameId] }));
+    setSelectedExames(prev => ({
+      ...prev,
+      [exameId]: !prev[exameId]
+    }));
 
-    const examesDaEspecialidade = exames.filter(exame => exame.especialidadeId === especialidadeId);
-    const allExamesSelected = examesDaEspecialidade.every(exame => selectedExames[exame.id] || exame.id === exameId);
+    const examesDaEspecialidade = exames.filter(
+      exame => exame.especialidadeId === especialidadeId
+    );
+    
+    setTimeout(() => {
+      const allExamesSelected = examesDaEspecialidade.every(
+        exame => selectedExames[exame.id] || exame.id === exameId
+      );
 
-    setSelectedEspecialidades(prev => ({ ...prev, [especialidadeId]: allExamesSelected }));
+      setSelectedEspecialidades(prev => ({
+        ...prev,
+        [especialidadeId]: allExamesSelected
+      }));
+    }, 0);
   };
 
-  // Função para salvar as seleções
   const handleSave = () => {
-    const selectedData = especialidades.map(especialidade => {
-      const examesDaEspecialidade = exames.filter(exame => exame.especialidadeId === especialidade.id);
-      const examesSelecionados = examesDaEspecialidade
-        .filter(exame => selectedExames[exame.id])
-        .map(exame => exame.id);
+    const selectedData = especialidades
+      .map(especialidade => {
+        const examesDaEspecialidade = exames.filter(
+          exame => exame.especialidadeId === especialidade.id
+        );
+        
+        const examesSelecionados = examesDaEspecialidade
+          .filter(exame => selectedExames[exame.id])
+          .map(exame => exame.id);
 
-      if (selectedEspecialidades[especialidade.id] && examesSelecionados.length === examesDaEspecialidade.length) {
-        return { especialidadeId: especialidade.id, examesId: [] };
-      } else if (examesSelecionados.length > 0) {
-        return { especialidadeId: especialidade.id, examesId: examesSelecionados };
-      }
-      return null;
-    }).filter(item => item !== null);
+        if (examesSelecionados.length === 0) {
+          return null;
+        }
 
-    onSave(selectedData as { especialidadeId: number; examesId: number[] }[]);
+        return {
+          especialidadeId: especialidade.id,
+          examesId: selectedEspecialidades[especialidade.id] ? [] : examesSelecionados
+        };
+      })
+      .filter((item): item is { especialidadeId: number; examesId: number[] } => item !== null);
+
+    console.log('Dados para salvar:', selectedData);
+    onSave(selectedData);
   };
 
   if (isLoading) {
@@ -134,7 +196,9 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
               onChange={() => handleEspecialidadeChange(especialidade.id)}
               className="mr-2"
             />
-            <label htmlFor={`especialidade-${especialidade.id}`} className="font-semibold">{especialidade.descricao}</label>
+            <label htmlFor={`especialidade-${especialidade.id}`} className="font-semibold">
+              {especialidade.descricao}
+            </label>
           </div>
           <div className="ml-6">
             {exames
@@ -148,7 +212,9 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
                     onChange={() => handleExameChange(exame.id, especialidade.id)}
                     className="mr-2"
                   />
-                  <label htmlFor={`exame-${exame.id}`}>{exame.descricao}</label>
+                  <label htmlFor={`exame-${exame.id}`}>
+                    {exame.nomeExame}
+                  </label>
                 </div>
               ))}
           </div>
