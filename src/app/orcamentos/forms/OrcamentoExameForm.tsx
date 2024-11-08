@@ -49,7 +49,6 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
-  const [recepcaoId,setrecepcaoId]= useState(0);
   
 /*star search field exame*/
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,7 +128,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   const buscarSolicitantePorCRM = async () => {
     try {
       if (!crm || crm.length < 3) return;
-      const response = await axios.get(`/api/Solicitante/GetSolicitanteByCRMAndRecepcao/${crm}/${recepcaoId}`);
+      const response = await axios.get(`/api/Solicitante/solicitanteByCRM/${crm}`);
       const item = response.data;
       preencherDadosSolicitante(item);
     } catch (error) {
@@ -147,7 +146,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
   useEffect(() => {
     const recepcaoCod= parseInt(user?.unidadeId || '0', 10);
-    setrecepcaoId(recepcaoCod)
+    //setrecepcaoId(recepcaoCod)
 
     const loadExames = async () => {
       try {
@@ -161,7 +160,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
     const loadSolicitantes = async () => {
       try {
-        const response = await axios.get(`/api/Solicitante/getSolicitanteByRecepcao/${recepcaoCod}`);
+        const response = await axios.get(`/api/Solicitante`);
         setSolicitantes(response.data);
       } catch (error) {
         console.log(error);

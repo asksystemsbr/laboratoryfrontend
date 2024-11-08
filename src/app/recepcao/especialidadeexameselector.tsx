@@ -1,3 +1,4 @@
+//src/app/recepcao/especialidadeexameselector.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { SnackbarState } from '../../models/snackbarState';
@@ -14,7 +15,7 @@ interface Exame {
 }
 
 interface EspecialidadeExameSelectorProps {
-  onSave: (selectedData: { especialidadeId: number; examesId: number[] }[]) => void;
+  onSave: (selectedData: { especialidadeId: number; examesId: number[]}[]) => void;
   recepcaoId?: number;
   setSnackbar: (snackbar: SnackbarState) => void;
 }
@@ -219,7 +220,7 @@ const EspecialidadeExameSelector: React.FC<EspecialidadeExameSelectorProps> = ({
               ))}
           </div>
         </div>
-      ))}
+      ))}     
       <button
         onClick={handleSave}
         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"

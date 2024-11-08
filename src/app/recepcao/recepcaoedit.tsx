@@ -1,3 +1,4 @@
+//src/app/recepcao/recepcaoedit.tsx
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -129,13 +130,13 @@ const onSubmit = async (data: Recepcao) => {
     await axios.put(`/api/Recepcao/${itemComEndereco.id}`, itemComEndereco);
 
     // Salva os convênios e planos com a nova estrutura
-    const conveniosPlanosSelecionados = conveniosEPlanos.map(c => ({
-      recepcaoId: itemComEndereco.id,
-      convenioId: c.id,
-      planosId: c.planos.filter(p => p.selecionado).map(p => p.id) // Use planosId ao invés de planos
-    }));
+    // const conveniosPlanosSelecionados = conveniosEPlanos.map(c => ({
+    //   recepcaoId: itemComEndereco.id,
+    //   convenioId: c.id,
+    //   planosId: c.planos.filter(p => p.selecionado).map(p => p.id) // Use planosId ao invés de planos
+    // }));
 
-    await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, conveniosPlanosSelecionados);
+    //await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${itemComEndereco.id}`, conveniosPlanosSelecionados);
 
     reset();
     onSave();
@@ -168,7 +169,6 @@ const onSubmit = async (data: Recepcao) => {
     });
   
     setConveniosEPlanos(updatedConveniosEPlanos);
-  
     try {
       await axios.post(`/api/RecepcaoConvenioPlano/addOrUpdate/${recepcao.id}`, selectedData);
       setSnackbar(new SnackbarState('Convênios e planos atualizados com sucesso!', 'success', true));
@@ -313,12 +313,17 @@ const onSubmit = async (data: Recepcao) => {
               {!endereco.uf && <p className="text-red-500 text-sm">UF é obrigatória</p>}
             </div>
           </div>
+          <div className="flex justify-end">
+            <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
+              Salvar
+            </button>
+          </div>          
         </>
       )}
 
       {activeTab === 'conveniosPlanos' && (
         <div className="w-full">
-          <h3 className="text-lg font-semibold mb-4">Convênios e Planos</h3>
+          <h3 className="text-lg font-semibold mb-4">Restrições</h3>
           <ConvenioPlanoSelector
             onSave={handleConveniosPlanosSave}
             recepcaoId={recepcao.id}
@@ -329,6 +334,7 @@ const onSubmit = async (data: Recepcao) => {
 
         {activeTab === 'especialidadesExames' && (
           <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4">Restrições</h3>
             <EspecialidadeExameSelector
               onSave={handleEspecialidadesExamesSave}
               recepcaoId={recepcao.id}
@@ -336,16 +342,12 @@ const onSubmit = async (data: Recepcao) => {
             />
           </div>
         )}
+          <div className="flex justify-end">
+            <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+              Fechar
+            </button>
+          </div>
 
-
-      <div className="flex justify-end">
-        <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
-          Cancelar
-        </button>
-        <button type="submit" className="py-2 px-4 rounded bg-blue-500 text-white">
-          Salvar
-        </button>
-      </div>
     </form>
   );
 };
