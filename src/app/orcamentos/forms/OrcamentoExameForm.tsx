@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Exame } from '@/models/exame';
 import { PlusIcon,TrashIcon } from '@heroicons/react/24/solid';
 import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
-import { formatDateForInput } from '@/utils/formatDateForInput';
+import { formatDateTimeForGrid } from '@/utils/formatDateForInput';
 import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import { Solicitante } from '@/models/solicitante';
@@ -69,6 +69,36 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
     );
     setHighlightedIndex(-1); // redefine o destaque ao atualizar a lista
   }, [searchTerm, exames]);
+
+  useEffect(() => {
+      // Update `addedExames` by modifying the `preco` of each item based on `orcamentoDetalhes`
+      const updatedExames = orcamentoDetalhes.map((detalhe) => {
+        // Find the corresponding `exame` in `addedExames`
+        const matchingExame = addedExames.find((exame) => exame.exameId === detalhe.exameId);
+        
+        // If a match is found, update its `preco`
+        if (matchingExame) {
+          return { ...matchingExame, preco: detalhe.valor ?? matchingExame.preco };
+        } else {
+          // Convert `OrcamentoDetalhe` to `Exame`, filling in required `Exame` fields
+          return {
+            ...detalhe,
+            nomeExame: 'Desconhecido',  // Default or fetched value for missing properties
+            prazo: 0,              // Default or fetched value
+            preco: detalhe.valor ?? 0,
+            dataColeta: detalhe.dataColeta || new Date().toISOString(),
+            materialApoioId: 0,    // Default or fetched value
+            especialidadeId: 0,    // Default or fetched value
+            setorId: 0             // Default or fetched value
+          } as Exame;
+        }
+        
+        // If no match, keep the `detalhe` as is
+        return detalhe;
+      });
+
+      setAddedExames(updatedExames as Exame[]);
+  }, [orcamentoDetalhes]);
 
   const handleSelect = (exame: Exame) => {
     console.log('Item selecionado:', exame); 
@@ -202,6 +232,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
         });
         // Define a lista de exames já adicionados a partir dos exames do orçamento
         setAddedExames(examesComDetalhes);
+        // setexames(examesComDetalhes);
 
         setObservacoes(observacoesParam);
         setMedicamentos(medicamentosParam);
@@ -251,6 +282,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
        // Check if the payment type already exists in the list
        const alreadyExists = (addedExames as OrcamentoDetalhe[]).some(
+      // const alreadyExists = (exames as OrcamentoDetalhe[]).some(
         (exameItem) => exameItem.exameId === exame.id
       );
 
@@ -273,17 +305,21 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
         .join(', ');
       setMedicamentos(newMedicamentos);
 
-      const newObservacoes = `${observacoes}${observacoes ? ', ' : ''}${obsResponse.data.instrucoesPreparo}`
-        .split(', ')
-        .filter((item, index, self) => self.indexOf(item) === index)
-        .join(', ');
-      setObservacoes(newObservacoes);
+      const newObservacoes = `${observacoes}${observacoes ? ', ' : ''}${obsResponse.data.instrucoesPreparo}${obsResponse.data.tecnicaDeColeta ? ', ' + obsResponse.data.tecnicaDeColeta : ''}`
+      .split(', ')
+      .filter((item, index, self) => self.indexOf(item) === index)
+      .join(', ');
+    setObservacoes(newObservacoes);
 
       const exameComDetalhes = { ...exame, id:0, valor:preco,exameId:exame.id,preco:preco, dataColeta: new Date().toISOString().split('T')[0] };
 
       setAddedExames([...addedExames, exameComDetalhes]);
 
-      onExameSelected([...addedExames, exameComDetalhes],observacoes,medicamentos);
+      onExameSelected([...addedExames, exameComDetalhes],newObservacoes,newMedicamentos);
+
+      // setexames([...exames, exameComDetalhes]);
+
+      // onExameSelected([...exames, exameComDetalhes],observacoes,medicamentos);
       //setcodigoExame(''); // Resetar campo após adicionar
       resetInput();
     } catch (error) {
@@ -292,14 +328,24 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   };
 
   const adicionarExameTeclado = async (exame: Exame) => {
-    if (!exame || !planoId) return;
+    if (!exame || !planoId) {
+      setModalMessage('Verifique o exame com convênio e plano.');
+      setIsModalOpen(true);
+      //resetInput();
+      return;
+    };
     await adicionarExame(exame);
 
   };
 
   const adicionarExameBtn = async (e: React.MouseEvent) => {
     e.preventDefault();    
-    if (!exameData || !planoId) return;
+    if (!exameData || !planoId) {
+      setModalMessage('Verifique o exame com convênio e plano.');
+      setIsModalOpen(true);
+      //resetInput();
+      return;
+    };
 
     await adicionarExame(exameData);
     
@@ -308,6 +354,28 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   const removerExame = (index: number) => {
     const updatedExames = addedExames.filter((_, idx) => idx !== index);
     setAddedExames(updatedExames);
+    // const updatedExames = exames.filter((_, idx) => idx !== index);
+    // setexames(updatedExames);
+
+    // Recompute medicamentos and observacoes based on remaining exams
+    const newMedicamentos = updatedExames
+    .map((exame) => exame.alertasRecep || '') // Assuming 'alertasRecep' holds medication alerts
+    .filter((med) => med) // Remove empty strings
+    .join(', ');
+
+    const newObservacoes = updatedExames
+      .map((exame) => {
+        const instrucoes = exame.instrucoesPreparo || '';
+        const tecnica = exame.tecnicaDeColeta || '';
+        return `${instrucoes}${tecnica ? ', ' + tecnica : ''}`;
+      })
+      .filter((obs) => obs) // Remove empty strings
+      .join(', ');
+
+    // Set the recomputed values to avoid duplicates
+    setMedicamentos(newMedicamentos);
+    setObservacoes(newObservacoes);
+
     onExameSelected(updatedExames,observacoes,medicamentos);
   };
 
@@ -394,6 +462,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
     </div>
 
     {addedExames.length > 0 && (
+    // {exames.length > 0 && (
       <div className="overflow-x-auto mt-4">
         <table className="min-w-full bg-white border border-gray-300">
           <thead className="bg-blue-100">
@@ -407,10 +476,11 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
           </thead>
           <tbody>
           {addedExames.map((exame, index) => (
+          // {exames.map((exame, index) => (
             <tr key={exame.id} className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
             <td className="px-2 py-1 border-b">{exame.codigoExame}</td>
             <td className="px-2 py-1 border-b">{exame.nomeExame}</td>
-            <td className="px-2 py-1 border-b">{formatDateForInput(exame.dataColeta)}</td>
+            <td className="px-2 py-1 border-b">{formatDateTimeForGrid(exame.dataColeta)}</td>
             <td className="px-2 py-1 border-b text-right">{formatCurrencyBRL(formatDecimal(exame.preco || 0, 2))}</td>
             <td className="px-2 py-1 border-b text-center">
               <button

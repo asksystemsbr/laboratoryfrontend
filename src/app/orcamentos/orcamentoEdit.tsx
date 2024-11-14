@@ -45,6 +45,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
   const isPercentageRef = useRef<boolean>(false); 
 
+  const previousPlanoIdRef = useRef<number | null>(null);
+
 // Memoize the discount calculation function
   const calcularTotalComDesconto = useCallback((subtotal: number, desconto: number, isPercentage: boolean) => {
     return isPercentage ? subtotal - ((subtotal * desconto) / 100) : subtotal - desconto;
@@ -80,6 +82,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           const totalAtualizado = calcularTotalComDesconto(novoSubtotal, orcamentoCabecalho.desconto,initialIsPercentage );
           setTotalComDesconto(totalAtualizado);          
           setLoading(false);
+
+          previousPlanoIdRef.current = orcamentoCabecalho.planoId || null;
         } catch (error) {
           console.error('Erro ao buscar o orçamento completo:', error);
           setSnackbar(new SnackbarState('Erro ao carregar o orçamento!', 'error', true));
@@ -87,9 +91,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       };
   
       fetchOrcamentoCompleto();
-    }, [orcamentoCabecalhoData.id, reset, setSnackbar]);
-    
-
+    }, [orcamentoCabecalhoData.id, reset, setSnackbar]);      
+  
   useEffect(() => {
     const checkDescontoPermission = async () => {
       try {
@@ -130,9 +133,33 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setValue('codConvenio', codConvenio || '');
   };
 
-  const handlePlanoSelected = (id: number | null) => {
+  const handlePlanoSelected = async  (id: number | null) => {
     setValue('planoId', id || 0);
     setPlanoId(id);
+
+    if (!id || id === previousPlanoIdRef.current) return;
+
+    try {
+      const updatedDetalhes = await Promise.all(
+        orcamentoDetalhes.map(async (detalhe) => {
+          const precoResponse = await axios.get(`/api/Exame/getPrecoByPlanoExameId/${id}/${detalhe.exameId}`);
+          const preco = precoResponse.data?.preco || 0;
+          return { ...detalhe, valor: preco };
+        })
+      );
+
+      setOrcamentoDetalhes(updatedDetalhes);
+
+      // Recalculate subtotal and total with discount
+      const novoSubtotal = updatedDetalhes.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
+      setSubtotal(novoSubtotal);
+      const totalAtualizado = calcularTotalComDesconto(novoSubtotal, desconto, isPercentage);
+      setTotalComDesconto(totalAtualizado);
+      previousPlanoIdRef.current = id;
+    } catch (error) {
+      console.error('Erro ao atualizar preços dos exames:', error);
+      setSnackbar(new SnackbarState('Erro ao atualizar preços dos exames!', 'error', true));
+    }
   };
 
   const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
@@ -175,11 +202,18 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   
   const onSubmit = async (data: OrcamentoCabecalho) => {
     if (isSubmitting) return;
+
+    const now = new Date();
+    now.setHours(now.getHours() - 3); // Adjust to GMT-3
+
+    const dataHora = now.toISOString().slice(0, 19); // Remove the "Z" to avoid UTC indication
+
+
     const orcamentoData: OrcamentoCabecalho = {
       ...data,
       usuarioId: user?.id || 0,
       recepcaoId: parseInt(user?.unidadeId || '0', 10),
-      dataHora: new Date().toISOString().split('T')[0],
+      dataHora: dataHora,
       total: totalComDesconto,
       desconto:desconto,
       tipoDesconto: isPercentage ? '1': '0'

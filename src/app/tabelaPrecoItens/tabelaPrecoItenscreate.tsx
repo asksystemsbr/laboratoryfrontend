@@ -214,10 +214,10 @@ export const TabelaPrecoItensComponent = ({ tabelaPrecoId,onClose }: TabelaPreco
         <thead>
           <tr>
             <th className="py-2 px-4 text-left">Exame</th>
-            <th className="py-2 px-4 text-left">Valor</th>
+            <th className="py-2 px-4 text-left">Valor R$</th>
             <th className="py-2 px-4 text-left">Custo Operacional</th>
             <th className="py-2 px-4 text-left">Custo Horário</th>
-            <th className="py-2 px-4 text-left">Filme</th>
+            <th className="py-2 px-4 text-left">Filme R$</th>
             <th className="py-2 px-4 text-left">Código ARNB</th>
           </tr>
         </thead>

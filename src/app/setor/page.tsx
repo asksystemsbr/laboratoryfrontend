@@ -27,6 +27,7 @@ export default function SetorList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+
   const hideSnackbar = () => {
     setSnackbar((prev) => {
       const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState

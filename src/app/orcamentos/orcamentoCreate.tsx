@@ -1,5 +1,5 @@
 //src/app/orcamentos/orcamentoCreate.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
@@ -37,6 +37,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
 
   const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
   const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
+  const previousPlanoIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const checkDescontoPermission = async () => {
@@ -82,24 +83,57 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     setValue('codConvenio', codConvenio || '');
   };
 
-  const handlePlanoSelected = (id: number | null) => {
+  const handlePlanoSelected = async (id: number | null) => {
     setValue('planoId', id || 0);
     setPlanoId(id);
+
+    if (!id || id === previousPlanoIdRef.current) return;
+
+    try {
+      const updatedDetalhes = await Promise.all(
+        orcamentoDetalhes.map(async (detalhe) => {
+          const precoResponse = await axios.get(`/api/Exame/getPrecoByPlanoExameId/${id}/${detalhe.exameId}`);
+          const preco = precoResponse.data?.preco || 0;
+          return { ...detalhe, valor: preco };
+        })
+      );
+
+      setOrcamentoDetalhes(updatedDetalhes);
+
+      // Recalculate subtotal and total with discount
+      const novoSubtotal = updatedDetalhes.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
+      setSubtotal(novoSubtotal);
+      const totalAtualizado = calcularTotalComDesconto(novoSubtotal, desconto, isPercentage);
+      setTotalComDesconto(totalAtualizado);
+      previousPlanoIdRef.current = id;
+    } catch (error) {
+      console.error('Erro ao atualizar preços dos exames:', error);
+      setSnackbar(new SnackbarState('Erro ao atualizar preços dos exames!', 'error', true));
+    }
   };
 
   const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
 
-    // Calcular subtotal com base nos preços dos exames
+    // Calcular subtotal com base  nos preços dos exames
     const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
-    setSubtotal(novoSubtotal);
-    // Calcular total com base no subtotal e desconto
-    //setTotal(novoSubtotal - desconto);
 
-    const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
-    setTotalComDesconto(totalAtualizado);
+    if (subtotal !== novoSubtotal) {
+      setSubtotal(novoSubtotal);
+    
+      // Calcular total com base no subtotal e desconto
+      //setTotal(novoSubtotal - desconto);
 
-    setValue('observacoes', observacoes || '');
-    setValue('medicamento', medicamento || '');
+      const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
+      setTotalComDesconto(totalAtualizado);
+    }
+
+    // Atualizar observações e medicamento se eles realmente mudaram
+    if (getValues('observacoes') !== observacoes) {
+      setValue('observacoes', observacoes || '');
+    }
+    if (getValues('medicamento') !== medicamento) {
+      setValue('medicamento', medicamento || '');
+    }
 
     const detalhes = detalhesOrcamento.map((detalhe) => ({
       exameId: detalhe.exameId,
@@ -107,7 +141,10 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
       dataColeta: new Date() // ou alguma outra data relacionada
     }));
 
-    setOrcamentoDetalhes(detalhes);
+    // Apenas atualize orcamentoDetalhes se os valores mudarem
+    if (JSON.stringify(orcamentoDetalhes) !== JSON.stringify(detalhes)) {
+      setOrcamentoDetalhes(detalhes);
+    }
   };
 
   const handlePagamentosSelected = (pagamentos: FormaPagamento[]) => {
@@ -125,17 +162,23 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     if (isSubmitting) return;
 
     const data = getValues();  // Pega valores atuais do formulário
+    const now = new Date();
+    now.setHours(now.getHours() - 3); // Adjust to GMT-3
+
+    const dataHora = now.toISOString().slice(0, 19); // Remove the "Z" to avoid UTC indication.
 
     const orcamentoData: OrcamentoCabecalho = {
       ...data,
       usuarioId: user?.id || 0,
       recepcaoId: parseInt(user?.unidadeId || '0', 10),
       status: '1',
-      dataHora: new Date().toISOString().split('T')[0],
+      dataHora: dataHora,
       total:totalComDesconto,
       validadeCartao: data.validadeCartao || undefined,
       desconto:desconto,
-      tipoDesconto: isPercentage ? '1': '0'
+      tipoDesconto: isPercentage ? '1': '0',
+      observacoes: getValues('observacoes'),
+      medicamento: getValues('medicamento')
     };
 
     const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
@@ -214,10 +257,15 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
           </div>                
         </div>
         <OrcamentoExameForm 
-            onExameSelected={handleExameSelected} 
-            onSolicitanteSelected={handleSolicitanteSelected} 
-            planoId={planoId}
-            solicitanteId= {undefined}  />       
+              onExameSelected={handleExameSelected} 
+              onSolicitanteSelected={handleSolicitanteSelected} 
+              planoId={planoId} 
+              orcamentoDetalhes={orcamentoDetalhes}
+              medicamentosParam= ''
+              observacoesParam= ''
+              orcamentoCabecalhoData= {undefined}
+              solicitanteId= {undefined}
+              />     
         <div className="grid grid-cols-2 gap-20 mt-1">
             <OrcamentoPagamentosForm  
                 onPagamentosSelected={handlePagamentosSelected} 
