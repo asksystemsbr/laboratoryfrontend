@@ -177,7 +177,7 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
             value={formatDecimal(valorPagamento,2)}
             onChange={(e) => setvalorPagamento(formatDecimal(parseFloat(e.target.value), 2))}
             className="border rounded w-full py-1 px-2 text-sm"
-            placeholder="CÓDIGO"
+            placeholder="R$"
           />         
       </div>      
       <div className="basis-1/12">

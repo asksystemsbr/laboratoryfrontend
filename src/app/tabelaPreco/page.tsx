@@ -28,6 +28,8 @@ export default function TabelaPrecoList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+  const totalPages = Math.ceil(filteredItems.length / recordsPerPage);
+
   const hideSnackbar = () => {
     setSnackbar((prev) => {
       const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
@@ -239,7 +241,7 @@ export default function TabelaPrecoList() {
             Anterior
           </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage}  de {totalPages}</span>
 
           <button
             onClick={() => paginate(currentPage + 1)}

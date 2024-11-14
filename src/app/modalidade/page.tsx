@@ -26,6 +26,8 @@ export default function ModalidadeList() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
+  
+  const totalPages = Math.ceil(filteredModalidades.length / recordsPerPage);
 
   const hideSnackbar = () => {
     setSnackbar((prev) => {
@@ -236,7 +238,7 @@ export default function ModalidadeList() {
             Anterior
           </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage}  de {totalPages}</span>
 
           <button
             onClick={() => paginate(currentPage + 1)}

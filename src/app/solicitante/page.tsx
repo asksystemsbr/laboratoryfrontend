@@ -27,6 +27,8 @@ export default function SolicitanteList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+  const totalPages = Math.ceil(filteredItems.length / recordsPerPage);
+
   // Função para carregar os dados
   const loadItems = useCallback(async () => {
     try {
@@ -237,7 +239,7 @@ export default function SolicitanteList() {
             Anterior
           </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage} de {totalPages}</span>
 
           <button
             onClick={() => paginate(currentPage + 1)}

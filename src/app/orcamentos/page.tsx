@@ -29,6 +29,8 @@ export default function EspecialidadeList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+  const totalPages = Math.ceil(filtered.length / recordsPerPage);
+
   // Função para carregar especialidades
   const loadOrcamentos = async () => {
     try {
@@ -246,7 +248,7 @@ export default function EspecialidadeList() {
             Anterior
           </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage} de {totalPages}</span>
 
           <button
             onClick={() => paginate(currentPage + 1)}

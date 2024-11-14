@@ -27,6 +27,8 @@ export default function ExameList() {
   const recordsPerPage = 10;
   const [dropdownVisible, setDropdownVisible] = useState<{ [key: number]: boolean }>({});
 
+  const totalPages = Math.ceil(filtered.length / recordsPerPage);
+
   // Carregar exames
   const loadItems = useCallback(async () => {
     try {
@@ -239,7 +241,7 @@ export default function ExameList() {
             Anterior
           </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage} de {totalPages}</span>
 
           <button
             onClick={() => paginate(currentPage + 1)}

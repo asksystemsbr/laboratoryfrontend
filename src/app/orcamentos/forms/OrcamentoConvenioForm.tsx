@@ -22,32 +22,32 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [planoData, setPlanoData] = useState<Plano | null>(null);  
-  const [codigoConvenio, setcodigoConvenio] = useState('');
+  // const [codigoConvenio, setcodigoConvenio] = useState('');
   const [recepcaoId,setrecepcaoId]= useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
 
-  const buscarConvenioPorCodigo = async () => {
-    try {
-      if (!codigoConvenio ) return;
-      const response = await axios.get(`/api/Convenio/getConvenioByCodigoAndRecepcao/${codigoConvenio}/${recepcaoId}`);
-      const item = response.data;
-      preencherDadosConvenio(item);
-    } catch (error) {
-      console.error('Solicitante não encontrado', error);
-      setConvenioData(null);
-      onConvenioSelected(null,null);
-      resetPlanos();
-    }
-  };
+  // const buscarConvenioPorCodigo = async () => {
+  //   try {
+  //     if (!codigoConvenio ) return;
+  //     const response = await axios.get(`/api/Convenio/getConvenioByCodigoAndRecepcao/${codigoConvenio}/${recepcaoId}`);
+  //     const item = response.data;
+  //     preencherDadosConvenio(item);
+  //   } catch (error) {
+  //     console.error('Solicitante não encontrado', error);
+  //     setConvenioData(null);
+  //     onConvenioSelected(null,null);
+  //     resetPlanos();
+  //   }
+  // };
   
-  const preencherDadosConvenio = async (convenio: Convenio) => {
-    setConvenioData(convenio);
-    setcodigoConvenio(convenio.codOperadora??"");
-    onConvenioSelected(convenio.id ?? null,convenio.codOperadora ?? null);
-    await loadPlanosByConvenio(convenio.id);
-  };
+  // const preencherDadosConvenio = async (convenio: Convenio) => {
+  //   setConvenioData(convenio);
+  //   setcodigoConvenio(convenio.codOperadora??"");
+  //   onConvenioSelected(convenio.id ?? null,convenio.codOperadora ?? null);
+  //   await loadPlanosByConvenio(convenio.id);
+  // };
 
   const loadPlanosByConvenio = async (convenioId: number) => {
     try {
@@ -71,7 +71,7 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
     const selectedId = Number(event.target.value);
     const selectedConvenio = convenios.find(s => s.id === selectedId) || null;
     setConvenioData(selectedConvenio);
-    setcodigoConvenio(selectedConvenio?.codOperadora ?? '');
+    // setcodigoConvenio(selectedConvenio?.codOperadora ?? '');
     onConvenioSelected(selectedConvenio?.id ?? null,selectedConvenio?.codOperadora ?? null);
 
     if (selectedConvenio) {
@@ -114,7 +114,7 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
     if (isLoaded && convenioId && convenios.length > 0) {
       const selectedConvenio = convenios.find(c => c.id === convenioId) || null;
       setConvenioData(selectedConvenio);
-      setcodigoConvenio(selectedConvenio?.codOperadora ?? '');
+      // setcodigoConvenio(selectedConvenio?.codOperadora ?? '');
       onConvenioSelected(selectedConvenio?.id ?? null, selectedConvenio?.codOperadora ?? null);
   
       // Carregar os planos relacionados ao convênio
@@ -141,7 +141,7 @@ useEffect(() => {
 
     {/* Primeira linha */}
     <div className="flex flex-wrap gap-4 mb-4">
-      <div className="basis-1/12">
+      {/* <div className="basis-1/12">
           <input
             type="text"
             value={codigoConvenio}
@@ -150,8 +150,8 @@ useEffect(() => {
             className="border rounded w-full py-1 px-2 text-sm"
             placeholder="Cód Convênio"
           />         
-      </div>    
-      <div className="basis-3/12">
+      </div>     */}
+      <div className="basis-5/12">
       <select
           value={convenioData?.id || ''}        
           onChange={handleSelectConvenioChange}  

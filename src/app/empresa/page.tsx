@@ -30,6 +30,8 @@ export default function EmpresaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
+  const totalPages = Math.ceil(filtered.length / recordsPerPage);
+
   const hideSnackbar = () => {
     setSnackbar((prev) => {
       const newSnackbarState = new SnackbarState(prev.message, prev.type, false); // Cria uma nova instância de SnackbarState
@@ -300,7 +302,7 @@ export default function EmpresaPage() {
             Anterior
           </button>
 
-          <span className="text-gray-600">Página {currentPage}</span>
+          <span className="text-gray-600">Página {currentPage}  de {totalPages}</span>
 
           <button
             onClick={() => paginate(currentPage + 1)}
