@@ -128,6 +128,10 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setValue('solicitanteId', id || 0);  
   };
 
+  const handleUnidadeSelected = (id: number | null) => {
+    setValue('recepcaoId', id || 0);
+  };
+
   const handleConvenioSelected = (id: number | null, codConvenio: string | null) => {
     setValue('convenioId', id || 0);
     setValue('codConvenio', codConvenio || '');
@@ -137,7 +141,27 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setValue('planoId', id || 0);
     setPlanoId(id);
 
-    if (!id || id === previousPlanoIdRef.current) return;
+  // Se `id` for nulo ou indefinido, resetar os preços para 0
+  if (!id) {
+    const updatedDetalhes = orcamentoDetalhes.map((detalhe) => ({
+      ...detalhe,
+      valor: 0,
+    }));
+
+    setOrcamentoDetalhes(updatedDetalhes);
+
+    // Recalcular subtotal e total com desconto
+    const novoSubtotal = 0; // Todos os valores são 0
+    setSubtotal(novoSubtotal);
+    const totalAtualizado = calcularTotalComDesconto(novoSubtotal, desconto, isPercentage);
+    setTotalComDesconto(totalAtualizado);
+
+    previousPlanoIdRef.current = id;
+    return; // Encerrar execução
+  }
+
+  // Caso o ID seja válido e diferente do plano anterior
+  if (id === previousPlanoIdRef.current) return;
 
     try {
       const updatedDetalhes = await Promise.all(
@@ -209,10 +233,40 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     const dataHora = now.toISOString().slice(0, 19); // Remove the "Z" to avoid UTC indication
 
 
+    if (!data.pacienteId) {
+      setSnackbar(new SnackbarState('Paciente é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.convenioId) {
+      setSnackbar(new SnackbarState('Convênio é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.nomePaciente) {
+      setSnackbar(new SnackbarState('Nome do paciente é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.solicitanteId) {
+      setSnackbar(new SnackbarState('Solicitante é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.planoId) {
+      setSnackbar(new SnackbarState('Plano é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (orcamentoDetalhes.length === 0) {
+      setSnackbar(new SnackbarState('O orçamento deve conter pelo menos um item!', 'error', true));
+      return;
+    }
+    
     const orcamentoData: OrcamentoCabecalho = {
       ...data,
       usuarioId: user?.id || 0,
-      recepcaoId: parseInt(user?.unidadeId || '0', 10),
+      //recepcaoId: parseInt(user?.unidadeId || '0', 10),
       dataHora: dataHora,
       total: totalComDesconto,
       desconto:desconto,
@@ -257,7 +311,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       {!loading && (     
         <OrcamentoConvenioForm             
             onConvenioSelected={handleConvenioSelected} 
-            onPlanoSelected={handlePlanoSelected}            
+            onPlanoSelected={handlePlanoSelected}         
+            onUnidadeSelected={handleUnidadeSelected}   
             convenioId= {orcamentoCabecalhoData.convenioId || 0}
             planoId= {orcamentoCabecalhoData.planoId || 0}
             />

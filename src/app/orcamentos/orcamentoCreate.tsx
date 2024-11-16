@@ -68,6 +68,9 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     setIsPercentage(percentual);
   };
   
+  const handleUnidadeSelected = (id: number | null) => {
+    setValue('recepcaoId', id || 0);
+  };
 
   const handleClienteSelected = (id: number | null, nomePaciente: string | null) => {
     setValue('pacienteId', id || 0);
@@ -167,10 +170,42 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
 
     const dataHora = now.toISOString().slice(0, 19); // Remove the "Z" to avoid UTC indication.
 
+
+    if (!data.pacienteId) {
+      setSnackbar(new SnackbarState('Paciente é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.convenioId) {
+      setSnackbar(new SnackbarState('Convênio é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.nomePaciente) {
+      setSnackbar(new SnackbarState('Nome do paciente é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.solicitanteId) {
+      setSnackbar(new SnackbarState('Solicitante é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (!data.planoId) {
+      setSnackbar(new SnackbarState('Plano é obrigatório!', 'error', true));
+      return;
+    }
+  
+    if (orcamentoDetalhes.length === 0) {
+      setSnackbar(new SnackbarState('O orçamento deve conter pelo menos um item!', 'error', true));
+      return;
+    }
+
+    
     const orcamentoData: OrcamentoCabecalho = {
       ...data,
       usuarioId: user?.id || 0,
-      recepcaoId: parseInt(user?.unidadeId || '0', 10),
+      //recepcaoId: parseInt(user?.unidadeId || '0', 10),
       status: '1',
       dataHora: dataHora,
       total:totalComDesconto,
@@ -215,7 +250,8 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
           pacienteId={ ''}  />
         <OrcamentoConvenioForm             
             onConvenioSelected={handleConvenioSelected} 
-            onPlanoSelected={handlePlanoSelected}            
+            onPlanoSelected={handlePlanoSelected}   
+            onUnidadeSelected={handleUnidadeSelected}         
             convenioId= {undefined}
             planoId= {undefined}
             />

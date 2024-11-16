@@ -4,10 +4,13 @@ import axios from 'axios';
 import { Convenio } from '@/models/convenio';
 import { Plano } from '@/models/plano';
 import { useAuth } from '@/app/auth';
+import { Recepcao } from '@/models/recepcao';
+import InformativeModal from '@/components/InformativeModal';
 
 interface OrcamentoConvenioFormProps {  
   onConvenioSelected: (id: number| null,codConvenio: string | null) => void;
   onPlanoSelected: (id: number| null) => void;  
+  onUnidadeSelected: (id: number| null) => void; 
   convenioId?: number;
   planoId?: number;
 }
@@ -15,18 +18,25 @@ interface OrcamentoConvenioFormProps {
 const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({     
     onConvenioSelected,
     onPlanoSelected,    
+    onUnidadeSelected,    
     convenioId,
     planoId
   }) => {  
   const [convenioData, setConvenioData] = useState<Convenio | null>(null);
   const [convenios, setConvenios] = useState<Convenio[]>([]);
+  const [localConvenioId, setLocalConvenioId] = useState<number | null>(convenioId || null);
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [planoData, setPlanoData] = useState<Plano | null>(null);  
+  const [unidades, setUnidades] = useState<Recepcao[]>([]);
+  const [unidadesData, setunidadesData] = useState<Recepcao | null>(null);
   // const [codigoConvenio, setcodigoConvenio] = useState('');
   const [recepcaoId,setrecepcaoId]= useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   // const buscarConvenioPorCodigo = async () => {
   //   try {
@@ -87,6 +97,60 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
     setPlanoData(selectedPlano);
     onPlanoSelected(selectedPlano?.id ?? null);
   };
+
+  const handleSelectUnidadeChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = Number(event.target.value);
+    const selectedUnidade = unidades.find(p => p.id === selectedId) || null;
+    if (selectedUnidade) {
+      setunidadesData(selectedUnidade);
+      setrecepcaoId(selectedUnidade.id ?? 0);
+      onUnidadeSelected(selectedUnidade?.id ?? null);
+      // Recarregar convênios
+      try {
+        const convenioResponse = await axios.get(`/api/Convenio/getConvenioByRecepcao/${selectedUnidade.id}`);
+        setConvenios(convenioResponse.data);
+
+        // Tentar restaurar o convênio antigo
+        const restoredConvenio = convenioResponse.data.find((c: Convenio) => c.id === convenioData?.id);
+        if (restoredConvenio) {
+          setConvenioData(restoredConvenio);
+          onConvenioSelected(restoredConvenio.id, restoredConvenio.codOperadora);
+          await loadPlanosByConvenio(restoredConvenio.id);
+
+          // Recarregar os planos com o convênio antigo
+           const planoResponse = await axios.get(
+             `/api/Plano/getListByConvenioAndRecepcao/${restoredConvenio.id}/${selectedUnidade.id}`
+           );
+           setPlanos(planoResponse.data);
+
+          // Tentar restaurar o plano antigo
+           const restoredPlano = planoResponse.data.find((p: Plano) => p.id === planoData?.id);
+           if (restoredPlano) {
+             setPlanoData(restoredPlano);
+             onPlanoSelected(restoredPlano.id);
+           } else {
+             setPlanoData(null);
+             onPlanoSelected(null);
+             setModalMessage('O plano anterior não está disponível para a nova unidade.');
+             setIsModalOpen(true);
+           }
+        } else {
+          // Convênio antigo não encontrado
+          setLocalConvenioId(null);
+          setConvenioData(null);
+          onConvenioSelected(null, null);
+          onPlanoSelected(null);
+          resetPlanos();
+          if(convenioData != null){
+            setModalMessage('O convênio anterior não está disponível para a nova unidade.');
+            setIsModalOpen(true);
+          }          
+        }
+      } catch (error) {
+        console.error('Erro ao carregar convênios ou planos:', error);
+      }      
+    }
+  };
   
   useEffect(() => {    
   // Usa uma variável para controlar a execução e evitar chamadas duplicadas
@@ -105,14 +169,32 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
       
     };
 
-    Promise.all([loadConvenios()]).then(() => setIsLoaded(true));    
+    const fetchUnidades = async () => {
+      try {
+        const response = await axios.get('/api/Recepcao');
+        setUnidades(response.data);
+
+        if (user?.unidadeId) {
+          const selectedUnidade = response.data.find((u: Recepcao) => u.id === parseInt(user.unidadeId, 10));
+          if (selectedUnidade) {
+            setunidadesData(selectedUnidade);
+            setrecepcaoId(selectedUnidade.id);
+            onUnidadeSelected(selectedUnidade.id);
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    Promise.all([loadConvenios(),fetchUnidades()]).then(() => setIsLoaded(true));    
   },[isLoaded]);
 
   useEffect(() => {
     // Carrega o convenio inicial quando `convenios` estiverem carregados e `convenioId` for passado
     //if (isLoaded && convenioId && convenios.length > 0 && !convenioData) {
-    if (isLoaded && convenioId && convenios.length > 0) {
-      const selectedConvenio = convenios.find(c => c.id === convenioId) || null;
+    if (isLoaded && localConvenioId  && convenios.length > 0) {
+      const selectedConvenio = convenios.find(c => c.id === localConvenioId ) || null;
       setConvenioData(selectedConvenio);
       // setcodigoConvenio(selectedConvenio?.codOperadora ?? '');
       onConvenioSelected(selectedConvenio?.id ?? null, selectedConvenio?.codOperadora ?? null);
@@ -121,7 +203,7 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
       if (selectedConvenio) loadPlanosByConvenio(selectedConvenio.id);
     }
   //}, [isLoaded, convenioId, convenios]);
-  }, [isLoaded, convenioId, convenios.length]);
+  }, [isLoaded, localConvenioId , convenios.length]);
 
 
 useEffect(() => {
@@ -151,7 +233,21 @@ useEffect(() => {
             placeholder="Cód Convênio"
           />         
       </div>     */}
-      <div className="basis-5/12">
+      <div className="basis-3/12">
+        <select
+            value={unidadesData?.id || ''}        
+            onChange={handleSelectUnidadeChange}  
+            className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          >
+            <option value="">Selecione uma Unidade</option>
+            {unidades.map((unidade) => (
+              <option key={unidade.id} value={unidade.id}>
+                {unidade.nomeRecepcao}
+              </option>
+            ))}
+          </select>
+      </div> 
+      <div className="basis-4/12">
       <select
           value={convenioData?.id || ''}        
           onChange={handleSelectConvenioChange}  
@@ -165,7 +261,7 @@ useEffect(() => {
           ))}
         </select>
       </div> 
-      <div className="basis-3/12 flex-grow">
+      <div className="basis-4/12 flex-grow">
       <select
           value={planoData?.id || ''}        
           onChange={handleSelectPlanoChange}  
@@ -180,7 +276,13 @@ useEffect(() => {
         </select>
       </div>                      
     </div>
-
+    {/* Informative Modal */}
+    <InformativeModal
+    isOpen={isModalOpen}
+    title="Atenção"
+    message={modalMessage}
+    onClose={() => setIsModalOpen(false)}
+  />
   </div>
   );
 };
