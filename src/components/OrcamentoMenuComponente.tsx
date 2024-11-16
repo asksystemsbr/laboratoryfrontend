@@ -39,7 +39,7 @@ export default function OrcamentoMenuComponente() {
         permissions: ['orcamento.Read', 'orcamento.Write'],
         label: 'Pedidos',
         icon: 'queue',
-        route: '/orcamentos/orcamentoCreate',
+        route: '/pedidos',
       },                            
   ];
 

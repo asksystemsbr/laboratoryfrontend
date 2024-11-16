@@ -4,24 +4,24 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import { SnackbarState } from '@/models/snackbarState';
-import OrcamentoClienteForm from './forms/OrcamentoClienteForm';
-import OrcamentoConvenioForm from './forms/OrcamentoConvenioForm';
+import PedidoClienteForm from './forms/PedidoClienteForm';
+import PedidoConvenioForm from './forms/PedidoConvenioForm';
 import { validateDateEmpty } from '@/utils/validateDate';
-import OrcamentoExameForm from './forms/OrcamentoExameForm';
-import OrcamentoResumoValoresForm from './forms/OrcamentoResumoValores';
-import OrcamentoPagamentosForm from './forms/OrcamentoPagamentosForm';
+import PedidoExameForm from './forms/PedidoExameForm';
+import PedidoResumoValoresForm from './forms/PedidoResumoValores';
+import PedidoPagamentosForm from './forms/PedidoPagamentosForm';
 import { useAuth } from '@/app/auth';
 import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
 
-interface OrcamentoCreateFormProps {
+interface PedidosEditFormProps {
   orcamentoCabecalhoData: OrcamentoCabecalho
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void;
 }
 
-export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSnackbar }: OrcamentoCreateFormProps) => {
+export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSnackbar }: PedidosEditFormProps) => {
   const { register,handleSubmit, setValue, reset,getValues  } = useForm<OrcamentoCabecalho>({
     defaultValues: orcamentoCabecalhoData,
   });
@@ -29,7 +29,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [planoId, setPlanoId] = useState<number | null>(null);
+
 
   const [subtotal, setSubtotal] = useState(0);
   const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
@@ -137,79 +137,6 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     setValue('codConvenio', codConvenio || '');
   };
 
-  const handlePlanoSelected = async  (id: number | null) => {
-    setValue('planoId', id || 0);
-    setPlanoId(id);
-
-  // Se `id` for nulo ou indefinido, resetar os preços para 0
-  if (!id) {
-    const updatedDetalhes = orcamentoDetalhes.map((detalhe) => ({
-      ...detalhe,
-      valor: 0,
-    }));
-
-    setOrcamentoDetalhes(updatedDetalhes);
-
-    // Recalcular subtotal e total com desconto
-    const novoSubtotal = 0; // Todos os valores são 0
-    setSubtotal(novoSubtotal);
-    const totalAtualizado = calcularTotalComDesconto(novoSubtotal, desconto, isPercentage);
-    setTotalComDesconto(totalAtualizado);
-
-    previousPlanoIdRef.current = id;
-    return; // Encerrar execução
-  }
-
-  // Caso o ID seja válido e diferente do plano anterior
-  if (id === previousPlanoIdRef.current) return;
-
-    try {
-      const updatedDetalhes = await Promise.all(
-        orcamentoDetalhes.map(async (detalhe) => {
-          const precoResponse = await axios.get(`/api/Exame/getPrecoByPlanoExameId/${id}/${detalhe.exameId}`);
-          const preco = precoResponse.data?.preco || 0;
-          return { ...detalhe, valor: preco };
-        })
-      );
-
-      setOrcamentoDetalhes(updatedDetalhes);
-
-      // Recalculate subtotal and total with discount
-      const novoSubtotal = updatedDetalhes.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
-      setSubtotal(novoSubtotal);
-      const totalAtualizado = calcularTotalComDesconto(novoSubtotal, desconto, isPercentage);
-      setTotalComDesconto(totalAtualizado);
-      previousPlanoIdRef.current = id;
-    } catch (error) {
-      console.error('Erro ao atualizar preços dos exames:', error);
-      setSnackbar(new SnackbarState('Erro ao atualizar preços dos exames!', 'error', true));
-    }
-  };
-
-  const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
-
-    // Calcular subtotal com base nos preços dos exames
-    const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
-    setSubtotal(novoSubtotal);
-
-    // Calcular total com base no subtotal e desconto
-    const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
-    setTotalComDesconto(totalAtualizado);
-    //setTotalComDesconto(novoSubtotal - desconto);
-
-    setValue('observacoes', observacoes || '');
-    setValue('medicamento', medicamento || '');
-
-    const detalhes = detalhesOrcamento.map((detalhe) => ({
-      exameId: detalhe.exameId,
-      valor: detalhe.valor,
-      dataColeta: new Date(),
-      orcamentoId:orcamentoCabecalhoData.id,
-      id: detalhe.id
-    }));
-
-    setOrcamentoDetalhes(detalhes);
-  };
 
   const handlePagamentosSelected = (pagamentos: OrcamentoPagamento[]) => {
     console.log(pagamentos);
@@ -351,15 +278,14 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
       <form onSubmit={handleSubmit(onSubmit)} className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
       {!loading && (
-        <OrcamentoClienteForm 
+        <PedidoClienteForm 
           onClienteSelected={handleClienteSelected} 
           nomePaciente={orcamentoCabecalhoData.nomePaciente || ''}
           pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
       )}
       {!loading && (     
-        <OrcamentoConvenioForm             
-            onConvenioSelected={handleConvenioSelected} 
-            onPlanoSelected={handlePlanoSelected}         
+        <PedidoConvenioForm             
+            onConvenioSelected={handleConvenioSelected}    
             onUnidadeSelected={handleUnidadeSelected}   
             convenioId= {orcamentoCabecalhoData.convenioId || 0}
             planoId= {orcamentoCabecalhoData.planoId || 0}
@@ -375,6 +301,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               )}
               className="border rounded w-full py-1 px-2 text-sm"
               placeholder="Validade Cartão"
+              disabled
             />
           </div>
           <div className="basis-2/12">
@@ -383,6 +310,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               {...register('guia')}
               className="border rounded w-full py-1 px-2 text-sm"
               placeholder="Guia"
+              disabled
             />
           </div>          
           <div className="basis-5/12">
@@ -391,6 +319,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               {...register('titular')}
               className="border rounded w-full py-1 px-2 text-sm"
               placeholder="Titular"
+              disabled
             />
           </div>      
           <div className="basis-2/12 flex-grow">
@@ -399,14 +328,13 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               {...register('senhaAutorizacao')}
               className="border rounded w-full py-1 px-2 text-sm"
               placeholder="Senha Autorização"
+              disabled
             />
           </div>                
         </div>
         {!loading && (
-          <OrcamentoExameForm 
-              onExameSelected={handleExameSelected} 
+          <PedidoExameForm 
               onSolicitanteSelected={handleSolicitanteSelected} 
-              planoId={planoId} 
               orcamentoDetalhes={orcamentoDetalhes}
               medicamentosParam={orcamentoCabecalhoData.medicamento || ''} 
               observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
@@ -416,14 +344,13 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           )}
         <div className="grid grid-cols-2 gap-20 mt-1">
         {!loading && (
-            <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
+            <PedidoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
                 orcamentoPagamentos={orcamentoPagamentos} 
                 orcamentoCabecalhoData={orcamentoCabecalhoData}
-                total={totalComDesconto}
                 />
         )}
         {!loading && (
-            <OrcamentoResumoValoresForm 
+            <PedidoResumoValoresForm 
                 subtotal={subtotal} 
                 desconto={desconto} 
                 total={totalComDesconto}
@@ -437,15 +364,15 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+          {/* <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
             Salvar
-          </button>
+          </button> */}
           <button 
             type="button" 
             onClick={transformarEmPedido}
             className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200"
             >
-            Transformar em Pedido
+            Gerar NFSe
           </button>
         </div>
       </form>
