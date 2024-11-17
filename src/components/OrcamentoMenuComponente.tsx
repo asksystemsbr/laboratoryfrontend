@@ -40,6 +40,12 @@ export default function OrcamentoMenuComponente() {
         label: 'Pedidos',
         icon: 'queue',
         route: '/pedidos',
+      },  
+      {
+        permissions: ['agendamento.Read', 'agendamento.Write'],
+        label: 'Agendamentos',
+        icon: 'queue',
+        route: '/agendamentos',
       },                            
   ];
 
