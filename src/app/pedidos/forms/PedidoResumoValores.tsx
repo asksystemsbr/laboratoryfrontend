@@ -1,4 +1,4 @@
-//src/app/orcamentos/forms/OrcamentoResumoValoresForm.tsx
+//src/app/pedidos/forms/PedidoResumoValores.tsx
 import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
 import React, { useEffect, useState } from 'react';
 

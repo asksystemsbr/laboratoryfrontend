@@ -1,0 +1,773 @@
+// //src/app/formaPagamento/formaPagamentoedit.tsx
+// "use client";
+// import React, { useEffect, useRef, useState } from 'react';
+// import { useForm } from 'react-hook-form';
+// import axios from 'axios';
+// import { AgendamentoHorario } from '../../models/agendamentoHorario';
+// import { SnackbarState } from '@/models/snackbarState';
+// import { Recepcao } from '@/models/recepcao';
+// import { Convenio } from '@/models/convenio';
+// import { Plano } from '@/models/plano';
+// import { Solicitante } from '@/models/solicitante';
+// import { Exame } from '@/models/exame';
+// import InformativeModal from '@/components/InformativeModal';
+// import { useAuth } from '../auth';
+
+// interface AgendamentoHorarioEditFormProps  {
+//   agendamento: AgendamentoHorario;
+//   onSave: () => void;
+//   onClose: () => void;
+//   setSnackbar: (state: SnackbarState) => void; // Adiciona o setSnackbar como prop
+// }
+
+// export const AgendamentoHorarioEditForm  = ({ agendamento, onSave, onClose,setSnackbar  }: AgendamentoHorarioEditFormProps) => {
+//   const { register, handleSubmit, reset,setValue, formState: { errors } } = useForm<AgendamentoHorario>({
+//     defaultValues: agendamento,
+//   });
+
+//   const [isSubmitting, setIsSubmitting] = useState(false);
+//   const [isLoaded, setIsLoaded] = useState(false);
+//   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
+//   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
+
+//   const [recepcaoId,setrecepcaoId]= useState(0);
+//   const [unidades, setUnidades] = useState<Recepcao[]>([]);
+//   const [unidadesData, setunidadesData] = useState<Recepcao | null>(null);
+  
+//   const [convenios, setConvenios] = useState<Convenio[]>([]);
+//   const [convenioData, setConvenioData] = useState<Convenio | null>(null);  
+
+//   const [planos, setPlanos] = useState<Plano[]>([]);
+//   const [planoData, setPlanoData] = useState<Plano | null>(null);  
+
+
+//   const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);  
+//   const [solicitanteData, setSolicitanteData] = useState<Solicitante | null>(null);    
+      
+//   const [exames, setexames] = useState<Exame[]>([]);  
+//   const [exameData, setexameData] = useState<Exame | null>(null);
+
+//   /*star search field exame*/
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [filteredExames, setFilteredExames] = useState(exames);
+//   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+//   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+//   const inputRef = useRef<HTMLInputElement | null>(null);
+  
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [modalMessage, setModalMessage] = useState("");
+
+
+//   useEffect(() => {
+//     const term = searchTerm.toLowerCase();
+//     setFilteredExames(
+//       exames.filter(
+//         (exame) =>
+//           exame.codigoExame?.toLowerCase().includes(term) ||
+//           exame.nomeExame.toLowerCase().includes(term) ||
+//           exame.sinonimos?.toLowerCase().includes(term)
+//       )
+//     );
+//     setHighlightedIndex(-1); // redefine o destaque ao atualizar a lista
+//   }, [searchTerm, exames]);
+
+
+//   useEffect(() => {    
+//     // Usa uma variável para controlar a execução e evitar chamadas duplicadas
+//     const recepcaoCod= parseInt(user?.unidadeId || '0', 10);
+  
+//       const loadConvenios = async () => {
+//         const recepcaoCod= parseInt(user?.unidadeId || '0', 10);
+//         setrecepcaoId(recepcaoCod)
+//         try {        
+//             setIsLoaded(true);
+//             const response = await axios.get(`/api/Convenio/getConvenioByRecepcao/${recepcaoCod}`);
+//             setConvenios(response.data);                 
+//         } catch (error) {
+//           console.log(error);
+//           //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
+//         } 
+        
+//       };
+  
+//       const fetchUnidades = async () => {
+//         try {
+//           const response = await axios.get('/api/Recepcao');
+//           setUnidades(response.data);
+  
+//           if (user?.unidadeId) {
+//             const selectedUnidade = response.data.find((u: Recepcao) => u.id === parseInt(user.unidadeId, 10));
+//             if (selectedUnidade) {
+//               setunidadesData(selectedUnidade);
+//               setrecepcaoId(selectedUnidade.id);
+//               setValue('recepcaoId', selectedUnidade.id || 0);
+//             }
+//           }
+//         } catch (error) {
+//           console.log(error);
+//         }
+//       };
+
+//       const loadSolicitantes = async () => {
+//         try {
+//           const response = await axios.get(`/api/Solicitante`);
+//           setSolicitantes(response.data);
+//         } catch (error) {
+//           console.log(error);
+//           //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
+//         }
+//       };
+
+//       const loadExames = async () => {
+//         try {
+//           const response = await axios.get(`/api/Exame/getExameByRecepcao/${recepcaoCod}`);
+//           setexames(response.data);
+//         } catch (error) {
+//           console.log(error);
+//           //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
+//         }
+//       };
+  
+//       Promise.all([loadConvenios(),fetchUnidades(),loadSolicitantes(),loadExames()]).then(() => setIsLoaded(true));    
+//     },[isLoaded]);
+
+//   useEffect(() => {
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => {
+//       document.removeEventListener('mousedown', handleClickOutside);
+//     };
+//   }, []);
+
+//   useEffect(() => {
+//     // Reseta o formulário com os valores iniciais
+//     reset(agendamento);
+//   }, [agendamento, reset]);
+
+//   const handleClickOutside = (event: MouseEvent) => {
+//     if (inputRef.current && event.target instanceof Node && !inputRef.current.contains(event.target)) {
+//       setIsDropdownOpen(false);
+//     }
+//   };
+
+//   const preencherDadosExame = async (exame: Exame) => {
+//     setexameData(exame);
+//     console.log(exameData);
+//   };
+
+//   const handleSelect = (exame: Exame) => {
+//     console.log('Item selecionado:', exame); 
+//     setSearchTerm(exame.nomeExame); // Preenche o nome do exame no campo de entrada
+//     preencherDadosExame(exame); // Chama a função de preenchimento com o exame selecionado
+//     setIsDropdownOpen(false); // Fecha o dropdown
+//   };
+
+//   const handleInputFocus = () => {
+//     setIsDropdownOpen(true);
+//   };
+
+//   const handleKeyDown = async (event: React.KeyboardEvent) => {
+//     if(!isDropdownOpen)
+//       setIsDropdownOpen(true);
+//     if (event.key === 'ArrowDown') {
+//       // Move o destaque para o próximo item
+//       setHighlightedIndex((prevIndex) =>
+//         prevIndex < filteredExames.length - 1 ? prevIndex + 1 : 0
+//       );
+//     } else if (event.key === 'ArrowUp') {
+//       // Move o destaque para o item anterior
+//       setHighlightedIndex((prevIndex) =>
+//         prevIndex > 0 ? prevIndex - 1 : filteredExames.length - 1
+//       );
+//     } else if (event.key === 'Tab') {
+//       event.preventDefault(); 
+//       // Seleciona o item destacado ao pressionar Tab
+//       if (highlightedIndex >= 0 && filteredExames[highlightedIndex]) {
+//         handleSelect(filteredExames[highlightedIndex]);
+//         //await adicionarExameTeclado(filteredExames[highlightedIndex]); // Chama `adicionarExame` com o exame atualmente destacado
+//       }
+//     }
+//   };
+
+//   const handleSelectSolicitanteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+//     const selectedId = Number(event.target.value);
+//     const selectedSolicitante = solicitantes.find(s => s.id === selectedId) || null;
+//     setSolicitanteData(selectedSolicitante);
+//     setValue('solicitanteId', selectedSolicitante?.id ?? 0); 
+//   };
+
+//   const handleSelectConvenioChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+//     const selectedId = Number(event.target.value);
+//     const selectedConvenio = convenios.find(s => s.id === selectedId) || null;
+//     setConvenioData(selectedConvenio);
+//     setValue('convenioId', selectedConvenio?.id ??  0);
+
+//     if (selectedConvenio) {
+//       await loadPlanosByConvenio(selectedConvenio.id);
+//     } else {
+//       resetPlanos();
+//     }
+//   };
+
+//   const handleSelectPlanoChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+//     const selectedId = Number(event.target.value);
+//     const selectedPlano = planos.find(p => p.id === selectedId) || null;
+//     setPlanoData(selectedPlano);
+//     setValue('planoId', selectedPlano?.id ?? 0);
+//   };
+
+//   const loadPlanosByConvenio = async (convenioId: number) => {
+//     try {
+//       const response = await axios.get(`/api/Plano/getListByConvenioAndRecepcao/${convenioId}/${recepcaoId}`);
+//       setPlanos(response.data);
+//       setPlanoData(null); // Reset plano selection
+//       setValue('planoId', 0);
+//     } catch (error) {
+//       console.error('Erro ao carregar planos', error);
+//       setPlanos([]);
+//     }
+//   };
+
+//   const resetPlanos = () => {
+//     setPlanos([]);
+//     setPlanoData(null);
+//     setValue('planoId', 0);
+//   };
+
+//   const handleSelectUnidadeChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+//     const selectedId = Number(event.target.value);
+//     const selectedUnidade = unidades.find(p => p.id === selectedId) || null;
+//     if (selectedUnidade) {
+//       setunidadesData(selectedUnidade);
+//       setrecepcaoId(selectedUnidade.id ?? 0);
+//       setValue('recepcaoId', selectedUnidade?.id || 0);
+//       // Recarregar convênios
+//       try {
+//         const convenioResponse = await axios.get(`/api/Convenio/getConvenioByRecepcao/${selectedUnidade.id}`);
+//         setConvenios(convenioResponse.data);
+
+//         // Tentar restaurar o convênio antigo
+//         const restoredConvenio = convenioResponse.data.find((c: Convenio) => c.id === convenioData?.id);
+//         if (restoredConvenio) {
+//           setConvenioData(restoredConvenio);
+//           setValue('convenioId', restoredConvenio.id || 0);
+//           await loadPlanosByConvenio(restoredConvenio.id);
+
+//           // Recarregar os planos com o convênio antigo
+//            const planoResponse = await axios.get(
+//              `/api/Plano/getListByConvenioAndRecepcao/${restoredConvenio.id}/${selectedUnidade.id}`
+//            );
+//            setPlanos(planoResponse.data);
+
+//           // Tentar restaurar o plano antigo
+//            const restoredPlano = planoResponse.data.find((p: Plano) => p.id === planoData?.id);
+//            if (restoredPlano) {
+//              setPlanoData(restoredPlano);
+//              setValue('planoId', restoredPlano.id || 0);
+//            } else {
+//              setPlanoData(null);
+//              setValue('planoId',  0);
+//              setModalMessage('O plano anterior não está disponível para a nova unidade.');
+//              setIsModalOpen(true);
+//            }
+//         } else {
+//           // Convênio antigo não encontrado
+//           setConvenioData(null);
+//           setValue('convenioId', 0);
+//           setValue('planoId',  0);
+//           resetPlanos();
+//           if(convenioData != null){
+//             setModalMessage('O convênio anterior não está disponível para a nova unidade.');
+//             setIsModalOpen(true);
+//           }          
+//         }
+//       } catch (error) {
+//         console.error('Erro ao carregar convênios ou planos:', error);
+//       }      
+//     }
+//   };
+
+
+
+//   const onSubmit = async (data: AgendamentoHorario) => {
+//     try {
+//           setIsSubmitting(true);
+
+//           // Update data
+//           await axios.put(`/api/Agendamento/${agendamento.id}`, {
+//             ...data,
+//             unidadeId: Number(data.unidadeId),
+//             convenioId: Number(data.convenioId),
+//             planoId: Number(data.planoId),
+//             solicitanteId: Number(data.solicitanteId),
+//             exameId: Number(data.exameId),
+//           });
+//         reset();
+//         onSave();
+//       } catch (error) {
+//         console.log(error);
+//         setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true)); // Exibe erro via snackbar
+//       }
+//   };
+
+//   return (
+//     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+//         <h2 className="text-xl font-bold mb-4">Novo Agendamento</h2>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Recepção</label>
+//             <select
+//               value={unidadesData?.id || ''}        
+//               onChange={handleSelectUnidadeChange}  
+//               className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+//             >
+//               <option value="">Selecione uma Unidade</option>
+//               {unidades.map((unidade) => (
+//                 <option key={unidade.id} value={unidade.id}>
+//                   {unidade.nomeRecepcao}
+//                 </option>
+//               ))}
+//             </select>
+//           {errors.recepcaoId && <p className="text-red-500 text-sm">{errors.recepcaoId.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Convênio</label>
+//               <select
+//               value={convenioData?.id || ''}        
+//               onChange={handleSelectConvenioChange}  
+//               className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+//             >
+//               <option value="">Selecione um convênio</option>
+//               {convenios.map((convenio) => (
+//                 <option key={convenio.id} value={convenio.id}>
+//                   {convenio.descricao}
+//                 </option>
+//               ))}
+//             </select>
+//           {errors.convenioId && <p className="text-red-500 text-sm">{errors.convenioId.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Plano</label>
+//             <select
+//             value={planoData?.id || ''}        
+//             onChange={handleSelectPlanoChange}  
+//             className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+//           >
+//             <option value="">Selecione um Plano</option>
+//             {planos.map((plano) => (
+//               <option key={plano.id} value={plano.id}>
+//                 {plano.descricao}
+//               </option>
+//             ))}
+//           </select>
+//           {errors.planoId && <p className="text-red-500 text-sm">{errors.planoId.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Solicitante</label>
+//             <select
+//             value={solicitanteData?.id || ''}        
+//             onChange={handleSelectSolicitanteChange}  
+//             className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+//           >
+//             <option value="">Selecione um solicitante</option>
+//             {solicitantes.map((solicitante) => (
+//               <option key={solicitante.id} value={solicitante.id}>
+//                 {solicitante.descricao}
+//               </option>
+//             ))}
+//           </select>
+//           {errors.solicitanteId && <p className="text-red-500 text-sm">{errors.solicitanteId.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Exame</label>
+//             <input
+//               type="text"
+//               ref={inputRef}
+//               value={searchTerm}
+//               onFocus={handleInputFocus}
+//               onChange={(e) => setSearchTerm(e.target.value)}
+//               onKeyDown={handleKeyDown} 
+//               placeholder="Buscar exame..."
+//               className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+//             />
+//             {isDropdownOpen && filteredExames.length > 0 && (
+//               <ul className="absolute z-10 w-full border bg-white shadow-md max-h-60 overflow-y-auto">
+//                 {filteredExames.map((exame,index) => (
+//                   <li
+//                     key={exame.id}
+//                     onMouseDown={() => handleSelect(exame)}
+//                     className={`px-2 py-1 cursor-pointer ${
+//                       index === highlightedIndex ? 'bg-blue-200' : 'hover:bg-blue-100'
+//                     }`}
+//                   >
+//                     {exame.nomeExame} - {exame.codigoExame}
+//                   </li>
+//                 ))}
+//               </ul>
+//             )}
+//             {isDropdownOpen && filteredExames.length === 0 && (
+//               <div className="absolute z-10 w-full border bg-white text-gray-500 px-2 py-1">
+//                 Nenhum exame encontrado
+//               </div>
+//             )}
+//           {errors.exameId && <p className="text-red-500 text-sm">{errors.exameId.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Data Início</label>
+//           <input
+//             type="date"
+//             {...register('dataInicio', { required: 'A data de início é obrigatória' })}
+//             className="border rounded w-full py-2 px-3 mt-1"
+//           />
+//           {errors.dataInicio && <p className="text-red-500 text-sm">{errors.dataInicio.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Data Fim</label>
+//           <input
+//             type="date"
+//             {...register('dataFim', { required: 'A data de fim é obrigatória' })}
+//             className="border rounded w-full py-2 px-3 mt-1"
+//           />
+//           {errors.dataFim && <p className="text-red-500 text-sm">{errors.dataFim.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Hora Início</label>
+//           <input
+//             type="time"
+//             {...register('horaInicio', { required: 'A hora de início é obrigatória' })}
+//             className="border rounded w-full py-2 px-3 mt-1"
+//           />
+//           {errors.horaInicio && <p className="text-red-500 text-sm">{errors.horaInicio.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Hora Fim</label>
+//           <input
+//             type="time"
+//             {...register('horaFim', { required: 'A hora de fim é obrigatória' })}
+//             className="border rounded w-full py-2 px-3 mt-1"
+//           />
+//           {errors.horaFim && <p className="text-red-500 text-sm">{errors.horaFim.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Duração (minutos)</label>
+//           <input
+//             type="number"
+//             {...register('duracaoMinutos', { required: 'A duração é obrigatória' })}
+//             className="border rounded w-full py-2 px-3 mt-1"
+//           />
+//           {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
+//         </div>
+
+//         <div className="mb-4">
+//           <label className="block text-gray-700">Intervalo (minutos)</label>
+//           <input
+//             type="number"
+//             {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
+//             className="border rounded w-full py-2 px-3 mt-1"
+//           />
+//           {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
+//         </div>
+
+//         <div className="flex justify-end">
+//           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+//             Cancelar
+//           </button>
+//           <button
+//             type="submit"
+//             className="py-2 px-4 rounded bg-blue-500 text-white"
+//             disabled={isSubmitting}
+//           >
+//             {isSubmitting ? 'Salvando...' : 'Salvar'}
+//           </button>
+//         </div>
+//         <div>
+//               {/* Informative Modal */}
+//               <InformativeModal
+//               isOpen={isModalOpen}
+//               title="Atenção"
+//               message={modalMessage}
+//               onClose={() => setIsModalOpen(false)}
+//             />
+//         </div>
+//       </form>
+//   );
+// };
+
+// src/app/formaPagamento/formaPagamentoedit.tsx
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import axios from 'axios';
+import { AgendamentoHorario } from '../../models/agendamentoHorario';
+import { SnackbarState } from '@/models/snackbarState';
+import InformativeModal from '@/components/InformativeModal';
+import { AgendamentoHorarioGerado } from '@/models/agendamentoHorarioGerado';
+
+interface AgendamentoHorarioEditFormProps {
+  agendamento: AgendamentoHorario;
+  onSave: () => void;
+  onClose: () => void;
+  setSnackbar: (state: SnackbarState) => void;
+}
+
+export const AgendamentoHorarioEditForm = ({
+  agendamento,
+  onSave,
+  onClose,
+  setSnackbar,
+}: AgendamentoHorarioEditFormProps) => {
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AgendamentoHorario>({
+    defaultValues: agendamento,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage] = useState('');
+  const [lstGerados, setLstGerados] = useState<AgendamentoHorarioGerado[]>([]);
+
+  useEffect(() => {
+    // Reseta o formulário com os valores iniciais
+    reset(agendamento);
+
+    // Carregar os dados do agendamento com a lista gerada
+    const fetchAgendamentoCompleto = async () => {
+      try {
+        const response = await axios.get(`/api/Agendamento/getAgendamentoHorario/${agendamento.id}`);
+        const data = response.data as {
+          agendamentoHorario: AgendamentoHorario;
+          agendamentoHorarioGerado: AgendamentoHorarioGerado[];
+        };
+
+        // Atualiza o estado com os dados carregados
+        reset(data.agendamentoHorario);
+        setLstGerados(data.agendamentoHorarioGerado || []);
+      } catch (error) {
+        console.error('Erro ao carregar os dados do agendamento:', error);
+        setSnackbar(new SnackbarState('Erro ao carregar dados do agendamento!', 'error', true));
+      }
+    };
+
+    fetchAgendamentoCompleto();
+  }, [agendamento, reset,setSnackbar]);
+
+    // Excluir um item da lista gerada
+    const handleDeleteGerado = (id: number) => {
+      setLstGerados((prev) => prev.filter((item) => item.id !== id));
+    };
+
+  const onSubmit = async (data: AgendamentoHorario) => {
+    try {
+      setIsSubmitting(true);
+
+          // Processar os campos de hora para o formato HH:mm
+      const formatTime = (time: string | null | undefined): string | null => {
+        if (!time) return null;
+        const date = new Date(`1970-01-01T${time}`);
+        return date.toISOString().split('T')[1].substring(0, 5); // Extrai apenas HH:mm
+      };
+        // Enviar os dados junto com a lista gerada
+      const payload = {
+        ...data,
+        horaInicio: formatTime(data.horaInicio), // Converte para HH:mm
+        horaFim: formatTime(data.horaFim),       // Converte para HH:mm
+        lstGerados, // Enviar a lista atualizada
+      };
+
+      // Atualiza os dados
+      await axios.put(`/api/Agendamento/editarAgendamento/${agendamento.id}`, payload);
+
+      onSave();
+    } catch (error) {
+      console.error('Erro ao editar o agendamento:', error);
+      setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+      <h2 className="text-xl font-bold mb-4">Editar Agendamento</h2>
+
+      {/* Unidade (desabilitada) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Unidade</label>
+        <input
+          type="text"
+          value={agendamento.unidade || ''}
+          disabled
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800 bg-gray-200"
+        />
+      </div>
+
+      {/* Convênio (desabilitado) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Convênio</label>
+        <input
+          type="text"
+          value={agendamento.convenio || ''}
+          disabled
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800 bg-gray-200"
+        />
+      </div>
+
+      {/* Plano (desabilitado) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Plano</label>
+        <input
+          type="text"
+          value={agendamento.plano || ''}
+          disabled
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800 bg-gray-200"
+        />
+      </div>
+
+      {/* Solicitante (desabilitado) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Solicitante</label>
+        <input
+          type="text"
+          value={agendamento.solicitante || ''}
+          disabled
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800 bg-gray-200"
+        />
+      </div>
+
+      {/* Exame (desabilitado) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Exame</label>
+        <input
+          type="text"
+          value={agendamento.exame || ''}
+          disabled
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800 bg-gray-200"
+        />
+      </div>
+
+      {/* Data Início (desabilitada) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Data Início</label>
+        <input
+          type="date"
+          value={agendamento.dataInicio ? new Date(agendamento.dataInicio).toISOString().split('T')[0] : ''}
+          disabled
+          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+        />
+      </div>
+
+      {/* Hora Início */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Hora Início</label>
+        <input
+          type="time"
+          {...register('horaInicio', { required: 'A hora de início é obrigatória' })}
+          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+          disabled
+        />
+        {errors.horaInicio && <p className="text-red-500 text-sm">{errors.horaInicio.message}</p>}
+      </div>
+
+      {/* Hora Fim */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Hora Fim</label>
+        <input
+          type="time"
+          {...register('horaFim', { required: 'A hora de fim é obrigatória' })}
+          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+          disabled
+        />
+        {errors.horaFim && <p className="text-red-500 text-sm">{errors.horaFim.message}</p>}
+      </div>
+
+      {/* Duração (minutos) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Duração (minutos)</label>
+        <input
+          type="number"
+          {...register('duracaoMinutos', { required: 'A duração é obrigatória' })}
+          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+          disabled
+        />
+        {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
+      </div>
+
+      {/* Intervalo (minutos) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Intervalo (minutos)</label>
+        <input
+          type="number"
+          {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
+          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+          disabled
+        />
+        {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
+      </div>
+{/* Lista Gerada */}
+<div className="mb-4">
+        <h3 className="text-lg font-semibold mb-2">Horários Gerados</h3>
+        {lstGerados.length > 0 ? (
+          <table className="table-auto border-collapse border border-gray-300 w-full text-sm text-gray-800">
+            <thead>
+              <tr>
+                <th className="border border-gray-300 px-2 py-1">Horário</th>
+                <th className="border border-gray-300 px-2 py-1">Status</th>
+                <th className="border border-gray-300 px-2 py-1">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lstGerados.map((item) => (
+                <tr key={item.id}>
+                  <td className="border border-gray-300 px-2 py-1">
+                    {item.horario ? new Date(item.horario).toLocaleString('pt-BR') : 'Horário inválido'}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-1">{item.status}</td>
+                  <td className="border border-gray-300 px-2 py-1 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteGerado(item.id?? 0)}
+                      className="bg-red-500 text-white py-1 px-2 rounded text-xs"
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-gray-600 text-sm">Nenhum horário gerado.</p>
+        )}
+      </div>
+      {/* Botões */}
+      <div className="flex justify-end">
+        <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="py-2 px-4 rounded bg-blue-500 text-white"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Salvando...' : 'Salvar'}
+        </button>
+      </div>
+
+      {/* Modal */}
+      <InformativeModal
+        isOpen={isModalOpen}
+        title="Atenção"
+        message={modalMessage}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </form>
+  );
+};

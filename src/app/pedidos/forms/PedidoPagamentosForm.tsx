@@ -1,20 +1,20 @@
-//src/app/orcamentos/forms/OrcamentoPagamentosForm.tsx
+//src/app/pedidos/forms/PedidoPagamentosForm.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
 import { FormaPagamento } from '@/models/formaPagamento';
-import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
-import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
+import { PedidoPagamento } from '@/models/pedidoPagamento';
+import { PedidoCabecalho } from '@/models/pedidoCabecalho';
 import InformativeModal from '@/components/InformativeModal';
 
 
 interface PagamentosFormProps {
   onPagamentosSelected: (exames: FormaPagamento[]) => void;
-  orcamentoPagamentos?: OrcamentoPagamento[];
-  orcamentoCabecalhoData?: OrcamentoCabecalho; // Lista de pagamentos no modo de edição
+  pedidosPagamentos?: PedidoPagamento[];
+  pedidoCabecalhoData?: PedidoCabecalho; // Lista de pagamentos no modo de edição
 }
 
-const PedidoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelected,orcamentoPagamentos =[],orcamentoCabecalhoData  }) => {  
+const PedidoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelected,pedidosPagamentos =[],pedidoCabecalhoData  }) => {  
   const [isLoaded] = useState(false);
   const [addedFormaPagamento, setaddedFormaPagamento] = useState<FormaPagamento[]>([]);
   const [isComponentMounted, setIsComponentMounted] = useState(false);
@@ -24,18 +24,17 @@ const PedidoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelec
   useEffect(() => {
     if (isComponentMounted) return;
     // Carregar exames do orçamento (modo de edição) ao iniciar
-    const loadOrcamentoPagamentos = async () => {          
-      if ( !orcamentoCabecalhoData?.id || orcamentoPagamentos.length === 0) return;
+    const loadPedidosPagamentos = async () => {          
+      if ( !pedidoCabecalhoData?.id || pedidosPagamentos.length === 0) return;
 
       try {
-        // Obtém o `OrcamentoId` e chama a API para obter os exames associados
-        const idCabecalho = orcamentoPagamentos[0].orcamentoId;
-        const response = await axios.get(`/api/Orcamento/getPagamentosList/${idCabecalho}`);
+        const idCabecalho = pedidosPagamentos[0].pagamentoId;
+        const response = await axios.get(`/api/Pedido/getPagamentosList/${idCabecalho}`);
         
       // Combinar detalhes do orçamento com os exames
       const pagamentosComDetalhes = response.data.map((formaPagamento: FormaPagamento) => {
           // Encontrar o detalhe correspondente pelo ExameId
-          const pagamentoDetalhe  = orcamentoPagamentos.find(d => d.pagamentoId === formaPagamento.id);
+          const pagamentoDetalhe  = pedidosPagamentos.find(d => d.pagamentoId === formaPagamento.id);
           
           // Retornar o exame com os detalhes de preço e data de coleta
           return {
@@ -55,8 +54,8 @@ const PedidoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSelec
       }
     };
 
-    loadOrcamentoPagamentos();
-  }, [orcamentoPagamentos, onPagamentosSelected]);
+    loadPedidosPagamentos();
+  }, [pedidosPagamentos, onPagamentosSelected]);
 
 
   useEffect(() => {

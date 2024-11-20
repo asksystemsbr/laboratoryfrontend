@@ -1,30 +1,30 @@
-//src/app/orcamentos/forms/OrcamentoExameForm.tsx
+//src/app/pedidos/forms/PedidoExameForm.tsx
 import React, { useEffect,  useState } from 'react';
 import axios from 'axios';
 import { Exame } from '@/models/exame';
 import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
 import { formatDateTimeForGrid } from '@/utils/formatDateForInput';
-import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
-import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
+import { PedidoDetalhe } from '@/models/pedidoDetalhe';
+import { PedidoCabecalho } from '@/models/pedidoCabecalho';
 import { Solicitante } from '@/models/solicitante';
 import InformativeModal from '@/components/InformativeModal';
 
 
 interface ExameFormProps {
   onSolicitanteSelected: (id: number| null) => void;
-  orcamentoDetalhes?: OrcamentoDetalhe[]; 
+  pedidoDetalhes?: PedidoDetalhe[]; 
   medicamentosParam?: string; 
   observacoesParam?: string;   
-  orcamentoCabecalhoData?: OrcamentoCabecalho;
+  pedidoCabecalhoData?: PedidoCabecalho;
   solicitanteId?: number;
 }
 
 const PedidoExameForm: React.FC<ExameFormProps> = ({ 
       onSolicitanteSelected,
-      orcamentoDetalhes = [],
+      pedidoDetalhes = [],
       medicamentosParam='',
       observacoesParam='',  
-      orcamentoCabecalhoData,
+      pedidoCabecalhoData,
       solicitanteId
     }) => {
   // const [codigoExame, setcodigoExame] = useState('');
@@ -42,17 +42,15 @@ const PedidoExameForm: React.FC<ExameFormProps> = ({
 /*star search field exame*/
   
 
-  useEffect(() => {
-      // Update `addedExames` by modifying the `preco` of each item based on `orcamentoDetalhes`
-      const updatedExames = orcamentoDetalhes.map((detalhe) => {
+  useEffect(() => {      
+      const updatedExames = pedidoDetalhes.map((detalhe) => {
         // Find the corresponding `exame` in `addedExames`
         const matchingExame = addedExames.find((exame) => exame.exameId === detalhe.exameId);
         
         // If a match is found, update its `preco`
         if (matchingExame) {
           return { ...matchingExame, preco: detalhe.valor ?? matchingExame.preco };
-        } else {
-          // Convert `OrcamentoDetalhe` to `Exame`, filling in required `Exame` fields
+        } else {          
           return {
             ...detalhe,
             nomeExame: 'Desconhecido',  // Default or fetched value for missing properties
@@ -70,7 +68,7 @@ const PedidoExameForm: React.FC<ExameFormProps> = ({
       });
 
       setAddedExames(updatedExames as Exame[]);
-  }, [orcamentoDetalhes]);
+  }, [pedidoDetalhes]);
 
   
 
@@ -112,31 +110,30 @@ const PedidoExameForm: React.FC<ExameFormProps> = ({
   useEffect(() => {
     if (isComponentMounted) return;
     // Carregar exames do orçamento (modo de edição) ao iniciar
-    const loadOrcamentoExames = async () => {
-      if ( !orcamentoCabecalhoData?.id || orcamentoDetalhes.length === 0) return;
+    const loadPedidoExames = async () => {
+      if ( !pedidoCabecalhoData?.id || pedidoDetalhes.length === 0) return;
 
       try {
-        // Obtém o `OrcamentoId` e chama a API para obter os exames associados
-        const idCabecalho = orcamentoCabecalhoData?.id;
-        const response = await axios.get(`/api/Orcamento/GetExamesList/${idCabecalho}`);
+        const idCabecalho = pedidoCabecalhoData?.id;
+        const response = await axios.get(`/api/Pedido/GetExamesList/${idCabecalho}`);
         
       // Combinar detalhes do orçamento com os exames
       const examesComDetalhes = response.data.map((exame: Exame) => {
           // Encontrar o detalhe correspondente pelo ExameId
-          const detalhe = orcamentoDetalhes.find(d => d.exameId === exame.id);
+          const detalhe = pedidoDetalhes.find(d => d.exameId === exame.id);
           
           return {
             ...detalhe,
             exame,
             id: detalhe?.id || 0,
-            orcamentoId: idCabecalho,
+            pedidoId: idCabecalho,
             exameId: exame.id,
             valor: detalhe?.valor || exame.preco || 0,
             nomeExame: exame.nomeExame,  
             codigoExame: exame.codigoExame,
             preco: detalhe?.valor || exame.preco || 0, 
             dataColeta: detalhe?.dataColeta || new Date().toISOString().split('T')[0]
-          } as OrcamentoDetalhe;
+          } as PedidoDetalhe;
         });
         // Define a lista de exames já adicionados a partir dos exames do orçamento
         setAddedExames(examesComDetalhes);
@@ -150,7 +147,7 @@ const PedidoExameForm: React.FC<ExameFormProps> = ({
       }
     };
 
-    loadOrcamentoExames();
+    loadPedidoExames();
   }, []);
 
   useEffect(() => {

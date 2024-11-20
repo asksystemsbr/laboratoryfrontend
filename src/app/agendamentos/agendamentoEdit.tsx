@@ -32,6 +32,7 @@ export const AgendamentoEditForm = ({agendamentoCabecalhoData, onSave, onClose, 
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [planoId, setPlanoId] = useState<number | null>(null);
+  const [convenioId, setConvenioId] = useState<number | null>(null);
 
   const [subtotal, setSubtotal] = useState(0);
   const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
@@ -137,6 +138,7 @@ export const AgendamentoEditForm = ({agendamentoCabecalhoData, onSave, onClose, 
   const handleConvenioSelected = (id: number | null, codConvenio: string | null) => {
     setValue('convenioId', id || 0);
     setValue('codConvenio', codConvenio || '');
+    setConvenioId(id);
   };
 
   const handlePlanoSelected = async  (id: number | null) => {
@@ -580,6 +582,7 @@ export const AgendamentoEditForm = ({agendamentoCabecalhoData, onSave, onClose, 
               observacoesParam={agendamentoCabecalhoData.observacoes || ''} 
               agendamentoCabecalhoData={agendamentoCabecalhoData}
               solicitanteId={agendamentoCabecalhoData.solicitanteId || 0}
+              convenioId={convenioId} 
               />   
           )}
         <div className="grid grid-cols-2 gap-20 mt-1">

@@ -28,3 +28,16 @@ export const formatDateForInput = (date: Date | string | undefined): string => {
 
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 };
+
+export const formatDateForGrid = (date: Date | string | null | undefined): string => {
+  if (!date) return '';
+
+  const parsedDate = new Date(date);
+  const gmt3Date = new Date(parsedDate.getTime() - 0 * 60 * 60 * 1000); // Ajuste para GMT-3
+
+  const day = String(gmt3Date.getDate()).padStart(2, '0');
+  const month = String(gmt3Date.getMonth() + 1).padStart(2, '0');
+  const year = gmt3Date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};

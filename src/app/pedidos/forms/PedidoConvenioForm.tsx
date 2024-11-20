@@ -1,4 +1,4 @@
-//src/app/orcamentos/forms/OrcamentoConvenioForm.tsx
+//src/app/pedidos/forms/PedidoConvenioForm.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Convenio } from '@/models/convenio';

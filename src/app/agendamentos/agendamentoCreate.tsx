@@ -28,6 +28,7 @@ export const AgendamentoCreateForm = ({ onSave, onClose, setSnackbar }: Agendame
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [planoId, setPlanoId] = useState<number | null>(null);
+  const [convenioId, setConvenioId] = useState<number | null>(null);
 
   const [subtotal, setSubtotal] = useState(0);
   const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
@@ -84,6 +85,7 @@ export const AgendamentoCreateForm = ({ onSave, onClose, setSnackbar }: Agendame
   const handleConvenioSelected = (id: number | null, codConvenio: string | null) => {
     setValue('convenioId', id || 0);
     setValue('codConvenio', codConvenio || '');
+    setConvenioId(id);
   };
 
   const handlePlanoSelected = async (id: number | null) => {
@@ -300,6 +302,7 @@ export const AgendamentoCreateForm = ({ onSave, onClose, setSnackbar }: Agendame
               observacoesParam= ''
               agendamentoCabecalhoData= {undefined}
               solicitanteId= {undefined}
+              convenioId={convenioId} 
               />     
         <div className="grid grid-cols-2 gap-20 mt-1">
             <AgendamentoPagamentosForm  

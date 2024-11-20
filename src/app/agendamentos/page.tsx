@@ -157,12 +157,12 @@ export default function EspecialidadeList() {
       <Menu />
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Orçamentos</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Agendamentos</h1>
           <button
             onClick={handleNewAgendamento}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
           >
-            Novo Orçamento
+            Novo Agendamento
           </button>
         </div>
 

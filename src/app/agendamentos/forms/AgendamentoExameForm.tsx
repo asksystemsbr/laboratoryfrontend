@@ -10,6 +10,7 @@ import { AgendamentoCabecalho } from '@/models/agendamentoCabecalho';
 import { Solicitante } from '@/models/solicitante';
 import InformativeModal from '@/components/InformativeModal';
 import { useAuth } from '@/app/auth';
+import { AgendamentoHorarioGerado } from '@/models/agendamentoHorarioGerado';
 
 
 interface ExameFormProps {
@@ -21,6 +22,7 @@ interface ExameFormProps {
   observacoesParam?: string;   
   agendamentoCabecalhoData?: AgendamentoCabecalho;
   solicitanteId?: number;
+  convenioId?:number | null;
 }
 
 const AgendamentoExameForm: React.FC<ExameFormProps> = ({ 
@@ -31,7 +33,8 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
       medicamentosParam='',
       observacoesParam='',  
       agendamentoCabecalhoData,
-      solicitanteId
+      solicitanteId,
+      convenioId
     }) => {
   const [exameData, setexameData] = useState<Exame | null>(null);
   // const [codigoExame, setcodigoExame] = useState('');
@@ -58,7 +61,58 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [dataColeta, setDataColeta] = useState(new Date().toISOString().split('T')[0]); // Estado para a data de coleta
+
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<AgendamentoHorarioGerado[]>([]); // Novo estado
+  const [horarioSelecionado, setHorarioSelecionado] = useState<number | null>(null); // Seleção de horário
+  const [isFetchingHorarios, setIsFetchingHorarios] = useState(false); // Estado de carregamento
+
   
+    // Função para buscar os horários
+    const fetchHorariosDisponiveis = async () => {
+      if (!planoId || !exameData || !dataColeta || !user?.unidadeId) {
+        console.warn('Campos obrigatórios faltando para buscar horários.');
+        setModalMessage('Selecione o convenio, plano, unidade, e exame para buscar os horários.');
+        setIsModalOpen(true);
+        return;
+      }
+  
+      const dto = {
+        ConvenioId: convenioId,
+        PlanoId: planoId,
+        UnidadeId: parseInt(user.unidadeId, 10),
+        ExameId: exameData?.id,
+        DataInicio: dataColeta,
+      };
+  
+      try {
+        setIsFetchingHorarios(true);
+        const response = await axios.post('/api/Agendamento/getAgendamentosHorariosDisponiveis', dto);
+        if (response.status === 204) {
+          // Limpar os horários disponíveis
+          setHorariosDisponiveis([]);
+          setModalMessage('Nenhum horário disponível para os critérios selecionados.');
+          setIsModalOpen(true);
+        } else {
+          // Atualizar os horários com os dados recebidos
+          setHorariosDisponiveis(response.data);          
+        }
+        setHorarioSelecionado(null); // Reseta a seleção ao recarregar os horários
+      } catch (error) {
+        console.error('Erro ao buscar horários disponíveis:', error);
+        setHorariosDisponiveis([]);
+      } finally {
+        setIsFetchingHorarios(false);
+      }
+    };
+
+    useEffect(() => {
+      fetchHorariosDisponiveis();
+    }, [dataColeta, exameData]);
+
+    const handleHorarioChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+      setHorarioSelecionado(Number(event.target.value));
+    };
+
   useEffect(() => {
     const term = searchTerm.toLowerCase();
     setFilteredExames(
@@ -409,7 +463,7 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
             placeholder="CRM"
           />         
       </div>
-      <div className="basis-3/12">
+      <div className="basis-2/12">
       <select
           value={solicitanteData?.id || ''}        
           onChange={handleSelectSolicitanteChange}  
@@ -423,7 +477,7 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
           ))}
         </select>
       </div>        
-      <div className="basis-5/12">
+      <div className="basis-4/12">
         <div className="relative w-full">
           <input
             type="text"
@@ -465,6 +519,28 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
           onChange={(e) => setDataColeta(e.target.value)}
           className="border rounded w-full py-1 px-2 text-sm"
         />
+      </div>      
+      <div className="basis-1/12">
+        <select
+          value={horarioSelecionado || ''}
+          onChange={handleHorarioChange}
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          disabled={isFetchingHorarios || horariosDisponiveis.length === 0}
+        >
+          <option value="" disabled>
+            {isFetchingHorarios ? 'Carregando...' : 'Hora'}
+          </option>
+          {horariosDisponiveis.map((horario) => (
+            <option key={horario.id} value={horario.id}>
+              {horario.horario
+                  ? new Date(horario.horario).toLocaleTimeString('pt-BR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : 'Horário inválido'}
+            </option>
+          ))}
+        </select>
       </div>      
       <div className="basis-1/12">
         <button onClick={adicionarExameBtn}

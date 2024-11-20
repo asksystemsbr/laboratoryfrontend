@@ -1,8 +1,8 @@
-//src/app/orcamentos/orcamentoCreate.tsx
+//src/app/pedidos/pedidosEdit.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
+import { PedidoCabecalho } from '@/models/pedidoCabecalho';
 import { SnackbarState } from '@/models/snackbarState';
 import PedidoClienteForm from './forms/PedidoClienteForm';
 import PedidoConvenioForm from './forms/PedidoConvenioForm';
@@ -11,19 +11,19 @@ import PedidoExameForm from './forms/PedidoExameForm';
 import PedidoResumoValoresForm from './forms/PedidoResumoValores';
 import PedidoPagamentosForm from './forms/PedidoPagamentosForm';
 import { useAuth } from '@/app/auth';
-import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
-import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
+import { PedidoDetalhe } from '@/models/pedidoDetalhe';
+import { PedidoPagamento } from '@/models/pedidoPagamento';
 
 interface PedidosEditFormProps {
-  orcamentoCabecalhoData: OrcamentoCabecalho
+  pedidoCabecalhoData: PedidoCabecalho
   onSave: () => void;
   onClose: () => void;
   setSnackbar: (state: SnackbarState) => void;
 }
 
-export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSnackbar }: PedidosEditFormProps) => {
-  const { register,handleSubmit, setValue, reset,getValues  } = useForm<OrcamentoCabecalho>({
-    defaultValues: orcamentoCabecalhoData,
+export const PedidosEditForm = ({pedidoCabecalhoData, onSave, onClose, setSnackbar }: PedidosEditFormProps) => {
+  const { register,handleSubmit, setValue, reset,getValues  } = useForm<PedidoCabecalho>({
+    defaultValues: pedidoCabecalhoData,
   });
   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
   const user = auth?.user; // Verifica se auth é nulo antes de acessar user
@@ -38,8 +38,8 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
   const [totalComDesconto, setTotalComDesconto] = useState(0);
   const [isDescontoEditable, setIsDescontoEditable] = useState(false);
 
-  const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
-  const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
+  const [pedidoDetalhes, setPedidoDetalhes] = useState<PedidoDetalhe[]>([]);
+  const [pedidoPagamentos, setPedidoPagamentos] = useState<PedidoPagamento[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchComplete = useRef(false);
 
@@ -54,49 +54,49 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
 
     // Função para buscar o orçamento completo
     useEffect(() => {
-      const fetchOrcamentoCompleto = async () => {
-        if (!orcamentoCabecalhoData || fetchComplete.current) return; // Fetch only once
+      const fetchPedidoCompleto = async () => {
+        if (!pedidoCabecalhoData || fetchComplete.current) return; // Fetch only once
         fetchComplete.current = true;
 
         try {
-          const response = await axios.get(`/api/Orcamento/getOrcamentoCompleto/${orcamentoCabecalhoData.id}`);
-          const { orcamentoCabecalho, orcamentoDetalhe, orcamentoPagamento } = response.data;
+          const response = await axios.get(`/api/Pedido/getPedidoCompleto/${pedidoCabecalhoData.id}`);
+          const { pedidoCabecalho, pedidoDetalhe, pedidoPagamento } = response.data;
   
-          reset(orcamentoCabecalho); // Preenche o formulário com os dados do cabeçalho
+          reset(pedidoCabecalho); // Preenche o formulário com os dados do cabeçalho
 
            // Initialize values directly from API response
-          const initialIsPercentage = orcamentoCabecalho.tipoDesconto === '1';
+          const initialIsPercentage = pedidoCabecalho.tipoDesconto === '1';
           isPercentageRef.current = initialIsPercentage; // Set reference to stabilize `isPercentage`
           setIsPercentage(initialIsPercentage);
 
 
-          setDesconto(orcamentoCabecalho.desconto);
+          setDesconto(pedidoCabecalho.desconto);
 
-          setOrcamentoDetalhes(orcamentoDetalhe);
-          setOrcamentoPagamentos(orcamentoPagamento);
+          setPedidoDetalhes(pedidoDetalhe);
+          setPedidoPagamentos(pedidoPagamento);
   
           // Calcula subtotal e total com base nos detalhes
-          const novoSubtotal = orcamentoDetalhe.reduce((acc: number, item: OrcamentoDetalhe) => acc + (item.valor || 0), 0);
+          const novoSubtotal = pedidoDetalhe.reduce((acc: number, item: PedidoDetalhe) => acc + (item.valor || 0), 0);
           setSubtotal(novoSubtotal);
           //setTotalComDesconto(novoSubtotal - desconto);
-          const totalAtualizado = calcularTotalComDesconto(novoSubtotal, orcamentoCabecalho.desconto,initialIsPercentage );
+          const totalAtualizado = calcularTotalComDesconto(novoSubtotal, pedidoCabecalho.desconto,initialIsPercentage );
           setTotalComDesconto(totalAtualizado);          
           setLoading(false);
 
-          previousPlanoIdRef.current = orcamentoCabecalho.planoId || null;
+          previousPlanoIdRef.current = pedidoCabecalho.planoId || null;
         } catch (error) {
-          console.error('Erro ao buscar o orçamento completo:', error);
-          setSnackbar(new SnackbarState('Erro ao carregar o orçamento!', 'error', true));
+          console.error('Erro ao buscar o pedido completo:', error);
+          setSnackbar(new SnackbarState('Erro ao carregar o pedido!', 'error', true));
         }
       };
   
-      fetchOrcamentoCompleto();
-    }, [orcamentoCabecalhoData.id, reset, setSnackbar]);      
+      fetchPedidoCompleto();
+    }, [pedidoCabecalhoData.id, reset, setSnackbar]);      
   
   useEffect(() => {
     const checkDescontoPermission = async () => {
       try {
-        const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
+        const response = await axios.get(`/api/Pedido/checkDescontoPermission/${user?.id}`);
         setIsDescontoEditable(response.data);
       } catch (error) {
         console.error('Erro ao verificar permissão para editar desconto:', error);
@@ -138,20 +138,19 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
   };
 
 
-  const handlePagamentosSelected = (pagamentos: OrcamentoPagamento[]) => {
-    console.log(pagamentos);
-    // Criar lista de `OrcamentoPagamento` a partir dos pagamentos selecionados
+  const handlePagamentosSelected = (pagamentos: PedidoPagamento[]) => {
+    console.log(pagamentos);    
     const pagamentosData = pagamentos.map((pagamento) => ({
       pagamentoId: pagamento.pagamentoId,
       valor: pagamento.valor,
-      orcamentoId: orcamentoCabecalhoData.id,
+      pedidoId: pedidoCabecalhoData.id,
       id: 0
     }));
 
-    setOrcamentoPagamentos(pagamentosData);
+    setPedidoPagamentos(pagamentosData);
   };
   
-  const validateOrcamento = (data: OrcamentoCabecalho, isPedido: boolean): boolean => {
+  const validatePedido = (data: PedidoCabecalho, isPedido: boolean): boolean => {
     if (!data.pacienteId) {
       setSnackbar(new SnackbarState('Paciente é obrigatório!', 'error', true));
       return false;
@@ -177,13 +176,13 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
       return false;
     }
   
-    if (orcamentoDetalhes.length === 0) {
+    if (setPedidoDetalhes.length === 0) {
       setSnackbar(new SnackbarState('O orçamento deve conter pelo menos um item!', 'error', true));
       return false;
     }
   
     if (isPedido) {
-      const totalPago = orcamentoPagamentos.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0);
+      const totalPago = pedidoPagamentos.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0);
       if (totalPago !== totalComDesconto) {
         setSnackbar(new SnackbarState('O total pago deve ser igual ao total do orçamento!', 'error', true));
         return false;
@@ -193,19 +192,19 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
     return true;
   };
 
-  const onSubmit = async (data: OrcamentoCabecalho) => {
+  const onSubmit = async (data: PedidoCabecalho) => {
     if (isSubmitting) return;
-    if (!validateOrcamento(data, false)) return; // Valida sem a regra específica para pedidos
+    if (!validatePedido(data, false)) return; // Valida sem a regra específica para pedidos
   
-    await submitOrcamento(data);
+    await submitPedido(data);
   };
 
-  const submitOrcamento = async (data: OrcamentoCabecalho) => {
+  const submitPedido = async (data: PedidoCabecalho) => {
       const now = new Date();
       now.setHours(now.getHours() - 3); // Ajuste para GMT-3
       const dataHora = now.toISOString().slice(0, 19); // Remove o "Z" para evitar indicação de UTC
 
-      const orcamentoData: OrcamentoCabecalho = {
+      const pedidoData: PedidoCabecalho = {
         ...data,
         usuarioId: user?.id || 0,
         dataHora: dataHora,
@@ -214,21 +213,21 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
         tipoDesconto: isPercentage ? '1' : '0',
       };
 
-      const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
+      const pedidoDetalheData = pedidoDetalhes.map((detalhe) => ({
         ...detalhe,
-        orcamentoId: orcamentoCabecalhoData.id,
+        pedidoId: pedidoCabecalhoData.id,
         id: detalhe.id,
       }));
 
-      const orcamentoCompleto = {
-        orcamentoCabecalho: orcamentoData,
-        orcamentoDetalhe: orcamentoDetalheData,
-        orcamentoPagamento: orcamentoPagamentos,
+      const pedidoCompleto = {
+        pedidoCabecalho: pedidoData,
+        pedidoDetalhe: pedidoDetalheData,
+        pedidoPagamento: pedidoPagamentos,
       };
 
       try {
         setIsSubmitting(true);
-        await axios.put('/api/Orcamento', orcamentoCompleto);
+        await axios.put('/api/Pedido', pedidoCompleto);
         reset();
         onSave();
       } catch (error) {
@@ -241,14 +240,14 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
 
     const transformarEmPedido = async () => {
       const formData = getValues(); // Obtém os valores atuais do formulário
-      if (!validateOrcamento(formData, true)) return; // Valida com a regra extra para pedidos
+      if (!validatePedido(formData, true)) return; // Valida com a regra extra para pedidos
     
       try {
         setIsSubmitting(true);
         //await submitOrcamento(formData);
 
         // Chamada à API para validação adicional
-        const response = await axios.get<string>(`/api/Orcamento/validateCreatePedido/${formData.id}`);
+        const response = await axios.get<string>(`/api/Pedido/validateCreatePedido/${formData.id}`);
         const validationMessage = response.data;
 
         // Verifica se a mensagem é diferente de vazio
@@ -258,17 +257,17 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
         }
 
         // Atualiza o status para 2 antes de salvar
-        const updatedData: OrcamentoCabecalho = {
+        const updatedData: PedidoCabecalho = {
           ...formData,
           status: '2', // Atualiza o status para "Pedido"
         };
 
         // Salva o orçamento atualizado
-        await submitOrcamento(updatedData);
-        setSnackbar(new SnackbarState('Orçamento transformado em pedido com sucesso!', 'success', true));
+        await submitPedido(updatedData);
+        setSnackbar(new SnackbarState('Pedido transformado em pedido com sucesso!', 'success', true));
       } catch (error) {
         console.error(error);
-        setSnackbar(new SnackbarState('Erro ao transformar o orçamento em pedido!', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao transformar o pedido em pedido!', 'error', true));
       } finally {
         setIsSubmitting(false);
       }
@@ -280,15 +279,15 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
       {!loading && (
         <PedidoClienteForm 
           onClienteSelected={handleClienteSelected} 
-          nomePaciente={orcamentoCabecalhoData.nomePaciente || ''}
-          pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
+          nomePaciente={pedidoCabecalhoData.nomePaciente || ''}
+          pacienteId={`${pedidoCabecalhoData.pacienteId || ''}`}  /> 
       )}
       {!loading && (     
         <PedidoConvenioForm             
             onConvenioSelected={handleConvenioSelected}    
             onUnidadeSelected={handleUnidadeSelected}   
-            convenioId= {orcamentoCabecalhoData.convenioId || 0}
-            planoId= {orcamentoCabecalhoData.planoId || 0}
+            convenioId= {pedidoCabecalhoData.convenioId || 0}
+            planoId= {pedidoCabecalhoData.planoId || 0}
             />
       )}
         <div className="flex flex-wrap gap-4 mb-4">
@@ -335,18 +334,18 @@ export const PedidosEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSna
         {!loading && (
           <PedidoExameForm 
               onSolicitanteSelected={handleSolicitanteSelected} 
-              orcamentoDetalhes={orcamentoDetalhes}
-              medicamentosParam={orcamentoCabecalhoData.medicamento || ''} 
-              observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
-              orcamentoCabecalhoData={orcamentoCabecalhoData}
-              solicitanteId={orcamentoCabecalhoData.solicitanteId || 0}
+              pedidoDetalhes={pedidoDetalhes}
+              medicamentosParam={pedidoCabecalhoData.medicamento || ''} 
+              observacoesParam={pedidoCabecalhoData.observacoes || ''} 
+              pedidoCabecalhoData={pedidoCabecalhoData}
+              solicitanteId={pedidoCabecalhoData.solicitanteId || 0}
               />   
           )}
         <div className="grid grid-cols-2 gap-20 mt-1">
         {!loading && (
             <PedidoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
-                orcamentoPagamentos={orcamentoPagamentos} 
-                orcamentoCabecalhoData={orcamentoCabecalhoData}
+                pedidosPagamentos={pedidoPagamentos} 
+                pedidoCabecalhoData={pedidoCabecalhoData}
                 />
         )}
         {!loading && (

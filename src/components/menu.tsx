@@ -273,7 +273,7 @@ export default function Menu() {
                 className="flex items-center px-4 py-2 hover:bg-gray-700 w-full"
                 >
                 <span className="material-icons">shopping_cart</span>
-                <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Orçamentos</span>
+                <span className={`ml-4 ${!drawerOpen ? 'hidden' : 'block'}`}>Gerenciamentos</span>
               </button>
             </li>
             <li>

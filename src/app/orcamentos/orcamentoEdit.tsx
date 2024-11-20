@@ -272,10 +272,20 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     if (isSubmitting) return;
     if (!validateOrcamento(data, false)) return; // Valida sem a regra específica para pedidos
   
-    await submitOrcamento(data);
+    // Chamada à API para validação adicional
+    const response = await axios.get<string>(`/api/Orcamento/validateCreatePedido/${data.id}`);
+    const validationMessage = response.data;
+
+    // Verifica se a mensagem é diferente de vazio
+    if (validationMessage) {
+      setSnackbar(new SnackbarState(validationMessage, 'error', true));
+      return; // Impede que o processo continue
+    }
+
+    await submitOrcamento(data,false);
   };
 
-  const submitOrcamento = async (data: OrcamentoCabecalho) => {
+  const submitOrcamento = async (data: OrcamentoCabecalho, isPedido: boolean) => {
       const now = new Date();
       now.setHours(now.getHours() - 3); // Ajuste para GMT-3
       const dataHora = now.toISOString().slice(0, 19); // Remove o "Z" para evitar indicação de UTC
@@ -304,6 +314,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       try {
         setIsSubmitting(true);
         await axios.put('/api/Orcamento', orcamentoCompleto);
+        if(isPedido){
+          await axios.post('/api/Pedido', orcamentoCompleto);
+        }
         reset();
         onSave();
       } catch (error) {
@@ -323,7 +336,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
         //await submitOrcamento(formData);
 
         // Chamada à API para validação adicional
-        const response = await axios.get<string>(`/api/Orcamento/validateCreatePedido/${formData.id}`);
+        const response = await axios.get<string>(`/api/Pedido/validateCreatePedido/${formData.id}`);
         const validationMessage = response.data;
 
         // Verifica se a mensagem é diferente de vazio
@@ -339,7 +352,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
         };
 
         // Salva o orçamento atualizado
-        await submitOrcamento(updatedData);
+        await submitOrcamento(updatedData,true);
         setSnackbar(new SnackbarState('Orçamento transformado em pedido com sucesso!', 'success', true));
       } catch (error) {
         console.error(error);
@@ -349,79 +362,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       }
     };
 
-    // const gerarPDF = async () => {
-    //   const doc = new jsPDF();
-    
-    // try{
-    //     // Realizar chamadas assíncronas para obter os dados necessários
-    //     const planoPromise = planoId
-    //     ? axios.get(`/api/Plano/${planoId}`).then((res) => res.data.descricao)
-    //     : Promise.resolve('N/A'); // Caso não tenha planoId, use um valor padrão
-
-    //     const convenioPromise = orcamentoCabecalhoData.convenioId
-    //       ? axios.get(`/api/Convenio/${orcamentoCabecalhoData.convenioId}`).then((res) => res.data.descricao)
-    //       : Promise.resolve('N/A'); // Caso não tenha convenioId, use um valor padrão
-
-    //     const examesPromises = orcamentoDetalhes.map((detalhe) =>
-    //       axios
-    //         .get(`/api/Exame/${detalhe.exameId}`)
-    //         .then((res) => res.data.nomeExame || 'Exame desconhecido')
-    //         .catch(() => 'Erro ao obter nome') // Tratar erros individuais
-    //     );
-
-    //     // Esperar as respostas das promessas
-    //     const [nomePlano, nomeConvenio, nomesExames] = await Promise.all([
-    //       planoPromise,
-    //       convenioPromise,
-    //       Promise.all(examesPromises),
-    //     ]);
-    //     // Adicionar título
-    //     doc.setFontSize(18);
-    //     doc.text(`Orçamento: ${orcamentoCabecalhoData.id}`, 10, 10);
-      
-    //     // Adicionar informações do cabeçalho
-    //     doc.setFontSize(12);
-    //     doc.text(`Paciente: ${orcamentoCabecalhoData.nomePaciente?.toUpperCase() || 'N/A'}`, 10, 20);
-    //     doc.text(`Convênio: ${nomeConvenio.toUpperCase()}`, 10, 30);
-    //     doc.text(`Plano: ${nomePlano.toUpperCase()}`, 10, 40);
-    //     doc.text(`Data: ${new Date(orcamentoCabecalhoData.dataHora || '').toLocaleDateString()}`, 10, 50);
-      
-    //     // Tabela de detalhes dos exames
-    //     const head = [['Exame', 'Valor (R$)', 'Data da Coleta']];
-    //     const body = orcamentoDetalhes.map((detalhe,index) => [
-    //       nomesExames[index].toUpperCase() || 'N/A',
-    //       detalhe.valor?.toFixed(2) || '0.00',
-    //       detalhe.dataColeta ? new Date(detalhe.dataColeta).toLocaleDateString() : '-',
-    //     ]);
-      
-    //     doc.autoTable({
-    //       startY: 60,
-    //       head: head,
-    //       body: body,
-    //     });
-      
-    //     // Adicionar resumo
-    //     const startY = doc.lastAutoTable.finalY + 10;
-    //     const safeSubtotal = subtotal != null ? subtotal : 0; // Default 0 se subtotal for null/undefined
-    //     const safeDesconto = desconto != null ? desconto : 0; // Default 0 se desconto for null/undefined
-    //     const safeTotalComDesconto = totalComDesconto != null ? totalComDesconto : 0; // Default 0 se totalComDesconto for null/undefined
-    //     doc.text(`Subtotal: R$ ${safeSubtotal.toFixed(2)}`, 10, startY);
-    //     doc.text(
-    //       `Desconto: ${isPercentage ? `${safeDesconto}%` : `R$ ${safeDesconto.toFixed(2)}`}`,
-    //       10,
-    //       startY + 10
-    //     );
-    //     doc.text(`Total com Desconto: R$ ${safeTotalComDesconto.toFixed(2)}`, 10, startY + 20);
-      
-    //     // Abrir ou baixar o PDF
-    //     doc.save(`orcamento_${orcamentoCabecalhoData.id}.pdf`);
-    //   }
-    //   catch (error) {
-    //     console.error('Erro ao gerar PDF:', error);
-    //     setSnackbar(new SnackbarState('Erro ao gerar o PDF!', 'error', true));
-    //   }
-    // };
-    
+  
     const gerarPDF = async () => {
       const doc = new jsPDF();
     
