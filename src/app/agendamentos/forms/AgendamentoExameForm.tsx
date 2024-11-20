@@ -341,9 +341,22 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
       if (alreadyExists) {
         setModalMessage('Esse exame já foi adicionado.');
         setIsModalOpen(true);
-        resetInput();
+        //resetInput();
         return;
       }
+
+      // Validar se um horário foi selecionado
+      if (!horarioSelecionado) {
+        setModalMessage('Selecione um horário antes de adicionar o exame.');
+        setIsModalOpen(true);
+        return;
+      }
+
+      // Combinar dataColeta com horárioSelecionado
+      const horarioData = horariosDisponiveis.find((h) => h.id === horarioSelecionado); // Obter horário do dropdown
+      const dataHoraColeta = `${dataColeta}T${new Date(horarioData?.horario || '').toLocaleTimeString('pt-BR', {
+        hour12: false,
+      })}`; // Combina data e horário no formato ISO
 
       // Adicionar medicamento e observação ao estado acumulado
       const medsResponse = await axios.get(`/api/Exame/getitemsByCodigo/${exame.codigoExame}`);      
@@ -369,7 +382,8 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
         valor: preco, 
         exameId: exame.id, 
         preco: preco, 
-        dataColeta: dataColeta // Inclui a data de coleta selecionada pelo usuário
+        dataColeta: dataHoraColeta, // Inclui a data de coleta selecionada pelo usuário
+        horarioId:horarioData?.id || 0
       };
 
       setAddedExames([...addedExames, exameComDetalhes]);
@@ -381,6 +395,7 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
       // onExameSelected([...exames, exameComDetalhes],observacoes,medicamentos);
       //setcodigoExame(''); // Resetar campo após adicionar
       resetInput();
+      setHorariosDisponiveis([]);
     } catch (error) {
       console.error('Erro ao adicionar exame', error);
     }

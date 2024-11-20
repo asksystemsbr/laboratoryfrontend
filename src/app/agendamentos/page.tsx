@@ -97,6 +97,16 @@ export default function EspecialidadeList() {
   const handleDelete = async () => {
     if (agendamentoToDelete !== null) {
       try {
+        // Chamada à API para validação adicional
+        const response = await axios.get<string>(`/api/Agendamento/validateDeleteAgendamento/${agendamentoToDelete}`);
+        const validationMessage = response.data;
+
+        // Verifica se a mensagem é diferente de vazio
+        if (validationMessage) {
+          setSnackbar(new SnackbarState(validationMessage, 'error', true));
+          return; // Impede que o processo continue
+        }
+
         await axios.delete(`/api/Agendamento/${agendamentoToDelete}`);
         setSnackbar(new SnackbarState('Agendamento excluído com sucesso!', 'success', true));
         setDeleteConfirmOpen(false);
@@ -194,6 +204,7 @@ export default function EspecialidadeList() {
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Paciente</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Data</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Total</th>
+              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Status</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
             </tr>
           </thead>
@@ -204,6 +215,11 @@ export default function EspecialidadeList() {
                 <td className="py-3 px-6 text-left text-sm text-gray-800">{agendamento.nomePaciente}</td>
                 <td className="py-3 px-6 text-left text-sm text-gray-800">{formatDateTimeForGrid(agendamento.dataHora)}</td>
                 <td className="py-3 px-6 text-left text-sm text-gray-800">{formatCurrencyBRL(agendamento.total?? 0)}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">
+                    {Number(agendamento.status) === 0 && "Cancelado"}
+                    {Number(agendamento.status) === 1 && "Ativo"}
+                    {Number(agendamento.status) === 2 && "Finalizado"}
+                </td>                
                 <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
                     onClick={() => toggleDropdown(agendamento.id!)}

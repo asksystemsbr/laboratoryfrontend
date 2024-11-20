@@ -282,6 +282,28 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
     try {
         setIsSubmitting(true); 
 
+          // Validação manual dos campos obrigatórios
+        const missingFields: string[] = [];
+        
+        if (!unidadesData?.id) missingFields.push("Recepção");
+        if (!convenioData?.id) missingFields.push("Convênio");
+        if (!planoData?.id) missingFields.push("Plano");
+        if (!solicitanteData?.id) missingFields.push("Solicitante");
+        if (!exameData?.id) missingFields.push("Exame");
+        if (!data.dataInicio) missingFields.push("Data Início");
+        if (!data.dataFim) missingFields.push("Data Fim");
+        if (!data.horaInicio) missingFields.push("Hora Início");
+        if (!data.horaFim) missingFields.push("Hora Fim");
+        if (!data.duracaoMinutos) missingFields.push("Duração");
+        if (!data.intervaloMinutos) missingFields.push("Intervalo");
+
+        if (missingFields.length > 0) {
+          const errorMessage = `Os seguintes campos são obrigatórios e estão faltando: ${missingFields.join(", ")}`;
+          setModalMessage(errorMessage); // Mostra a mensagem no modal informativo
+          setIsModalOpen(true);
+          return; // Não prossegue com o envio dos dados
+        }
+
         // Completa os dados do formulário
         const requestData: AgendamentoHorario = {
           ...data,
@@ -437,44 +459,48 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
           {errors.dataFim && <p className="text-red-500 text-sm">{errors.dataFim.message}</p>}
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700">Hora Início</label>
-          <input
-            type="time"
-            {...register('horaInicio', { required: 'A hora de início é obrigatória' })}
-            className="border rounded w-full py-2 px-3 mt-1"
-          />
-          {errors.horaInicio && <p className="text-red-500 text-sm">{errors.horaInicio.message}</p>}
+        <div className="mb-4 flex gap-4">
+          <div className="flex-1">
+            <label className="block text-gray-700">Hora Início</label>
+            <input
+              type="time"
+              {...register('horaInicio', { required: 'A hora de início é obrigatória' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+            {errors.horaInicio && <p className="text-red-500 text-sm">{errors.horaInicio.message}</p>}
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-gray-700">Hora Fim</label>
+            <input
+              type="time"
+              {...register('horaFim', { required: 'A hora de fim é obrigatória' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+            {errors.horaFim && <p className="text-red-500 text-sm">{errors.horaFim.message}</p>}
+          </div>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700">Hora Fim</label>
-          <input
-            type="time"
-            {...register('horaFim', { required: 'A hora de fim é obrigatória' })}
-            className="border rounded w-full py-2 px-3 mt-1"
-          />
-          {errors.horaFim && <p className="text-red-500 text-sm">{errors.horaFim.message}</p>}
-        </div>
+        <div className="mb-4 flex gap-4">
+          <div className="flex-1">
+            <label className="block text-gray-700">Duração (minutos)</label>
+            <input
+              type="number"
+              {...register('duracaoMinutos', { required: 'A duração é obrigatória' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+            {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
+          </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700">Duração (minutos)</label>
-          <input
-            type="number"
-            {...register('duracaoMinutos', { required: 'A duração é obrigatória' })}
-            className="border rounded w-full py-2 px-3 mt-1"
-          />
-          {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700">Intervalo (minutos)</label>
-          <input
-            type="number"
-            {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
-            className="border rounded w-full py-2 px-3 mt-1"
-          />
-          {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
+          <div className="flex-1">
+            <label className="block text-gray-700">Intervalo (minutos)</label>
+            <input
+              type="number"
+              {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+            {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
+          </div>
         </div>
 
         <div className="flex justify-end">

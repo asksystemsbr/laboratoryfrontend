@@ -654,62 +654,66 @@ export const AgendamentoHorarioEditForm = ({
       </div>
 
       {/* Data Início (desabilitada) */}
-      <div className="mb-4">
-        <label className="block text-gray-700">Data Início</label>
-        <input
-          type="date"
-          value={agendamento.dataInicio ? new Date(agendamento.dataInicio).toISOString().split('T')[0] : ''}
-          disabled
-          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
-        />
-      </div>
+      <div className="mb-4 flex gap-4">
+        <div className="flex-1">
+          <label className="block text-gray-700">Data Início</label>
+          <input
+            type="date"
+            value={agendamento.dataInicio ? new Date(agendamento.dataInicio).toISOString().split('T')[0] : ''}
+            disabled
+            className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+          />
+        </div>
 
-      {/* Hora Início */}
-      <div className="mb-4">
-        <label className="block text-gray-700">Hora Início</label>
-        <input
-          type="time"
-          {...register('horaInicio', { required: 'A hora de início é obrigatória' })}
-          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
-          disabled
-        />
-        {errors.horaInicio && <p className="text-red-500 text-sm">{errors.horaInicio.message}</p>}
-      </div>
+        {/* Hora Início */}
+        <div className="flex-1">
+          <label className="block text-gray-700">Hora Início</label>
+          <input
+            type="time"
+            {...register('horaInicio', { required: 'A hora de início é obrigatória' })}
+            className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+            disabled
+          />
+          {errors.horaInicio && <p className="text-red-500 text-sm">{errors.horaInicio.message}</p>}
+        </div>
 
-      {/* Hora Fim */}
-      <div className="mb-4">
-        <label className="block text-gray-700">Hora Fim</label>
-        <input
-          type="time"
-          {...register('horaFim', { required: 'A hora de fim é obrigatória' })}
-          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
-          disabled
-        />
-        {errors.horaFim && <p className="text-red-500 text-sm">{errors.horaFim.message}</p>}
+        {/* Hora Fim */}
+        <div className="flex-1">
+          <label className="block text-gray-700">Hora Fim</label>
+          <input
+            type="time"
+            {...register('horaFim', { required: 'A hora de fim é obrigatória' })}
+            className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+            disabled
+          />
+          {errors.horaFim && <p className="text-red-500 text-sm">{errors.horaFim.message}</p>}
+        </div>
       </div>
 
       {/* Duração (minutos) */}
-      <div className="mb-4">
-        <label className="block text-gray-700">Duração (minutos)</label>
-        <input
-          type="number"
-          {...register('duracaoMinutos', { required: 'A duração é obrigatória' })}
-          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
-          disabled
-        />
-        {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
-      </div>
+      <div className="mb-4 flex gap-4">
+        <div className="flex-1">
+          <label className="block text-gray-700">Duração (minutos)</label>
+          <input
+            type="number"
+            {...register('duracaoMinutos', { required: 'A duração é obrigatória' })}
+            className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+            disabled
+          />
+          {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
+        </div>
 
-      {/* Intervalo (minutos) */}
-      <div className="mb-4">
-        <label className="block text-gray-700">Intervalo (minutos)</label>
-        <input
-          type="number"
-          {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
-          className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
-          disabled
-        />
-        {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
+        {/* Intervalo (minutos) */}
+        <div className="flex-1">
+          <label className="block text-gray-700">Intervalo (minutos)</label>
+          <input
+            type="number"
+            {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
+            className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
+            disabled
+          />
+          {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
+        </div>
       </div>
 {/* Lista Gerada */}
 <div className="mb-4">

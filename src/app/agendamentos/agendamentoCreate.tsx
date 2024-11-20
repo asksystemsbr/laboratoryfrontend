@@ -143,7 +143,8 @@ export const AgendamentoCreateForm = ({ onSave, onClose, setSnackbar }: Agendame
     const detalhes = detalhesAgendamento.map((detalhe) => ({
       exameId: detalhe.exameId,
       valor: detalhe.valor,
-      dataColeta: detalhe.dataColeta // ou alguma outra data relacionada
+      dataColeta: detalhe.dataColeta, // ou alguma outra data relacionada
+      horarioId: detalhe.horarioId
     }));
     
     if (JSON.stringify(agendamentoDetalhes) !== JSON.stringify(detalhes)) {

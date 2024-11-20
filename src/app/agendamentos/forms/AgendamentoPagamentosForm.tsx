@@ -74,7 +74,7 @@ const AgendamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentos
     };
 
     loadItemsPagamentos();
-  }, [agendamentoPagamentos, onPagamentosSelected]);
+  }, []);
 
   const preencherDadosExame = async (formaPagamento: FormaPagamento) => {
     setformaPagamentoData(formaPagamento);

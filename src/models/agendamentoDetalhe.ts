@@ -5,5 +5,6 @@ export interface AgendamentoDetalhe {
     exameId?: number;
     valor?: number;
     dataColeta?: Date |string;
+    horarioId?: number;
   }
   
