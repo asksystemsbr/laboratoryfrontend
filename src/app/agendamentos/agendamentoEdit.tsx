@@ -454,13 +454,18 @@ export const AgendamentoEditForm = ({agendamentoCabecalhoData, onSave, onClose, 
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+          <button 
+            type="submit" 
+            className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200"
+            disabled
+            >
             Salvar
           </button>
           <button 
             type="button" 
             onClick={transformarEmOrcamento}
              className="mr-2 py-2 px-4 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-500 hover:to-purple-500 transition-all duration-200"
+             disabled
             >
             Transformar em Orçamento
           </button>
