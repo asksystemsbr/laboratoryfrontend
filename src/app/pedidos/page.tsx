@@ -1,29 +1,25 @@
+//src/app/pedidos/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { OrcamentoCreateForm } from './orcamentoCreate';
-import { OrcamentoEditForm } from './orcamentoEdit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
-import { OrcamentoCabecalho } from '../../models/orcamentoCabecalho';
+import { PedidoCabecalho } from '../../models/pedidoCabecalho';
 import { SnackbarState } from '../../models/snackbarState';
 import Menu from '../../components/menu';
-import ConfirmationModal from '../../components/confirmationModal';
 import { formatDateTimeForGrid } from '@/utils/formatDateForInput';
 import { formatCurrencyBRL } from '@/utils/numbers';
+import { PedidosEditForm } from './pedidosEdit';
 
 Modal.setAppElement('#__next');
 
 export default function EspecialidadeList() {
-  const [orcamentos, setorcamentos] = useState<OrcamentoCabecalho[]>([]);
-  const [filtered, setFiltered] = useState<OrcamentoCabecalho[]>([]);
+  const [pedidos, setPedidos] = useState<PedidoCabecalho[]>([]);
+  const [filtered, setFiltered] = useState<PedidoCabecalho[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingOrcamento, seteditingOrcamento] = useState<OrcamentoCabecalho | null>(null);
+  const [editingPedido, setEditingPedido] = useState<PedidoCabecalho | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [orcamentoToDelete, setorcamentoToDelete] = useState<number | null>(null);
   const [progress, setProgress] = useState(100); // Barra de progresso para o snackbar
   const recordsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,10 +28,10 @@ export default function EspecialidadeList() {
   const totalPages = Math.ceil(filtered.length / recordsPerPage);
 
   // Função para carregar especialidades
-  const loadOrcamentos = async () => {
+  const loadPedidos = async () => {
     try {
-      const response = await axios.get('/api/Orcamento');
-      setorcamentos(response.data);
+      const response = await axios.get('/api/Pedido/getItemsPedido');
+      setPedidos(response.data);
       setFiltered(response.data);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
@@ -44,7 +40,7 @@ export default function EspecialidadeList() {
   };
 
   useEffect(() => {
-    loadOrcamentos();
+    loadPedidos();
   }, []);
 
   // Função para controle do Snackbar
@@ -76,59 +72,31 @@ export default function EspecialidadeList() {
 
   const applySearch = useCallback(() => {
     const searchTermLower = searchTerm.toLowerCase();
-    const filteredEspecialidades = orcamentos.filter((orcamento) =>
-      Object.values(orcamento).some((value) =>
+    const filteredEspecialidades = pedidos.filter((pedido) =>
+      Object.values(pedido).some((value) =>
         String(value).toLowerCase().includes(searchTermLower)
       )
     );
     setFiltered(filteredEspecialidades);
-  }, [searchTerm, orcamentos]);
+  }, [searchTerm, pedidos]);
 
   useEffect(() => {
     applySearch();
-  }, [searchTerm, orcamentos, applySearch]);
+  }, [searchTerm, pedidos, applySearch]);
 
   const handleSave = () => {
     setModalIsOpen(false);
     setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
-    loadOrcamentos();
+    loadPedidos();
   };
 
-  const handleDelete = async () => {
-    if (orcamentoToDelete !== null) {
-      try {
-          // Chamada à API para validação adicional
-          const response = await axios.get<string>(`/api/Orcamento/validateCreatePedido/${orcamentoToDelete}`);
-          const validationMessage = response.data;
 
-          // Verifica se a mensagem é diferente de vazio
-          if (validationMessage) {
-            setSnackbar(new SnackbarState(validationMessage, 'error', true));
-            return; // Impede que o processo continue
-          }
-          await axios.delete(`/api/Orcamento/${orcamentoToDelete}`);
-          setSnackbar(new SnackbarState('Orcamento excluído com sucesso!', 'success', true));
-          setDeleteConfirmOpen(false);
-          loadOrcamentos();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao excluir orcamento!', 'error', true));
-      }
-    }
-  };
-
-  const handleEdit = (orcamentoCabecalho: OrcamentoCabecalho) => {
-    seteditingOrcamento(orcamentoCabecalho);
-    setIsEditing(true);
+  const handleEdit = (pedidoCabecalho: PedidoCabecalho) => {
+    setEditingPedido(pedidoCabecalho);
     setModalIsOpen(true);
     setDropdownVisible({});
   };
 
-  const handleNewOrcamento = () => {
-    setIsEditing(false);
-    seteditingOrcamento(null);
-    setModalIsOpen(true);
-  };
 
   const toggleDropdown = (id: number) => {
     setDropdownVisible((prev) => ({
@@ -137,15 +105,10 @@ export default function EspecialidadeList() {
     }));
   };
 
-  const handleDeleteConfirmation = (id: number) => {
-    setorcamentoToDelete(id);
-    setDeleteConfirmOpen(true);
-    setDropdownVisible({});
-  };
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentOrcamentos = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentPedidos = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -166,13 +129,7 @@ export default function EspecialidadeList() {
       <Menu />
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Orçamentos</h1>
-          <button
-            onClick={handleNewOrcamento}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
-          >
-            Novo Orçamento
-          </button>
+          <h1 className="text-3xl font-bold text-gray-800">Pedidos</h1>
         </div>
 
         {/* Campo de busca */}
@@ -203,43 +160,37 @@ export default function EspecialidadeList() {
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Paciente</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Data</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Total</th>
-              <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Status</th>
               <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600 border-b">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {currentOrcamentos.map((orcamento) => (
-              <tr key={orcamento.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{orcamento.id}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{orcamento.nomePaciente}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatDateTimeForGrid(orcamento.dataHora)}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatCurrencyBRL(orcamento.total?? 0)}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">
-                    {Number(orcamento.status) === 0 && "Cancelado"}
-                    {Number(orcamento.status) === 1 && "Ativo"}
-                    {Number(orcamento.status) === 2 && "Finalizado"}
-                </td>
+            {currentPedidos.map((pedido) => (
+              <tr key={pedido.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{pedido.id}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{pedido.nomePaciente}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatDateTimeForGrid(pedido.dataHora)}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatCurrencyBRL(pedido.total?? 0)}</td>
                 <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
-                    onClick={() => toggleDropdown(orcamento.id!)}
+                    onClick={() => toggleDropdown(pedido.id!)}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded-lg shadow-sm transition-all duration-200"
                   >
                     Ações
                   </button>
-                  {dropdownVisible[orcamento.id!] && (
+                  {dropdownVisible[pedido.id!] && (
                     <div className="absolute mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
                       <ul className="py-1">
                         <li
                           className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleEdit(orcamento)}
+                          onClick={() => handleEdit(pedido)}
                         >
-                          Editar
+                          Visualizar
                         </li>
                         <li
-                          className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleDeleteConfirmation(orcamento.id!)}
+                          className="px-4 py-2 text-sm text-blue-500 hover:bg-gray-100 cursor-pointer"
+                          // onClick={() => handleDeleteConfirmation(orcamento.id!)}
                         >
-                          Excluir
+                          Gerar NFSe
                         </li>
                       </ul>
                     </div>
@@ -284,32 +235,13 @@ export default function EspecialidadeList() {
           className="bg-white p-6 max-w-xl mx-auto rounded-lg shadow-lg w-full"
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
-          {isEditing ? (
-            <OrcamentoEditForm
-              orcamentoCabecalhoData={editingOrcamento!}
+            <PedidosEditForm
+              pedidoCabecalhoData={editingPedido!}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
             />
-          ) : (
-            <OrcamentoCreateForm
-              onSave={handleSave}
-              onClose={() => setModalIsOpen(false)}
-              setSnackbar={setSnackbar}
-            />
-          )}
         </Modal>
-
-        {/* Modal de confirmação de exclusão */}
-        <ConfirmationModal
-          isOpen={deleteConfirmOpen}
-          title="Confirmação de Exclusão"
-          message="Tem certeza de que deseja excluir esta especialidade? Esta ação não pode ser desfeita."
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteConfirmOpen(false)}
-          confirmText="Excluir"
-          cancelText="Cancelar"
-        />
 
         {/* Snackbar */}
         {snackbar.show && (

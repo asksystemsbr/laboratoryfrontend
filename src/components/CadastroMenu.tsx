@@ -136,7 +136,13 @@ export default function CadastroMenu() {
         label: 'Formas de Pagamento',
         icon: 'queue',
         route: '/formaPagamento',
-      },                                
+      },             
+      {
+        permissions: ['agendamento.Read', 'agendamento.Write'],
+        label: 'Agendamento',
+        icon: 'queue',
+        route: '/agendamentoHorario',
+      },                        
   ];
 
   // Renderiza os itens de menu com base nas permissões

@@ -1,4 +1,4 @@
-//src/app/orcamentos/forms/OrcamentoConvenioForm.tsx
+//src/app/agendamentos/forms/AgendamentoConvenioForm.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Convenio } from '@/models/convenio';
@@ -7,7 +7,7 @@ import { useAuth } from '@/app/auth';
 import { Recepcao } from '@/models/recepcao';
 import InformativeModal from '@/components/InformativeModal';
 
-interface OrcamentoConvenioFormProps {  
+interface AgendamentoConvenioFormProps {  
   onConvenioSelected: (id: number| null,codConvenio: string | null) => void;
   onPlanoSelected: (id: number| null) => void;  
   onUnidadeSelected: (id: number| null) => void; 
@@ -15,7 +15,7 @@ interface OrcamentoConvenioFormProps {
   planoId?: number;
 }
 
-const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({     
+const AgendamentoConvenioForm: React.FC<AgendamentoConvenioFormProps> = ({     
     onConvenioSelected,
     onPlanoSelected,    
     onUnidadeSelected,    
@@ -37,27 +37,6 @@ const OrcamentoConvenioForm: React.FC<OrcamentoConvenioFormProps> = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
-
-  // const buscarConvenioPorCodigo = async () => {
-  //   try {
-  //     if (!codigoConvenio ) return;
-  //     const response = await axios.get(`/api/Convenio/getConvenioByCodigoAndRecepcao/${codigoConvenio}/${recepcaoId}`);
-  //     const item = response.data;
-  //     preencherDadosConvenio(item);
-  //   } catch (error) {
-  //     console.error('Solicitante não encontrado', error);
-  //     setConvenioData(null);
-  //     onConvenioSelected(null,null);
-  //     resetPlanos();
-  //   }
-  // };
-  
-  // const preencherDadosConvenio = async (convenio: Convenio) => {
-  //   setConvenioData(convenio);
-  //   setcodigoConvenio(convenio.codOperadora??"");
-  //   onConvenioSelected(convenio.id ?? null,convenio.codOperadora ?? null);
-  //   await loadPlanosByConvenio(convenio.id);
-  // };
 
   const loadPlanosByConvenio = async (convenioId: number) => {
     try {
@@ -287,4 +266,4 @@ useEffect(() => {
   );
 };
 
-export default OrcamentoConvenioForm;
+export default AgendamentoConvenioForm;

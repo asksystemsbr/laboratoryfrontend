@@ -30,4 +30,5 @@ export interface Cliente {
     titularConvenio?: string;
 
     nomeFantasia?: string;
+    senha?: string;
 }

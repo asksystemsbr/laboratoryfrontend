@@ -227,7 +227,22 @@ const onSubmit = async (data: Recepcao) => {
             />
             {errors.nomeRecepcao && <p className="text-red-500 text-sm">{errors.nomeRecepcao?.message}</p>}
           </div>
-
+          <div className="mb-4">
+            <label className="block text-gray-700">Cabecalho Orçamento</label>
+            <textarea
+              {...register('cabecalhoOrcamento', { required: 'O cabeçalho é obrigatória' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+            {errors.cabecalhoOrcamento && <p className="text-red-500 text-sm">{errors.cabecalhoOrcamento?.message}</p>}
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700">Rodapé Orçamento</label>
+            <textarea
+              {...register('rodapeOrcamento', { required: 'O rodapé é obrigatória' })}
+              className="border rounded w-full py-2 px-3 mt-1"
+            />
+            {errors.rodapeOrcamento && <p className="text-red-500 text-sm">{errors.rodapeOrcamento?.message}</p>}
+          </div>               
           <div className="mb-4">
             <label className="block text-gray-800">CEP *</label>
             <InputMask

@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
-import { OrcamentoCreateForm } from './orcamentoCreate';
-import { OrcamentoEditForm } from './orcamentoEdit';
+import { AgendamentoCreateForm } from './agendamentoCreate';
+import { AgendamentoEditForm } from './agendamentoEdit';
 import { Snackbar } from '../snackbar';
 import Modal from 'react-modal';
 import axios from 'axios';
-import { OrcamentoCabecalho } from '../../models/orcamentoCabecalho';
+import { AgendamentoCabecalho } from '../../models/agendamentoCabecalho';
 import { SnackbarState } from '../../models/snackbarState';
 import Menu from '../../components/menu';
 import ConfirmationModal from '../../components/confirmationModal';
@@ -15,15 +15,15 @@ import { formatCurrencyBRL } from '@/utils/numbers';
 Modal.setAppElement('#__next');
 
 export default function EspecialidadeList() {
-  const [orcamentos, setorcamentos] = useState<OrcamentoCabecalho[]>([]);
-  const [filtered, setFiltered] = useState<OrcamentoCabecalho[]>([]);
+  const [agendamentos, setAgendamentos] = useState<AgendamentoCabecalho[]>([]);
+  const [filtered, setFiltered] = useState<AgendamentoCabecalho[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingOrcamento, seteditingOrcamento] = useState<OrcamentoCabecalho | null>(null);
+  const [editingAgendamento, seteditingAgendamento] = useState<AgendamentoCabecalho | null>(null);
   const [snackbar, setSnackbar] = useState(new SnackbarState());
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [orcamentoToDelete, setorcamentoToDelete] = useState<number | null>(null);
+  const [agendamentoToDelete, setAgendamentoToDelete] = useState<number | null>(null);
   const [progress, setProgress] = useState(100); // Barra de progresso para o snackbar
   const recordsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,20 +31,20 @@ export default function EspecialidadeList() {
 
   const totalPages = Math.ceil(filtered.length / recordsPerPage);
 
-  // Função para carregar especialidades
-  const loadOrcamentos = async () => {
+  // Função para carregar agendamentos
+  const loadAgendamentos = async () => {
     try {
-      const response = await axios.get('/api/Orcamento');
-      setorcamentos(response.data);
+      const response = await axios.get('/api/Agendamento');
+      setAgendamentos(response.data);
       setFiltered(response.data);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
+      setSnackbar(new SnackbarState('Erro ao carregar agendamentos!', 'error', true));
     }
   };
 
   useEffect(() => {
-    loadOrcamentos();
+    loadAgendamentos();
   }, []);
 
   // Função para controle do Snackbar
@@ -76,57 +76,58 @@ export default function EspecialidadeList() {
 
   const applySearch = useCallback(() => {
     const searchTermLower = searchTerm.toLowerCase();
-    const filteredEspecialidades = orcamentos.filter((orcamento) =>
-      Object.values(orcamento).some((value) =>
+    const filteredEspecialidades = agendamentos.filter((agendamento) =>
+      Object.values(agendamento).some((value) =>
         String(value).toLowerCase().includes(searchTermLower)
       )
     );
     setFiltered(filteredEspecialidades);
-  }, [searchTerm, orcamentos]);
+  }, [searchTerm, agendamentos]);
 
   useEffect(() => {
     applySearch();
-  }, [searchTerm, orcamentos, applySearch]);
+  }, [searchTerm, agendamentos, applySearch]);
 
   const handleSave = () => {
     setModalIsOpen(false);
     setSnackbar(new SnackbarState('Registro salvo com sucesso!', 'success', true));
-    loadOrcamentos();
+    loadAgendamentos();
   };
 
   const handleDelete = async () => {
-    if (orcamentoToDelete !== null) {
+    if (agendamentoToDelete !== null) {
       try {
-          // Chamada à API para validação adicional
-          const response = await axios.get<string>(`/api/Orcamento/validateCreatePedido/${orcamentoToDelete}`);
-          const validationMessage = response.data;
+        // Chamada à API para validação adicional
+        const response = await axios.get<string>(`/api/Agendamento/validateDeleteAgendamento/${agendamentoToDelete}`);
+        const validationMessage = response.data;
 
-          // Verifica se a mensagem é diferente de vazio
-          if (validationMessage) {
-            setSnackbar(new SnackbarState(validationMessage, 'error', true));
-            return; // Impede que o processo continue
-          }
-          await axios.delete(`/api/Orcamento/${orcamentoToDelete}`);
-          setSnackbar(new SnackbarState('Orcamento excluído com sucesso!', 'success', true));
-          setDeleteConfirmOpen(false);
-          loadOrcamentos();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // Verifica se a mensagem é diferente de vazio
+        if (validationMessage) {
+          setSnackbar(new SnackbarState(validationMessage, 'error', true));
+          return; // Impede que o processo continue
+        }
+
+        await axios.delete(`/api/Agendamento/${agendamentoToDelete}`);
+        setSnackbar(new SnackbarState('Agendamento excluído com sucesso!', 'success', true));
+        setDeleteConfirmOpen(false);
+        loadAgendamentos();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        setSnackbar(new SnackbarState('Erro ao excluir orcamento!', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao excluir agendamento!', 'error', true));
       }
     }
   };
 
-  const handleEdit = (orcamentoCabecalho: OrcamentoCabecalho) => {
-    seteditingOrcamento(orcamentoCabecalho);
+  const handleEdit = (agendamentoCabecalho: AgendamentoCabecalho) => {
+    seteditingAgendamento(agendamentoCabecalho);
     setIsEditing(true);
     setModalIsOpen(true);
     setDropdownVisible({});
   };
 
-  const handleNewOrcamento = () => {
+  const handleNewAgendamento = () => {
     setIsEditing(false);
-    seteditingOrcamento(null);
+    seteditingAgendamento(null);
     setModalIsOpen(true);
   };
 
@@ -138,14 +139,14 @@ export default function EspecialidadeList() {
   };
 
   const handleDeleteConfirmation = (id: number) => {
-    setorcamentoToDelete(id);
+    setAgendamentoToDelete(id);
     setDeleteConfirmOpen(true);
     setDropdownVisible({});
   };
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentOrcamentos = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentAgendamentos = filtered.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -166,12 +167,12 @@ export default function EspecialidadeList() {
       <Menu />
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Orçamentos</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Agendamentos</h1>
           <button
-            onClick={handleNewOrcamento}
+            onClick={handleNewAgendamento}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300"
           >
-            Novo Orçamento
+            Novo Agendamento
           </button>
         </div>
 
@@ -208,36 +209,36 @@ export default function EspecialidadeList() {
             </tr>
           </thead>
           <tbody>
-            {currentOrcamentos.map((orcamento) => (
-              <tr key={orcamento.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{orcamento.id}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{orcamento.nomePaciente}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatDateTimeForGrid(orcamento.dataHora)}</td>
-                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatCurrencyBRL(orcamento.total?? 0)}</td>
+            {currentAgendamentos.map((agendamento) => (
+              <tr key={agendamento.id} className="border-t border-gray-300 hover:bg-gray-100 transition">
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{agendamento.id}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{agendamento.nomePaciente}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatDateTimeForGrid(agendamento.dataHora)}</td>
+                <td className="py-3 px-6 text-left text-sm text-gray-800">{formatCurrencyBRL(agendamento.total?? 0)}</td>
                 <td className="py-3 px-6 text-left text-sm text-gray-800">
-                    {Number(orcamento.status) === 0 && "Cancelado"}
-                    {Number(orcamento.status) === 1 && "Ativo"}
-                    {Number(orcamento.status) === 2 && "Finalizado"}
-                </td>
+                    {Number(agendamento.status) === 0 && "Cancelado"}
+                    {Number(agendamento.status) === 1 && "Ativo"}
+                    {Number(agendamento.status) === 2 && "Finalizado"}
+                </td>                
                 <td className="py-3 px-6 text-left relative dropdown-actions">
                   <button
-                    onClick={() => toggleDropdown(orcamento.id!)}
+                    onClick={() => toggleDropdown(agendamento.id!)}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-4 rounded-lg shadow-sm transition-all duration-200"
                   >
                     Ações
                   </button>
-                  {dropdownVisible[orcamento.id!] && (
+                  {dropdownVisible[agendamento.id!] && (
                     <div className="absolute mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
                       <ul className="py-1">
                         <li
                           className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleEdit(orcamento)}
+                          onClick={() => handleEdit(agendamento)}
                         >
                           Editar
                         </li>
                         <li
                           className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleDeleteConfirmation(orcamento.id!)}
+                          onClick={() => handleDeleteConfirmation(agendamento.id!)}
                         >
                           Excluir
                         </li>
@@ -285,14 +286,14 @@ export default function EspecialidadeList() {
           overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
         >
           {isEditing ? (
-            <OrcamentoEditForm
-              orcamentoCabecalhoData={editingOrcamento!}
+            <AgendamentoEditForm
+              agendamentoCabecalhoData={editingAgendamento!}
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
             />
           ) : (
-            <OrcamentoCreateForm
+            <AgendamentoCreateForm
               onSave={handleSave}
               onClose={() => setModalIsOpen(false)}
               setSnackbar={setSnackbar}
