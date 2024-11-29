@@ -5,6 +5,7 @@ export interface Cliente {
     cpfCnpj?: string;
     enderecoId?: number; // Corrigido para int e alinhado com o backend
     telefone?: string;
+    telefoneCelular: string;
     email?: string;
     situacaoId: number;
     dataCadastro: Date | string;

@@ -635,7 +635,6 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               type="button" 
               onClick={gerarPDF} 
                 className="mr-2 py-2 px-4 bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold rounded-lg shadow-lg hover:from-red-500 hover:to-orange-400 transition-all duration-200"
-                disabled
             >
               Imprimir PDF
             </button>

@@ -95,7 +95,6 @@ export default function EspecialidadeList() {
   };
 
   const handleDelete = async () => {
-    return;
     if (agendamentoToDelete !== null) {
       try {
         // Chamada à API para validação adicional

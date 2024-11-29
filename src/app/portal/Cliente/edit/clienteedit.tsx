@@ -1,28 +1,42 @@
 //src/app/portal/Cliente/create/clientecreate.tsx
-import React, { useState } from 'react';
-// import { useForm,FieldErrors, UseFormRegister } from 'react-hook-form';
+"use client"; 
+
+import React, { useEffect, useState } from 'react';
 import { useForm} from 'react-hook-form';
 import axios from 'axios';
 import InputMask from 'react-input-mask-next';
-import { SnackbarState } from '@/models/snackbarState';
 import { Cliente } from '@/models/cliente'; 
 import { validateDateEmpty } from '@/utils/validateDate';
 import { Endereco } from '@/models/endereco';
 import { validatePhone } from '@/utils/phone';
 import { useRouter } from 'next/navigation';
 import InformativeModal from '@/components/InformativeModal';
+import { usePortalAuth  } from '../../../authPortal'; // Importa o hook de autenticação
+import { formatDateForInput } from '@/utils/formatDateForInput';
 
-interface ClienteCreateFormProps {
-  setSnackbar: (state: SnackbarState) => void;
-}
 
-export const ClienteCreateForm = ({ 
-      setSnackbar,  
-   }: ClienteCreateFormProps) => {
-  const { register, handleSubmit, reset, formState: { errors }, setError } = useForm<Cliente>({
-
-  });
+export const ClienteEditForm = () => {
   const router = useRouter();
+  const authContext = usePortalAuth ();
+  if (!authContext) {
+    return null;
+  }
+
+  const { user } = authContext;
+
+
+  if (!user) {
+    router.push('./portal');
+    return null;
+  }
+
+  const { register, handleSubmit, reset,setValue, formState: { errors }, setError } = useForm<Cliente>({
+    defaultValues: undefined,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
   const [isPhoneFixo, setIsPhoneFixo] = useState(false);
   const [endereco] = useState<Endereco>({
     cep: '',
@@ -34,13 +48,33 @@ export const ClienteCreateForm = ({
     uf: ''
   });
 
-  // Novo estado para indicar se está processando a requisição
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  // const ContainerElement = isSimpleMode ? 'div' : 'form';
-  const ContainerElement = 'form';
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+    // Load user data from API
+    useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get(`/api/ClientePortal/${user.id}`);
+          const clienteData = response.data;
+  
+          // Populate form fields with fetched data
+          Object.keys(clienteData).forEach((key) => {
+            setValue(key as keyof Cliente, clienteData[key]);
+          });
+  
+          setValue('nascimento',clienteData.nascimento ?  formatDateForInput(clienteData.nascimento):''); // Converter a data para o formato correto
+        } catch (error) {
+          console.error("Erro ao buscar os dados do cliente:", error);
+          setModalMessage("Erro ao carregar os dados do cliente.");
+          setIsModalOpen(true);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchUserData();
+    }, [user.id, setValue]);
+
 
   const onSubmit = async (data: Cliente) => {
 
@@ -68,23 +102,25 @@ export const ClienteCreateForm = ({
 
     try {
       setIsSubmitting(true);
-      await axios.post('/api/ClientePortal/createPortal', clienteComEndereco);
+      await axios.put(`/api/ClientePortal/updatePortal/${data.id}`, clienteComEndereco);
       reset();
-      setModalMessage('Usuário cadastrado com sucesso');
+      setModalMessage('Usuário atualizado com sucesso');
       setIsModalOpen(true);
     } catch {
-      setSnackbar(new SnackbarState('Erro ao criar o cliente!', 'error', true));
+      setModalMessage('Erro ao atualizar o usuário');
+      setIsModalOpen(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
 
+  if (isLoading) {
+    return <div>Carregando dados...</div>;
+  }
     
   return (
-      <ContainerElement  
-        {...({ onSubmit: handleSubmit(onSubmit) })} 
-        className="bg-white p-6 rounded-lg shadow-md w-full max-w-lg mx-auto">
+    <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow-md w-full max-w-lg mx-auto">
         
         <h2 className="text-xl font-bold mb-6">Registrar-se</h2>
 
@@ -186,7 +222,7 @@ export const ClienteCreateForm = ({
         <div className="flex justify-center gap-4 mt-6">
           <button
             type="button"
-            onClick={() => router.push('../')}
+            onClick={() => router.push('../Menu')}
             className="px-6 py-3 text-lg bg-gray-400 text-white rounded-md hover:bg-gray-500"
           >
             Cancelar
@@ -205,10 +241,10 @@ export const ClienteCreateForm = ({
           message={modalMessage}
           onClose={() => {
             setIsModalOpen(false);
-            router.push('../');
+            router.push('../Menu');
           }}
         />
         </div>
-      </ContainerElement >
+      </form>
   );
 };

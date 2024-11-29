@@ -32,6 +32,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
   });
   const [isCNPJ, setIsCNPJ] = useState(false);
   const [isPhoneFixo, setIsPhoneFixo] = useState(false);
+  const [isPhoneMobile, setIsPhoneMobile] = useState(false);
   const [isPhoneFixoResponsavel, setIsPhoneFixoResponsavel] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [ufOptions, setUFOptions] = useState<UF[]>([]);
@@ -289,7 +290,7 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
         </div>
 
         {/* E-mail e Telefone */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-gray-800">Email *</label>
             <input 
@@ -335,6 +336,35 @@ export const ClienteEditForm = ({ cliente, onSave, onClose, setSnackbar }: Clien
               />
             {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone?.message}</p>}
           </div>
+          <div>
+              <label className="block text-gray-800">Telefone Celular *</label>
+              <InputMask
+                {...register('telefoneCelular', { 
+                  required: 'Telefone obrigatório',
+                 })}
+                mask={isPhoneMobile ? '(99) 9999-9999' : '(99) 99999-9999'}
+                maskPlaceholder={null}
+                alwaysShowMask={false}
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                onBlur={(e) => {
+                  const phoneImputCelular = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número;
+                  if (phoneImputCelular.length === 10) {
+                    setIsPhoneMobile(true);
+                  }
+                  else{
+                    setIsPhoneMobile(false);
+                  }
+                    if (!validatePhone(phoneImputCelular)) {
+                      setError('telefoneCelular', {
+                        type: 'manual',
+                        message: 'Telefone obrigatório',
+                      });
+                      return;
+                    }                    
+                }}
+              />
+              {errors.telefoneCelular && <p className="text-red-500 text-sm">{errors.telefoneCelular?.message}</p>}
+            </div>          
         </div>
 
         {/* Sexo, Convênio, Plano e Situação */}

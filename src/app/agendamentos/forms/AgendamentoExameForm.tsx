@@ -68,7 +68,7 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
 
   
     // Função para buscar os horários
-    const fetchHorariosDisponiveis = async () => {
+    const fetchHorariosDisponiveis = async (isData:boolean) => {
       if (!planoId || !exameData || !dataColeta || !user?.unidadeId) {
         console.warn('Campos obrigatórios faltando para buscar horários.');
         setModalMessage('Selecione o convenio, plano, unidade, e exame para buscar os horários.');
@@ -76,15 +76,41 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
         return;
       }
   
-      const dto = {
+      const dtoNextDate = {
         ConvenioId: convenioId,
         PlanoId: planoId,
         UnidadeId: parseInt(user.unidadeId, 10),
         ExameId: exameData?.id,
-        DataInicio: dataColeta,
       };
-  
+      //buscar a data mais próxima
       try {
+
+        let  dataConsulta = dataColeta;
+        if(!isData){
+        const responseDataProxima = await axios.post('/api/Agendamento/getNextAgendamentosHorariosDisponiveis', dtoNextDate);
+        if (responseDataProxima.status === 204) {
+            // Limpar os horários disponíveis
+            setHorariosDisponiveis([]);
+            setModalMessage('Nenhum horário disponível para os critérios selecionados.');
+            setIsModalOpen(true);
+            return;
+          }
+          const proximaData =responseDataProxima.data[0].horario; // Obtém o horário da resposta
+          const formattedDataInicio = new Date(proximaData).toISOString().split('T')[0]; // Garante que seja uma string no formato YYYY-MM-DD
+          setDataColeta(formattedDataInicio);
+          dataConsulta = formattedDataInicio;
+        }
+
+
+          
+          const dto = {
+            ConvenioId: convenioId,
+            PlanoId: planoId,
+            UnidadeId: parseInt(user.unidadeId, 10),
+            ExameId: exameData?.id,
+            DataInicio: dataConsulta, // Usa a data formatada
+          };
+      
         setIsFetchingHorarios(true);
         const response = await axios.post('/api/Agendamento/getAgendamentosHorariosDisponiveis', dto);
         if (response.status === 204) {
@@ -106,8 +132,12 @@ const AgendamentoExameForm: React.FC<ExameFormProps> = ({
     };
 
     useEffect(() => {
-      fetchHorariosDisponiveis();
-    }, [dataColeta, exameData]);
+      fetchHorariosDisponiveis(false);
+    }, [ exameData]);
+
+    useEffect(() => {
+      fetchHorariosDisponiveis(true);
+    }, [dataColeta]);
 
     const handleHorarioChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
       setHorarioSelecionado(Number(event.target.value));
