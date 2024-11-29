@@ -18,21 +18,17 @@ import { formatDateForInput } from '@/utils/formatDateForInput';
 export const ClienteEditForm = () => {
   const router = useRouter();
   const authContext = usePortalAuth ();
-  if (!authContext) {
-    return null;
-  }
+  
+  const { user } = authContext || {};
 
-  const { user } = authContext;
-
+  const { register, handleSubmit, reset, setValue, formState: { errors }, setError } = useForm<Cliente>({
+    defaultValues: undefined,
+  });
 
   if (!user) {
     router.push('./portal');
     return null;
   }
-
-  const { register, handleSubmit, reset,setValue, formState: { errors }, setError } = useForm<Cliente>({
-    defaultValues: undefined,
-  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
