@@ -25,10 +25,6 @@ export const ClienteEditForm = () => {
     defaultValues: undefined,
   });
 
-  if (!user) {
-    router.push('./portal');
-    return null;
-  }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,8 +42,16 @@ export const ClienteEditForm = () => {
 
 
   const [isLoading, setIsLoading] = useState(true);
-    // Load user data from API
+    
+  useEffect(() => {
+    if (!user) {
+      router.push("./portal");
+    }
+  }, [user, router]);
+
     useEffect(() => {
+      if (!user) return;
+
       const fetchUserData = async () => {
         try {
           const response = await axios.get(`/api/ClientePortal/${user.id}`);
@@ -69,7 +73,7 @@ export const ClienteEditForm = () => {
       };
 
       fetchUserData();
-    }, [user.id, setValue]);
+    }, [user?.id, setValue]);
 
 
   const onSubmit = async (data: Cliente) => {
