@@ -27,6 +27,9 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   //const [newClienteId, setNewClienteId] = useState<number | null>(null); // Holds the newly created client ID
 
+  const [nome, setNome] = useState(clienteData?.nome || "");
+  const [telefone, setTelefone] = useState(clienteData?.telefone || "");
+
   const [endereco, setEndereco] = useState<Endereco>({
     cep: '',
     rua: '',
@@ -71,6 +74,34 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     fetchClienteData();
   }, [pacienteIdData]);
 
+
+  const buscarClientePorNome = async () => {
+    try {      
+      if(!nome) return;
+      const response = await axios.get(`/api/Cliente/clienteByNome/${nome}`);
+      const cliente = response.data;
+      preencherDadosCliente(cliente,'');
+    } catch (error) {
+      console.error('Cliente não encontrado', error);
+      setClienteData(null);
+      onClienteSelected(null,null);
+      openConfirmationModal(); // Open confirmation modal if no client is found
+    }
+  };
+
+  const buscarClientePorTelefone = async () => {
+    try {      
+      if(!telefone) return;
+      const response = await axios.get(`/api/Cliente/clienteByTelefone/${telefone}`);
+      const cliente = response.data;
+      preencherDadosCliente(cliente,'');
+    } catch (error) {
+      console.error('Cliente não encontrado', error);
+      setClienteData(null);
+      onClienteSelected(null,null);
+      openConfirmationModal(); // Open confirmation modal if no client is found
+    }
+  };
 
   const buscarClientePorCpf = async () => {
     try {
@@ -117,6 +148,8 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       cliente.nome = nomePaciente
     }
     setClienteData(cliente);
+    setNome(cliente.nome || ""); 
+    setTelefone(cliente.telefone || "");
     setCpf(cliente.cpfCnpj??"");
     setRg(cliente.rg ?? "")
     onClienteSelected(cliente.id ?? null,cliente.nome ?? null);
@@ -161,11 +194,11 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       <div className="basis-3/12 flex-grow">
         <input
           type="text"
-          value={clienteData?.nome || ''}
-          readOnly
-          disabled
+          value={nome}
+          onChange={(e) => setNome(e.target.value)} 
           className="border rounded w-full py-1 px-2 text-sm"
           placeholder="Nome"
+          onBlur= {buscarClientePorNome}
         />
       </div>
       <div className="basis-1/12">
@@ -240,10 +273,11 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
       <div className="basis-1/12">
         <input
           type="text"
-          value={clienteData?.telefone || ""}
+          value={telefone}
           className="border rounded w-full py-1 px-2 text-sm"
           placeholder="Celular"
-          disabled
+          onChange={(e) => setTelefone(e.target.value)} 
+          onBlur= {buscarClientePorTelefone}
         />
       </div>
       <div className="basis-2/12 flex-grow">

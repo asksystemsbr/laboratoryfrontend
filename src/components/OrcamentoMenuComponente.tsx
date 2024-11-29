@@ -31,13 +31,13 @@ export default function OrcamentoMenuComponente() {
   const menuItems: MenuItem[] = [         
       {
         permissions: ['orcamento.Read', 'orcamento.Write'],
-        label: 'Orçamentos',
+        label: 'Orçamentos/Agendamentos',
         icon: 'queue',
         route: '/orcamentos',
       },         
       {
         permissions: ['orcamento.Read', 'orcamento.Write'],
-        label: 'Pedidos',
+        label: 'Ordem de Serviço',
         icon: 'queue',
         route: '/pedidos',
       },  

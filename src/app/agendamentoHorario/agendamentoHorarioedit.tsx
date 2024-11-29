@@ -631,9 +631,20 @@ export const AgendamentoHorarioEditForm = ({
         />
       </div>
 
+      {/* Especialidade (desabilitado) */}
+      <div className="mb-4">
+        <label className="block text-gray-700">Especialidade</label>
+        <input
+          type="text"
+          value={agendamento.especialidade || ''}
+          disabled
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800 bg-gray-200"
+        />
+      </div>
+
       {/* Solicitante (desabilitado) */}
       <div className="mb-4">
-        <label className="block text-gray-700">Solicitante</label>
+        <label className="block text-gray-700">Especialista</label>
         <input
           type="text"
           value={agendamento.solicitante || ''}
@@ -701,18 +712,6 @@ export const AgendamentoHorarioEditForm = ({
             disabled
           />
           {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
-        </div>
-
-        {/* Intervalo (minutos) */}
-        <div className="flex-1">
-          <label className="block text-gray-700">Intervalo (minutos)</label>
-          <input
-            type="number"
-            {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
-            className="border rounded w-full py-2 px-3 mt-1 bg-gray-200 text-gray-800"
-            disabled
-          />
-          {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
         </div>
       </div>
 {/* Lista Gerada */}

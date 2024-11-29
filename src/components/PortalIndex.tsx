@@ -2,7 +2,7 @@
 "use client";
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../app/auth'; // Importa o hook de autenticação
+ import { usePortalAuth  } from '../app/authPortal'; // Importa o hook de autenticação
 import {
   FaUserAlt,
   FaClipboardList,
@@ -23,26 +23,26 @@ interface MenuItem {
 export default function PortalIndexComponente() {
   const router = useRouter();
 
-  const authContext = useAuth();
-  if (!authContext) {
-    return null;
-  }
+   const authContext = usePortalAuth ();
+   if (!authContext) {
+     return null;
+   }
 
-  const { user, userCan } = authContext;
+   const { user } = authContext;
 
 
-  if (!user) {
-    router.push('./portal/Login');
-    //return null;
-  }
+   if (!user) {
+     router.push('./portal');
+     //return null;
+   }
 
   // Definição dos itens de menu
   const menuItems: MenuItem[] = [         
       {
-        permissions: ['orcamento.Read', 'orcamento.Write'],
+        permissions: ['clienteportal.Read', 'clienteportal.Write'],
         label: 'Meus Dados',
         icon: <FaUserAlt size={24} />,
-        route: './portal/Cliente/edit',
+        route: './Cliente/edit',
       },         
       {
         permissions: ['orcamento.Read', 'orcamento.Write'],
@@ -85,7 +85,7 @@ export default function PortalIndexComponente() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {menuItems.map(
             (item) =>
-              userCan(item.permissions) && (
+              // userCan(item.permissions) && (
                 <div
                   key={item.label}
                   onClick={() => router.push(item.route)}
@@ -96,7 +96,7 @@ export default function PortalIndexComponente() {
                     <p className="text-center font-medium text-sm">{item.label}</p>
                   </div>
                 </div>
-              )
+              // )
           )}
         </div>
       </main>

@@ -469,7 +469,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
             <tr>
               <th className="px-2 py-1 border-b text-left font-semibold">Código</th>
               <th className="px-2 py-1 border-b text-left font-semibold">Nome do Exame</th>
-              <th className="px-2 py-1 border-b text-left font-semibold">Data Coleta</th>
+              <th className="px-2 py-1 border-b text-left font-semibold">Data Agendamento</th>
               <th className="px-2 py-1 border-b text-right font-semibold">Valor</th>
               <th className="px-2 py-1 border-b text-center font-semibold">Ações</th>
             </tr>

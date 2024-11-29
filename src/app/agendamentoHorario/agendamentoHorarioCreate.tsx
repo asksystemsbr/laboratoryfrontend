@@ -12,6 +12,7 @@ import { Plano } from '@/models/plano';
 import InformativeModal from '@/components/InformativeModal';
 import { Solicitante } from '@/models/solicitante';
 import { Exame } from '@/models/exame';
+import { Especialidade } from '@/models/especialidade';
 
 interface AgendamentoHorarioCreateFormProps {
   onSave: () => void;
@@ -41,6 +42,10 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
   const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);  
   const [solicitanteData, setSolicitanteData] = useState<Solicitante | null>(null);    
       
+  const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);  
+
+  const [especialidadeData, setEspecialidadesData] = useState<Especialidade | null>(null);    
+
   const [exames, setexames] = useState<Exame[]>([]);  
   const [exameData, setexameData] = useState<Exame | null>(null);
 
@@ -122,8 +127,18 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
           //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
         }
       };
+
+      const loadEspecialidades = async () => {
+        try {
+          const response = await axios.get(`/api/Especialidade`);
+          setEspecialidades(response.data);
+        } catch (error) {
+          console.log(error);
+          //setSnackbar(new SnackbarState('Erro ao carregar especialidades!', 'error', true));
+        }
+      };
   
-      Promise.all([loadConvenios(),fetchUnidades(),loadSolicitantes(),loadExames()]).then(() => setIsLoaded(true));    
+      Promise.all([loadConvenios(),fetchUnidades(),loadSolicitantes(),loadExames(),loadEspecialidades()]).then(() => setIsLoaded(true));    
     },[isLoaded]);
 
     useEffect(() => {
@@ -176,6 +191,13 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
           //await adicionarExameTeclado(filteredExames[highlightedIndex]); // Chama `adicionarExame` com o exame atualmente destacado
         }
       }
+    };
+
+    const handleSelectEspecialidadeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const selectedId = Number(event.target.value);
+      const selectedEspecialidade = especialidades.find(s => s.id === selectedId) || null;
+      setEspecialidadesData(selectedEspecialidade);
+      setValue('especialidadeId', selectedEspecialidade?.id ?? 0); 
     };
 
     const handleSelectSolicitanteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -288,14 +310,15 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
         if (!unidadesData?.id) missingFields.push("Recepção");
         if (!convenioData?.id) missingFields.push("Convênio");
         if (!planoData?.id) missingFields.push("Plano");
-        if (!solicitanteData?.id) missingFields.push("Solicitante");
+        //if (!solicitanteData?.id) missingFields.push("Solicitante");
+        if (!especialidadeData?.id) missingFields.push("especialidade");
         if (!exameData?.id) missingFields.push("Exame");
         if (!data.dataInicio) missingFields.push("Data Início");
         if (!data.dataFim) missingFields.push("Data Fim");
         if (!data.horaInicio) missingFields.push("Hora Início");
         if (!data.horaFim) missingFields.push("Hora Fim");
         if (!data.duracaoMinutos) missingFields.push("Duração");
-        if (!data.intervaloMinutos) missingFields.push("Intervalo");
+        // if (!data.intervaloMinutos) missingFields.push("Intervalo");
 
         if (missingFields.length > 0) {
           const errorMessage = `Os seguintes campos são obrigatórios e estão faltando: ${missingFields.join(", ")}`;
@@ -311,12 +334,13 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
           convenioId: convenioData?.id || 0,
           planoId: planoData?.id || 0,
           solicitanteId: solicitanteData?.id || 0,
+          especialidadeId: especialidadeData?.id || 0,
           unidadeId: unidadesData?.id || 0,
           exameId: exameData?.id || 0,
           dataInicio: data.dataInicio || null,
           dataFim: data.dataFim || null,
           duracaoMinutos: data.duracaoMinutos || 0,
-          intervaloMinutos: data.intervaloMinutos || 0,
+          intervaloMinutos:  0,
           horaInicio: data.horaInicio || null, // Use "HH:mm"
           horaFim: data.horaFim || null,       // Use "HH:mm"
         };
@@ -388,13 +412,30 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
         </div>
 
         <div className="mb-4">
-          <label className="block text-gray-700">Solicitante</label>
+          <label className="block text-gray-700">Especialidade</label>
+            <select
+            value={especialidadeData?.id || ''}        
+            onChange={handleSelectEspecialidadeChange}  
+            className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          >
+            <option value="">Selecione uma Especialidade</option>
+            {especialidades.map((especialidade) => (
+              <option key={especialidade.id} value={especialidade.id}>
+                {especialidade.descricao}
+              </option>
+            ))}
+          </select>
+          {errors.especialidadeId && <p className="text-red-500 text-sm">{errors.especialidadeId.message}</p>}
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700">Especialista</label>
             <select
             value={solicitanteData?.id || ''}        
             onChange={handleSelectSolicitanteChange}  
             className="border rounded w-full py-1 px-2 text-sm text-gray-800"
           >
-            <option value="">Selecione um solicitante</option>
+            <option value="">Selecione um especialista</option>
             {solicitantes.map((solicitante) => (
               <option key={solicitante.id} value={solicitante.id}>
                 {solicitante.descricao}
@@ -490,16 +531,6 @@ export const FormaPagamentoCreateForm = ({ onSave, onClose,setSnackbar  }: Agend
               className="border rounded w-full py-2 px-3 mt-1"
             />
             {errors.duracaoMinutos && <p className="text-red-500 text-sm">{errors.duracaoMinutos.message}</p>}
-          </div>
-
-          <div className="flex-1">
-            <label className="block text-gray-700">Intervalo (minutos)</label>
-            <input
-              type="number"
-              {...register('intervaloMinutos', { required: 'O intervalo é obrigatório' })}
-              className="border rounded w-full py-2 px-3 mt-1"
-            />
-            {errors.intervaloMinutos && <p className="text-red-500 text-sm">{errors.intervaloMinutos.message}</p>}
           </div>
         </div>
 

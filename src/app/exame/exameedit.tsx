@@ -10,6 +10,7 @@ import { MaterialApoio } from '../../models/materialApoio';
 import { SnackbarState } from '@/models/snackbarState';
 import { useEffect, useState } from 'react';
 import { LaboratorioApoio } from '@/models/laboratorioApoio';
+import ConfirmationModal from '@/components/confirmationModal';
 
 interface ExameEditFormProps {
   exame: Exame;
@@ -29,6 +30,8 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
   const [laboratorioApoio, setLaboratorioApoio] = useState<LaboratorioApoio[]>([]);
   const [activeTab, setActiveTab] = useState<'info' | 'preparos' | 'coletas' | 'apoio'>('info');
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
 
   useEffect(() => {
     const loadEspecialidades = async () => {
@@ -74,6 +77,34 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
     Promise.all([loadEspecialidades(), loadSetores(), loadMaterialApoio(),loadLaboratorioApoio()]).then(() => setIsLoaded(true));
   }, [setSnackbar]);
 
+  const openConfirmationModal = () => {
+    setIsConfirmationModalOpen(true);
+  };
+
+  const closeConfirmationModal = () => {
+    setIsConfirmationModalOpen(false);
+    reset();
+    onSave();
+  };
+
+  const confirmUpdateAgendas = async () => {
+    closeConfirmationModal();
+      await UpdateAgendamentos(exame);
+  };
+
+  const UpdateAgendamentos = async (exameData: Exame) => {
+    try {
+      // Chamada ao endpoint responsável pela replicação
+      await axios.post('/api/Agendamento/ReplicarAgendamento', exameData);
+      setSnackbar(new SnackbarState('Agendamentos replicados com sucesso!', 'success', true));
+      reset();
+      onSave();
+    } catch (error) {
+      console.error('Erro ao replicar agendamentos:', error);
+      setSnackbar(new SnackbarState('Erro ao replicar agendamentos!', 'error', true));
+    }
+  };
+
   useEffect(() => {
     if (isLoaded) {
       setValue('codigoExame', exame.codigoExame);
@@ -84,6 +115,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
       setValue('setorId', exame.setorId);
       setValue('materialApoioId', exame.materialApoioId);
       setValue('destinoId', exame.destinoId);
+      setValue('agendamento', exame.agendamento==='1' ? '1' : '0');
     }
   }, [isLoaded, exame, setValue]);
 
@@ -129,8 +161,8 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
 
     try {
       await axios.put(`/api/Exame/${exame.id}`, data);
-      reset();
-      onSave();
+
+      openConfirmationModal();
     } catch (error) {
       console.log(error);
       setSnackbar(new SnackbarState('Erro ao editar o registro!', 'error', true));
@@ -203,13 +235,27 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
             </div>
             
           {/* sinonimos */}
-          <div className="mb-4">
-            <label className="block text-gray-700">Sinônimos *</label>
-            <input
-              {...register('sinonimos', { required: 'O sinônimo é obrigatório' })}
-              className="border rounded w-full py-2 px-3 mt-1"
-            />
-            {errors.sinonimos && <p className="text-red-500 text-sm">{errors.sinonimos?.message}</p>}
+          <div className="grid grid-cols-[2fr,1fr] gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700">Sinônimos *</label>
+              <input
+                {...register('sinonimos', { required: 'O sinônimo é obrigatório' })}
+                className="border rounded w-full py-2 px-3 mt-1"
+              />
+              {errors.sinonimos && <p className="text-red-500 text-sm">{errors.sinonimos?.message}</p>}
+            </div>
+            <div>
+                <label className="block text-gray-700">Agendamento*</label> 
+                  <select
+                    {...register('agendamento', { required: 'O agendamento é obrigatório' })}
+                    className="border rounded w-full py-2 px-3 mt-1"
+                  >
+                    <option value="">Selecione</option>
+                    <option value="1">Sim</option>
+                    <option value="0">Não</option>
+                  </select>
+                {errors.agendamento && <p className="text-red-500 text-sm">{errors.agendamento?.message}</p>}
+              </div>
           </div>
             {/* Linha com TUSS, Prazo e Método */}
             <div className="grid grid-cols-4 gap-4 mb-4">
@@ -234,7 +280,7 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
               </div>
 
               <div>
-                <label className="block text-gray-700">Volume mínimo *</label>
+                <label className="block text-gray-700">Vol. mínimo *</label>
                 <input
                   {...register('volumeMinimo', { required: 'O volume mínimo é obrigatório' })}
                   className="border rounded w-full py-2 px-3 mt-1"
@@ -546,6 +592,14 @@ export const ExameEditForm = ({ exame, onSave, onClose, setSnackbar }: ExameEdit
           Salvar
         </button>
       </div>
+
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        title="Replicar agendamento"
+        message="Deseja replicar o agendamento para especialidade e setor?"
+        onConfirm={confirmUpdateAgendas} // Open create modal on confirm
+        onCancel={closeConfirmationModal}
+      />
     </form>
   );
 };

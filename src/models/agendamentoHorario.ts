@@ -5,6 +5,7 @@ export interface AgendamentoHorario {
     convenioId?: number;
     planoId?: number;
     solicitanteId?: number;
+    especialidadeId?: number;
     unidadeId?: number;
     exameId?: number;
     dataInicio?: Date | string | null;
@@ -19,6 +20,7 @@ export interface AgendamentoHorario {
     convenio?: string;
     plano?: string;
     solicitante?: string;
+    especialidade?: string;
     exame?: string;
     
   }

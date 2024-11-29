@@ -1,4 +1,4 @@
- // src/app/auth.tsx
+//src/app/authPortal.tsx
  "use client"; 
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import axios from './axiosConfig'; // Usa o axios configurado
@@ -32,10 +32,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Função para carregar o usuário a partir do token
   const loadUserFromToken = async () => {
-    const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    const savedUser = JSON.parse(localStorage.getItem('userPortal') || 'null');
     //const savedToken = localStorage.getItem('token');
-    const savedToken = getCookie('token');
-    const savedPermissions = JSON.parse(localStorage.getItem('permissions') || '[]');
+    const savedToken = getCookie('tokenPortal');
+    const savedPermissions = JSON.parse(localStorage.getItem('permissionsPortal') || '[]');
 
     if (savedUser && savedToken) {
       // Reconstrói o objeto user
@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setLoading(false);
       }
-  };
- 
+  };  
+
   useEffect(() => {
     loadUserFromToken();
   }, []);
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Função de login
   const login = async (username: string, password: string, unidadeId: string) => {
     try {
-      const { data } = await axios.post('/api/Usuarios/authenticate', {
+      const { data } = await axios.post('/api/Usuarios/authenticatePortal', {
         Nome: username,
         Senha: password,
         token: '',
@@ -81,24 +81,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       };
 
       // Salve o token em um cookie
-      setCookie('token', data.token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('permissions', JSON.stringify(data.permissions));
-      localStorage.setItem('unidadeId', JSON.stringify(data.unidadeId));
+      setCookie('tokenPortal', data.token);
+      localStorage.setItem('userPortal', JSON.stringify(user));
+      localStorage.setItem('tokenPortal', data.token);
+      localStorage.setItem('permissionsPortal', JSON.stringify(data.permissions));
+      localStorage.setItem('unidadeIdPortal', JSON.stringify(data.unidadeId));
       setUser(user); // Armazena o usuário autenticado
     } catch (error) {
       console.error('Erro no login', error);
       throw error;
     }
-  };
+  };  
 
   // Função de logout
   const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('permissions');
-    localStorage.removeItem('unidadeId');
+    localStorage.removeItem('userPortal');
+    localStorage.removeItem('tokenPortal');
+    localStorage.removeItem('permissionsPortal');
+    localStorage.removeItem('unidadeIdPortal');
 
     deleteCookie('token'); 
 
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const userPermissionsLower = user.permissions.map((perm) => perm.toLowerCase());
     const requiredPermissionsLower = permissions.map((perm) => perm.toLowerCase());
     return requiredPermissionsLower.some((permission) => userPermissionsLower.includes(permission));
-  }; 
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, logout, userCan, loading }}>
@@ -121,4 +121,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Hook para acessar o contexto de autenticação
-export const useAuth = () => useContext(AuthContext);
+export const usePortalAuth  = () => useContext(AuthContext);

@@ -47,6 +47,7 @@ export interface Exame {
     diasRealizacaoApoio?: string;
     meioColetaSimilar?: string;
     materialColetaSimilar?: string;
+    agendamento?: string;
 
     //orçamento/pedido
     preco: number;
