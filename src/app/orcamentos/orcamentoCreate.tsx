@@ -14,6 +14,7 @@ import { FormaPagamento } from '@/models/formaPagamento';
 import { useAuth } from '@/app/auth';
 import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
+import InformativeModal from '@/components/InformativeModal';
 
 interface OrcamentoCreateFormProps {
   onSave: () => void;
@@ -28,6 +29,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [planoId, setPlanoId] = useState<number | null>(null);
+  const [convenioId, setConvenioId] = useState<number | null>(null);
 
   const [subtotal, setSubtotal] = useState(0);
   const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
@@ -38,6 +40,9 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
   const [orcamentoDetalhes, setOrcamentoDetalhes] = useState<OrcamentoDetalhe[]>([]);
   const [orcamentoPagamentos, setOrcamentoPagamentos] = useState<OrcamentoPagamento[]>([]);
   const previousPlanoIdRef = useRef<number | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     const checkDescontoPermission = async () => {
@@ -84,6 +89,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
   const handleConvenioSelected = (id: number | null, codConvenio: string | null) => {
     setValue('convenioId', id || 0);
     setValue('codConvenio', codConvenio || '');
+    setConvenioId(id);
   };
 
   const handlePlanoSelected = async (id: number | null) => {
@@ -141,7 +147,8 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     const detalhes = detalhesOrcamento.map((detalhe) => ({
       exameId: detalhe.exameId,
       valor: detalhe.valor,
-      dataColeta: new Date() // ou alguma outra data relacionada
+      dataColeta: new Date(), // ou alguma outra data relacionada
+      horarioId: detalhe.horarioId
     }));
 
     // Apenas atualize orcamentoDetalhes se os valores mudarem
@@ -155,7 +162,8 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     // Criar lista de `OrcamentoPagamento` a partir dos pagamentos selecionados
     const pagamentosData = pagamentos.map((pagamento) => ({
       pagamentoId: pagamento.id,
-      valor: pagamento.valor
+      valor: pagamento.valor,
+      dataPagamento:pagamento.dataPagamento
     }));
 
     setOrcamentoPagamentos(pagamentosData);
@@ -172,32 +180,38 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
 
 
     if (!data.pacienteId) {
-      setSnackbar(new SnackbarState('Paciente é obrigatório!', 'error', true));
+      setModalMessage('Paciente é obrigatório!');
+      setIsModalOpen(true);
       return;
     }
   
     if (!data.convenioId) {
-      setSnackbar(new SnackbarState('Convênio é obrigatório!', 'error', true));
+      setModalMessage('Convênio é obrigatório!');
+      setIsModalOpen(true);
       return;
     }
   
     if (!data.nomePaciente) {
-      setSnackbar(new SnackbarState('Nome do paciente é obrigatório!', 'error', true));
+      setModalMessage('Nome do paciente é obrigatório!');
+      setIsModalOpen(true);
       return;
     }
   
     if (!data.solicitanteId) {
-      setSnackbar(new SnackbarState('Solicitante é obrigatório!', 'error', true));
+      setModalMessage('Solicitante é obrigatório!');
+      setIsModalOpen(true);
       return;
     }
   
     if (!data.planoId) {
-      setSnackbar(new SnackbarState('Plano é obrigatório!', 'error', true));
+      setModalMessage('Plano é obrigatório!');
+      setIsModalOpen(true);
       return;
     }
   
     if (orcamentoDetalhes.length === 0) {
-      setSnackbar(new SnackbarState('O orçamento deve conter pelo menos um item!', 'error', true));
+      setModalMessage('O orçamento deve conter pelo menos um item!');
+      setIsModalOpen(true);
       return;
     }
 
@@ -219,7 +233,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
     const orcamentoDetalheData = orcamentoDetalhes.map((detalhe) => ({
       ...detalhe,
       id: 0,
-      orcamentoId: 0 
+      orcamentoId: 0
     }));
 
     const orcamentoCompleto = {
@@ -301,6 +315,7 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
               observacoesParam= ''
               orcamentoCabecalhoData= {undefined}
               solicitanteId= {undefined}
+              convenioId={convenioId} 
               />     
         <div className="grid grid-cols-2 gap-20 mt-1">
             <OrcamentoPagamentosForm  
@@ -328,6 +343,13 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
           </button>
         </div>
       </form>
+        {/* Informative Modal */}
+        <InformativeModal
+        isOpen={isModalOpen}
+        title="Atenção"
+        message={modalMessage}
+        onClose={() => setIsModalOpen(false)}
+      />      
     </div>
   );
 };

@@ -10,6 +10,7 @@ import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import { Solicitante } from '@/models/solicitante';
 import InformativeModal from '@/components/InformativeModal';
 import { useAuth } from '@/app/auth';
+import { AgendamentoHorarioGerado } from '@/models/agendamentoHorarioGerado';
 
 
 interface ExameFormProps {
@@ -21,6 +22,7 @@ interface ExameFormProps {
   observacoesParam?: string;   
   orcamentoCabecalhoData?: OrcamentoCabecalho;
   solicitanteId?: number;
+  convenioId?:number | null;
 }
 
 const OrcamentoExameForm: React.FC<ExameFormProps> = ({ 
@@ -31,7 +33,8 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
       medicamentosParam='',
       observacoesParam='',  
       orcamentoCabecalhoData,
-      solicitanteId
+      solicitanteId,
+      convenioId
     }) => {
   const [exameData, setexameData] = useState<Exame | null>(null);
   // const [codigoExame, setcodigoExame] = useState('');
@@ -56,6 +59,13 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const [dataColeta, setDataColeta] = useState(new Date().toISOString().split('T')[0]); // Estado para a data de coleta
+  const [horarioSelecionado, setHorarioSelecionado] = useState<number | null>(null); // Seleção de horário
+  const [isFetchingHorarios, setIsFetchingHorarios] = useState(false); // Estado de carregamento
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<AgendamentoHorarioGerado[]>([]); // Novo estado
+
+  const [datasDisponiveis, setDatasDisponiveis] = useState<Date[]>([]);
   
   useEffect(() => {
     const term = searchTerm.toLowerCase();
@@ -99,6 +109,119 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
       setAddedExames(updatedExames as Exame[]);
   }, [orcamentoDetalhes]);
+
+  useEffect(() => {
+    fetchHorariosDisponiveis(false);
+  }, [ exameData]);
+
+  useEffect(() => {
+    fetchHorariosDisponiveis(true);
+  }, [dataColeta]);
+
+  useEffect(() => {
+    if (exameData) {
+      fetchDatasDisponiveis();
+    }
+  }, [exameData, planoId, convenioId, user?.unidadeId]);
+  
+  const handleHorarioChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setHorarioSelecionado(Number(event.target.value));
+  };
+
+  const fetchDatasDisponiveis = async () => {
+    if (!planoId || !convenioId || !exameData || !user?.unidadeId) {
+      console.warn('Campos obrigatórios faltando para buscar datas disponíveis.');
+      setModalMessage('Selecione o convênio, plano, unidade, e exame para buscar as datas disponíveis.');
+      setIsModalOpen(true);
+      return;
+    }
+  
+    const dto = {
+      ConvenioId: convenioId,
+      PlanoId: planoId,
+      UnidadeId: parseInt(user.unidadeId, 10),
+      ExameId: exameData.id,
+    };
+  
+    try {
+      const response = await axios.post('/api/Agendamento/getNextAgendamentoDisponiveis', dto);
+      if (response.status === 200) {
+        const datas = response.data.map((item: { dataInicio: string }) => new Date(item.dataInicio));
+        setDatasDisponiveis(datas);
+      } else {
+        setDatasDisponiveis([]);
+        setModalMessage('Nenhuma data disponível para os critérios selecionados.');
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar datas disponíveis:', error);
+      setDatasDisponiveis([]);
+    }
+  };
+
+   // Função para buscar os horários
+   const fetchHorariosDisponiveis = async (isData:boolean) => {
+    if (!planoId || !exameData || !dataColeta || !user?.unidadeId) {
+      console.warn('Campos obrigatórios faltando para buscar horários.');
+      setModalMessage('Selecione o convenio, plano, unidade, e exame para buscar os horários.');
+      setIsModalOpen(true);
+      return;
+    }
+
+    const dtoNextDate = {
+      ConvenioId: convenioId,
+      PlanoId: planoId,
+      UnidadeId: parseInt(user.unidadeId, 10),
+      ExameId: exameData?.id,
+    };
+    //buscar a data mais próxima
+    try {
+
+      let  dataConsulta = dataColeta;
+      if(!isData){
+      const responseDataProxima = await axios.post('/api/Agendamento/getNextAgendamentosHorariosDisponiveis', dtoNextDate);
+      if (responseDataProxima.status === 204) {
+          // Limpar os horários disponíveis
+          setHorariosDisponiveis([]);
+          setModalMessage('Nenhum horário disponível para os critérios selecionados.');
+          setIsModalOpen(true);
+          return;
+        }
+        const proximaData =responseDataProxima.data[0].horario; // Obtém o horário da resposta
+        const formattedDataInicio = new Date(proximaData).toISOString().split('T')[0]; // Garante que seja uma string no formato YYYY-MM-DD
+        setDataColeta(formattedDataInicio);
+        dataConsulta = formattedDataInicio;
+      }
+
+
+        
+        const dto = {
+          ConvenioId: convenioId,
+          PlanoId: planoId,
+          UnidadeId: parseInt(user.unidadeId, 10),
+          ExameId: exameData?.id,
+          DataInicio: dataConsulta, // Usa a data formatada
+        };
+    
+      setIsFetchingHorarios(true);
+      const response = await axios.post('/api/Agendamento/getAgendamentosHorariosDisponiveis', dto);
+      if (response.status === 204) {
+        // Limpar os horários disponíveis
+        setHorariosDisponiveis([]);
+        setModalMessage('Nenhum horário disponível para os critérios selecionados.');
+        setIsModalOpen(true);
+      } else {
+        // Atualizar os horários com os dados recebidos
+        setHorariosDisponiveis(response.data);          
+      }
+      setHorarioSelecionado(null); // Reseta a seleção ao recarregar os horários
+    } catch (error) {
+      console.error('Erro ao buscar horários disponíveis:', error);
+      setHorariosDisponiveis([]);
+    } finally {
+      setIsFetchingHorarios(false);
+    }
+  };
 
   const handleSelect = (exame: Exame) => {
     console.log('Item selecionado:', exame); 
@@ -272,7 +395,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
     try {
       // Buscar preço pelo código do plano e exame
       const precoResponse = await axios.get(`/api/Exame/getPrecoByPlanoExame/${planoId}/${exame.codigoExame}`);
-      const preco = precoResponse.data?.preco || 0;
+      const preco = precoResponse.data?.preco || 0;      
 
       if (preco <= 0) {
         setModalMessage('Não foi possível encontrar preço para o exame na tabela de preço.');
@@ -293,6 +416,34 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
         return;
       }
 
+      //verifica se é um exame que precisa ser agendado
+      // Validar se um horário foi selecionado  
+      const agendamentoResponse = await axios.get(`/api/Orcamento/checkExamAgendamento/${exame.id}`);
+      const isAgendamento = agendamentoResponse.data;  
+
+      let dataHoraColeta;
+      let horarioData;
+      if(isAgendamento)  {
+        if (!horarioSelecionado) {
+          setModalMessage('Selecione um horário antes de adicionar o exame.');
+          setIsModalOpen(true);
+          return;
+        }
+      // Combinar dataColeta com horárioSelecionado
+      horarioData = horariosDisponiveis.find((h) => h.id === horarioSelecionado); // Obter horário do dropdown
+      dataHoraColeta = `${dataColeta}T${new Date(horarioData?.horario || '').toLocaleTimeString('pt-BR', {
+        hour12: false,
+      })}`; // Combina data e horário no formato ISO
+      }
+      else {
+        // Usar a data e hora atual
+        const now = new Date();
+        dataHoraColeta = now.toISOString(); // Data e hora no formato ISO
+      }
+
+
+
+
       // Adicionar medicamento e observação ao estado acumulado
       const medsResponse = await axios.get(`/api/Exame/getitemsByCodigo/${exame.codigoExame}`);      
       //const obsResponse = await axios.get(`/api/Exame/getitemsByCodigo/${exameData.codigoExame}`);
@@ -311,7 +462,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
       .join(', ');
     setObservacoes(newObservacoes);
 
-      const exameComDetalhes = { ...exame, id:0, valor:preco,exameId:exame.id,preco:preco, dataColeta: new Date().toISOString().split('T')[0] };
+      const exameComDetalhes = { ...exame, id:0, valor:preco,exameId:exame.id,preco:preco, dataColeta: dataHoraColeta,horarioId:horarioData?.id || 0 };
 
       setAddedExames([...addedExames, exameComDetalhes]);
 
@@ -322,6 +473,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
       // onExameSelected([...exames, exameComDetalhes],observacoes,medicamentos);
       //setcodigoExame(''); // Resetar campo após adicionar
       resetInput();
+      setHorariosDisponiveis([]);
     } catch (error) {
       console.error('Erro ao adicionar exame', error);
     }
@@ -404,7 +556,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
             placeholder="CRM"
           />         
       </div>
-      <div className="basis-3/12">
+      <div className="basis-2/12">
       <select
           value={solicitanteData?.id || ''}        
           onChange={handleSelectSolicitanteChange}  
@@ -418,7 +570,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
           ))}
         </select>
       </div>        
-      <div className="basis-6/12">
+      <div className="basis-4/12">
         <div className="relative w-full">
           <input
             type="text"
@@ -452,6 +604,45 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
           )}
         </div>        
       </div> 
+      {/* Campo para data de coleta */}
+      <div className="basis-2/12">
+        <select
+          value={dataColeta}
+          onChange={(e) => setDataColeta(e.target.value)}
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+        >
+          <option value="" disabled>
+            {datasDisponiveis.length === 0 ? 'Carregando...' : 'Selecione uma data'}
+          </option>
+          {datasDisponiveis.map((data, index) => (
+            <option key={index} value={data.toISOString().split('T')[0]}>
+              {data.toLocaleDateString('pt-BR')}
+            </option>
+          ))}
+        </select>
+      </div>    
+      <div className="basis-1/12">
+        <select
+          value={horarioSelecionado || ''}
+          onChange={handleHorarioChange}
+          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          disabled={isFetchingHorarios || horariosDisponiveis.length === 0}
+        >
+          <option value="" disabled>
+            {isFetchingHorarios ? 'Carregando...' : 'Hora'}
+          </option>
+          {horariosDisponiveis.map((horario) => (
+            <option key={horario.id} value={horario.id}>
+              {horario.horario
+                  ? new Date(horario.horario).toLocaleTimeString('pt-BR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : 'Horário inválido'}
+            </option>
+          ))}
+        </select>
+      </div>      
       <div className="basis-1/12">
         <button onClick={adicionarExameBtn}
           className="p-2 bg-blue-400 text-white font-semibold rounded-full shadow hover:bg-blue-500 transition duration-150"
@@ -480,7 +671,13 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
             <tr key={exame.id} className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
             <td className="px-2 py-1 border-b">{exame.codigoExame}</td>
             <td className="px-2 py-1 border-b">{exame.nomeExame}</td>
-            <td className="px-2 py-1 border-b">{formatDateTimeForGrid(exame.dataColeta)}</td>
+            <td className="px-2 py-1 border-b">
+              {formatDateTimeForGrid(
+                typeof exame.dataColeta === 'string' && exame.dataColeta.includes('T')
+                ? exame.dataColeta // Se já contém data e hora, usa diretamente
+                : `${exame.dataColeta}T${new Date().toLocaleTimeString('pt-BR', { hour12: false })}` // Adiciona hora atual se só houver data
+              )}
+            </td>
             <td className="px-2 py-1 border-b text-right">{formatCurrencyBRL(formatDecimal(exame.preco || 0, 2))}</td>
             <td className="px-2 py-1 border-b text-center">
               <button

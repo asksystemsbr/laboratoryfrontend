@@ -58,7 +58,7 @@ export default function EspecialidadeList() {
         snackbar.hideSnackbar();
         setSnackbar(new SnackbarState());
         setProgress(100); // Reset progresso
-      }, 5000);
+      }, 3000);
 
       return () => {
         clearInterval(interval);

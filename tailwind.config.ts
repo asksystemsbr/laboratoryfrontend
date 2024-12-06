@@ -12,6 +12,9 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      borderColor: {
+        highlight: '#4CAF50',
+      },
       keyframes: {
         'slide-up': {
           '0%': {
