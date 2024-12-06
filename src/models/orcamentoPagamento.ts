@@ -4,5 +4,6 @@ export interface OrcamentoPagamento {
     pagamentoId?: number;
     valor?: number;
     orcamentoId?: number;
+    dataPagamento?: Date | string;
   }
    

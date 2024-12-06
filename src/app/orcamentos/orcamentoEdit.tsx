@@ -15,6 +15,7 @@ import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable'; // Para criar tabelas facilmente
+import InformativeModal from '@/components/InformativeModal';
 
 interface OrcamentoCreateFormProps {
   orcamentoCabecalhoData: OrcamentoCabecalho
@@ -32,6 +33,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [planoId, setPlanoId] = useState<number | null>(null);
+  const [convenioId, setConvenioId] = useState<number | null>(null);
 
   const [subtotal, setSubtotal] = useState(0);
   const [desconto,setDesconto] = useState(0); // Adicione lógica para desconto se necessário
@@ -48,6 +50,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   const isPercentageRef = useRef<boolean>(false); 
 
   const previousPlanoIdRef = useRef<number | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
 // Memoize the discount calculation function
   const calcularTotalComDesconto = useCallback((subtotal: number, desconto: number, isPercentage: boolean) => {
@@ -137,6 +142,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   const handleConvenioSelected = (id: number | null, codConvenio: string | null) => {
     setValue('convenioId', id || 0);
     setValue('codConvenio', codConvenio || '');
+    setConvenioId(id);
   };
 
   const handlePlanoSelected = async  (id: number | null) => {
@@ -207,7 +213,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       valor: detalhe.valor,
       dataColeta: new Date(),
       orcamentoId:orcamentoCabecalhoData.id,
-      id: detalhe.id
+      id: detalhe.id,
+      horarioId: detalhe.horarioId,
     }));
 
     setOrcamentoDetalhes(detalhes);
@@ -220,7 +227,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       pagamentoId: pagamento.pagamentoId,
       valor: pagamento.valor,
       orcamentoId: orcamentoCabecalhoData.id,
-      id: 0
+      id: 0,
+      dataPagamento: pagamento.dataPagamento
     }));
 
     setOrcamentoPagamentos(pagamentosData);
@@ -228,39 +236,46 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   
   const validateOrcamento = (data: OrcamentoCabecalho, isPedido: boolean): boolean => {
     if (!data.pacienteId) {
-      setSnackbar(new SnackbarState('Paciente é obrigatório!', 'error', true));
+      setModalMessage('Paciente é obrigatório!');
+      setIsModalOpen(true);
       return false;
     }
   
     if (!data.convenioId) {
-      setSnackbar(new SnackbarState('Convênio é obrigatório!', 'error', true));
+      setModalMessage('Convênio é obrigatório!');
+      setIsModalOpen(true);
       return false;
     }
   
     if (!data.nomePaciente) {
-      setSnackbar(new SnackbarState('Nome do paciente é obrigatório!', 'error', true));
+      setModalMessage('Nome do paciente é obrigatório!');
+      setIsModalOpen(true);
       return false;
     }
   
     if (!data.solicitanteId) {
-      setSnackbar(new SnackbarState('Solicitante é obrigatório!', 'error', true));
+      setModalMessage('Solicitante é obrigatório!');
+      setIsModalOpen(true);
       return false;
     }
   
     if (!data.planoId) {
-      setSnackbar(new SnackbarState('Plano é obrigatório!', 'error', true));
+      setModalMessage('Plano é obrigatório!');
+      setIsModalOpen(true);
       return false;
     }
   
     if (orcamentoDetalhes.length === 0) {
-      setSnackbar(new SnackbarState('O orçamento deve conter pelo menos um item!', 'error', true));
+      setModalMessage('O orçamento deve conter pelo menos um item!');
+      setIsModalOpen(true);
       return false;
     }
   
     if (isPedido) {
       const totalPago = orcamentoPagamentos.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0);
       if (totalPago !== totalComDesconto) {
-        setSnackbar(new SnackbarState('O total pago deve ser igual ao total do orçamento!', 'error', true));
+        setModalMessage('O total pago deve ser igual ao total do orçamento!');
+        setIsModalOpen(true);
         return false;
       }
     }
@@ -329,6 +344,22 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
     const transformarEmPedido = async () => {
       const formData = getValues(); // Obtém os valores atuais do formulário
+
+      // Verificar se todos os exames possuem valores
+      const examesSemValor = orcamentoDetalhes.filter((detalhe) => !detalhe.valor || detalhe.valor <= 0);
+      if (examesSemValor.length > 0) {
+        setModalMessage('Todos os exames devem ter valores atribuídos!');
+        setIsModalOpen(true);
+        return;
+      }
+
+      // Verificar se todos os pagamentos possuem valores
+      const pagamentosSemValor = orcamentoPagamentos.filter((pagamento) => !pagamento.valor || pagamento.valor <= 0);
+      if (pagamentosSemValor.length > 0) {
+        setModalMessage('Todos os pagamentos devem ter valores atribuídos!');
+        setIsModalOpen(true);
+        return;
+      }
       if (!validateOrcamento(formData, true)) return; // Valida com a regra extra para pedidos
     
       try {
@@ -596,6 +627,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               observacoesParam={orcamentoCabecalhoData.observacoes || ''} 
               orcamentoCabecalhoData={orcamentoCabecalhoData}
               solicitanteId={orcamentoCabecalhoData.solicitanteId || 0}
+              convenioId={convenioId} 
               />   
           )}
         <div className="grid grid-cols-2 gap-20 mt-1">
@@ -629,7 +661,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
             onClick={transformarEmPedido}
              className="mr-2 py-2 px-4 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-500 hover:to-purple-500 transition-all duration-200"
             >
-            Transformar em Pedido
+            Transformar em OS
           </button>
           <button 
               type="button" 
@@ -640,6 +672,14 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
             </button>
         </div>
       </form>
+
+      {/* Informative Modal */}
+      <InformativeModal
+        isOpen={isModalOpen}
+        title="Atenção"
+        message={modalMessage}
+        onClose={() => setIsModalOpen(false)}
+      />      
     </div>
   );
 };

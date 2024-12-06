@@ -13,7 +13,7 @@ export class SnackbarState {
     }
   
     // Método para mostrar o Snackbar com mensagem e tipo
-    showSnackbar(message: string, type: 'success' | 'error', duration: number = 5000) {
+    showSnackbar(message: string, type: 'success' | 'error', duration: number = 3000) {
       this.message = message;
       this.type = type;
       this.show = true;

@@ -176,7 +176,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
             value={cpf}
             onChange={(e) => setCpf(e.target.value)}
             mask='999.999.999-99'
-            className="border rounded w-full py-1 px-2 text-sm"
+            className="border-2 border-highlight rounded w-full py-1 px-2 text-sm focus:border-green-700"
             placeholder= 'CPF'
             onBlur= {buscarClientePorCpf}
           />          
@@ -187,7 +187,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           onChange={(e) => setRg(e.target.value)}
           onBlur={buscarClientePorRg}
           mask="99.999.999-9"
-          className="border rounded w-full py-1 px-2 text-sm"
+          className="border-2 border-highlight rounded w-full py-1 px-2 text-sm focus:border-green-700"
           placeholder="RG"
         />
       </div>      
@@ -196,7 +196,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           type="text"
           value={nome}
           onChange={(e) => setNome(e.target.value)} 
-          className="border rounded w-full py-1 px-2 text-sm"
+          className="border-2 border-highlight rounded w-full py-1 px-2 text-sm focus:border-green-700"
           placeholder="Nome"
           onBlur= {buscarClientePorNome}
         />
@@ -274,7 +274,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
         <input
           type="text"
           value={telefone}
-          className="border rounded w-full py-1 px-2 text-sm"
+          className="border-2 border-highlight rounded w-full py-1 px-2 text-sm focus:border-green-700"
           placeholder="Celular"
           onChange={(e) => setTelefone(e.target.value)} 
           onBlur= {buscarClientePorTelefone}

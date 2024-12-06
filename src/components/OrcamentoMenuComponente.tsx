@@ -41,12 +41,12 @@ export default function OrcamentoMenuComponente() {
         icon: 'queue',
         route: '/pedidos',
       },  
-      {
-        permissions: ['agendamento.Read', 'agendamento.Write'],
-        label: 'Agendamentos',
-        icon: 'queue',
-        route: '/agendamentos',
-      },                            
+      // {
+      //   permissions: ['agendamento.Read', 'agendamento.Write'],
+      //   label: 'Agendamentos',
+      //   icon: 'queue',
+      //   route: '/agendamentos',
+      // },                            
   ];
 
   // Renderiza os itens de menu com base nas permissões

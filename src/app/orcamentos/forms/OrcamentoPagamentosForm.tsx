@@ -7,6 +7,7 @@ import { FormaPagamento } from '@/models/formaPagamento';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
 import { OrcamentoCabecalho } from '@/models/orcamentoCabecalho';
 import InformativeModal from '@/components/InformativeModal';
+import { formatDateTimeForGrid } from '@/utils/formatDateForInput';
 
 
 interface PagamentosFormProps {
@@ -25,6 +26,7 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
   const [isComponentMounted, setIsComponentMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [dataPagamento, setDataPagamento] = useState<string | null>(null);
 
   useEffect(() => {
     const loadFormasPagamentos = async () => {
@@ -61,7 +63,8 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
             ...formaPagamento,
             valor: pagamentoDetalhe ? pagamentoDetalhe.valor : 0,
             id: pagamentoDetalhe ? pagamentoDetalhe.id : formaPagamento.id,
-            pagamentoId: formaPagamento.id
+            pagamentoId: formaPagamento.id,
+            dataPagamento: pagamentoDetalhe?pagamentoDetalhe.dataPagamento: '01-01-1900'
           };
         });
         // Define a lista de exames já adicionados a partir dos exames do orçamento
@@ -99,6 +102,12 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
         return;
       }
 
+      if (!dataPagamento) {
+        setModalMessage("Selecione uma data de pagamento.");
+        setIsModalOpen(true);
+        return;
+      }
+
     try {
 
       if (valorPagamento <= 0) {
@@ -129,11 +138,12 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
         return;
       }
 
-      const pagamentoComDetalhes = { ...formaPagamentoData, valor:valorPagamento,pagamentoId:formaPagamentoData.id };
+      const pagamentoComDetalhes = { ...formaPagamentoData, valor:valorPagamento,pagamentoId:formaPagamentoData.id, dataPagamento, };
       setaddedFormaPagamento([...addedFormaPagamento, pagamentoComDetalhes]);
 
       onPagamentosSelected([...addedFormaPagamento, pagamentoComDetalhes]);
       setvalorPagamento(0); // Resetar campo após adicionar
+      setIsComponentMounted(true);
     } catch (error) {
       console.error('Erro ao adicionar exame', error);
     }
@@ -151,7 +161,7 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
 
     {/* Primeira linha */}
     <div className="flex flex-wrap gap-4 mb-4">
-      <div className="basis-7/12">
+      <div className="basis-4/12">
       <select
           value={formaPagamentoData?.id || ''}        
           onChange={(e) => {
@@ -180,6 +190,15 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
             placeholder="R$"
           />         
       </div>      
+      <div className="basis-2/12">
+        <input
+          type="date"
+          value={dataPagamento || ''}
+          onChange={(e) => setDataPagamento(e.target.value)}
+          className="border rounded w-full py-1 px-2 text-sm"
+          placeholder="Data de pagamento"
+        />
+      </div>      
       <div className="basis-1/12">
         <button onClick={adicionarFormaPagamento}
           className="p-2 bg-blue-400 text-white font-semibold rounded-full shadow hover:bg-blue-500 transition duration-150"
@@ -196,6 +215,7 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
             <tr>
               <th className="px-2 py-1 border-b text-left font-semibold">Pagamento</th>
               <th className="px-2 py-1 border-b text-right font-semibold">Valor</th>
+              <th className="px-2 py-1 border-b text-left font-semibold">Data de Pagamento</th>
               <th className="px-2 py-1 border-b text-center font-semibold">Ações</th>
             </tr>
           </thead>
@@ -204,6 +224,13 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
             <tr key={pagamento.id} className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
             <td className="px-2 py-1 border-b">{pagamento.descricao}</td>
             <td className="px-2 py-1 border-b text-right">{formatCurrencyBRL(formatDecimal(pagamento.valor || 0, 2))}</td>
+            <td className="px-2 py-1 border-b">
+              {formatDateTimeForGrid(
+                typeof pagamento.dataPagamento === 'string' && pagamento.dataPagamento.includes('T')
+                ? pagamento.dataPagamento // Se já contém data e hora, usa diretamente
+                : `${pagamento.dataPagamento}T${new Date().toLocaleTimeString('pt-BR', { hour12: false })}` // Adiciona hora atual se só houver data
+              )}
+            </td>
             <td className="px-2 py-1 border-b text-center">
               <button
                 onClick={() => removerPagamento(index)}
