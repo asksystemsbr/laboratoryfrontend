@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   FaUserAlt,
   FaClipboardList,
-  FaCalendarAlt,
   FaCheckCircle,
   FaChartBar,
 } from "react-icons/fa";
