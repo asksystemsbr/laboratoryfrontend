@@ -14,7 +14,12 @@ import { AgendamentoHorarioGerado } from '@/models/agendamentoHorarioGerado';
 
 
 interface ExameFormProps {
-  onExameSelected: (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => void;
+  onExameSelected: (
+      detalhesOrcamento: OrcamentoDetalhe[],
+      observacoes: string |null, 
+      medicamento: string | null,
+      selectedExames: number[] // IDs dos exames selecionados
+    ) => void;
   onSolicitanteSelected: (id: number| null) => void;
   planoId: number | null;
   orcamentoDetalhes?: OrcamentoDetalhe[]; 
@@ -40,7 +45,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   // const [codigoExame, setcodigoExame] = useState('');
   const [exames, setexames] = useState<Exame[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [addedExames, setAddedExames] = useState<Exame[]>([]);
+  const [addedExames, setAddedExames] = useState<(Exame [])>([]);
   const [medicamentos, setMedicamentos] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [isComponentMounted, setIsComponentMounted] = useState(false);
@@ -66,7 +71,11 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<AgendamentoHorarioGerado[]>([]); // Novo estado
 
   const [datasDisponiveis, setDatasDisponiveis] = useState<Date[]>([]);
+
+  const [selectedExames, setSelectedExames] = useState<number[]>([]);
   
+  const previousDataRef = useRef<string>(JSON.stringify({ addedExames, observacoes, medicamentos, selectedExames }));
+
   useEffect(() => {
     const term = searchTerm.toLowerCase();
     setFilteredExames(
@@ -350,7 +359,8 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
             nomeExame: exame.nomeExame,  
             codigoExame: exame.codigoExame,
             preco: detalhe?.valor || exame.preco || 0, 
-            dataColeta: detalhe?.dataColeta || new Date().toISOString().split('T')[0]
+            dataColeta: detalhe?.dataColeta || new Date().toISOString().split('T')[0],
+            prazo: exame.prazo,
           } as OrcamentoDetalhe;
         });
         // Define a lista de exames já adicionados a partir dos exames do orçamento
@@ -378,6 +388,16 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
     }
   }, [isLoaded, solicitanteId, solicitantes]);
 
+
+useEffect(() => {
+  const currentData = JSON.stringify({ addedExames, observacoes, medicamentos, selectedExames });
+
+  if (currentData !== previousDataRef.current) {
+    previousDataRef.current = currentData;
+    onExameSelected(addedExames, observacoes, medicamentos, selectedExames);
+  }
+}, [addedExames, observacoes, medicamentos, selectedExames]);
+
   const preencherDadosExame = async (exame: Exame) => {
     setexameData(exame);
     //setcodigoExame(exame.codigoExame??"");
@@ -389,6 +409,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
       // setValue('codigoExame', exame.codigoExame);
     }
   }, [isLoaded]);
+
 
   const adicionarExame = async (exame: Exame) => {    
 
@@ -462,11 +483,37 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
       .join(', ');
     setObservacoes(newObservacoes);
 
-      const exameComDetalhes = { ...exame, id:0, valor:preco,exameId:exame.id,preco:preco, dataColeta: dataHoraColeta,horarioId:horarioData?.id || 0 };
+      const exameComDetalhes = { 
+        ...exame, 
+        id:0, 
+        valor:preco,
+        exameId:exame.id,
+        preco:preco, 
+        dataColeta: dataHoraColeta,
+        horarioId:horarioData?.id || 0,
+        prazoFinal: undefined as Date | undefined  
+      };
+
+
+          try {
+            // Buscar prazo para o exame atual
+            const prazoResponse = await axios.get(`/api/Exame/${exameComDetalhes.exameId}`);
+            const prazoDias = prazoResponse.data.prazo || 0;
+  
+            // Calcular data final do prazo
+            const dataColeta = typeof exameComDetalhes.dataColeta === 'string' ? new Date(exameComDetalhes.dataColeta) : new Date();
+            const prazoFinal = new Date(dataColeta);
+            prazoFinal.setDate(prazoFinal.getDate() + prazoDias);
+  
+            exameComDetalhes.prazoFinal = prazoFinal;
+          } catch (error) {
+            console.error(`Erro ao buscar prazo para o exame ${exameComDetalhes.exameId}:`, error);
+            exameComDetalhes.prazoFinal = undefined;
+          }
 
       setAddedExames([...addedExames, exameComDetalhes]);
 
-      onExameSelected([...addedExames, exameComDetalhes],newObservacoes,newMedicamentos);
+      onExameSelected([...addedExames, exameComDetalhes],newObservacoes,newMedicamentos,selectedExames);
 
       // setexames([...exames, exameComDetalhes]);
 
@@ -528,7 +575,7 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
     setMedicamentos(newMedicamentos);
     setObservacoes(newObservacoes);
 
-    onExameSelected(updatedExames,observacoes,medicamentos);
+    onExameSelected(updatedExames,observacoes,medicamentos,selectedExames);
   };
 
   const handleSelectSolicitanteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -539,7 +586,14 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
     onSolicitanteSelected(selectedSolicitante?.id ?? null);
   };
 
-  
+  const handleCheckboxChange = (exameId: number) => {
+    setSelectedExames((prevSelected) =>
+      prevSelected.includes(exameId)
+        ? prevSelected.filter((id) => id !== exameId) // Remove da seleção
+        : [...prevSelected, exameId] // Adiciona à seleção
+    );
+  };
+
   return (
     <div className="form-section mt-4 border-t border-gray-300 py-1">
     <h3 className="text-lg font-semibold text-center mb-2">Lista de Exames</h3>
@@ -658,17 +712,31 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
         <table className="min-w-full bg-white border border-gray-300">
           <thead className="bg-blue-100">
             <tr>
+            <th className="px-2 py-1 border-b text-center font-semibold">Selecionar</th>
               <th className="px-2 py-1 border-b text-left font-semibold">Código</th>
               <th className="px-2 py-1 border-b text-left font-semibold">Nome do Exame</th>
               <th className="px-2 py-1 border-b text-left font-semibold">Data Agendamento</th>
+              <th className="px-2 py-1 border-b text-center font-semibold">Prazo</th>
               <th className="px-2 py-1 border-b text-right font-semibold">Valor</th>
+              <th className="px-2 py-1 border-b text-center font-semibold ">Status</th>
               <th className="px-2 py-1 border-b text-center font-semibold">Ações</th>
             </tr>
           </thead>
           <tbody>
           {addedExames.map((exame, index) => (
           // {exames.map((exame, index) => (
-            <tr key={exame.id} className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
+            <tr key={
+              typeof exame.exameId === 'number' || typeof exame.exameId === 'string' 
+              ? exame.exameId : String(exame.exameId) 
+              } className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
+            <td className="px-2 py-1 border-b text-center">
+              <input
+                type="checkbox"
+                checked={selectedExames.includes(typeof exame.exameId === 'number'? exame.exameId ?? 0: 0)}
+                disabled={!['agendado', 'Agendado'].includes(typeof exame.status === 'string' ? exame.status : '')}
+                onChange={() => handleCheckboxChange(typeof exame.exameId === 'number'? exame.exameId ?? 0:0)}
+              />
+            </td>
             <td className="px-2 py-1 border-b">{exame.codigoExame}</td>
             <td className="px-2 py-1 border-b">{exame.nomeExame}</td>
             <td className="px-2 py-1 border-b">
@@ -678,10 +746,17 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
                 : `${exame.dataColeta}T${new Date().toLocaleTimeString('pt-BR', { hour12: false })}` // Adiciona hora atual se só houver data
               )}
             </td>
+            <td className="px-2 py-1 border-bt text-center">
+            {exame.prazoFinal && (typeof exame.prazoFinal === 'string' || exame.prazoFinal instanceof Date)
+              ? formatDateTimeForGrid(new Date(exame.prazoFinal))
+              : 'Data inválida'}
+              </td>     
             <td className="px-2 py-1 border-b text-right">{formatCurrencyBRL(formatDecimal(exame.preco || 0, 2))}</td>
+            <td className="px-2 py-1 border-b text-center">{ typeof exame.status === 'string' ? exame.status : 'Indisponível'}</td>
             <td className="px-2 py-1 border-b text-center">
               <button
                 onClick={() => removerExame(index)}
+                hidden={!['agendado', 'Agendado'].includes(typeof exame.status === 'string' ? exame.status : '')}
                 className="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all duration-200"
               >
                 <TrashIcon className="h-5 w-5" />

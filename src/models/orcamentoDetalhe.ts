@@ -5,6 +5,8 @@ export interface OrcamentoDetalhe {
     exameId?: number;
     valor?: number;
     dataColeta?: Date |string;
+    prazoFinal?: Date |string;
     horarioId?: number;
+    status?: string;
   }
   

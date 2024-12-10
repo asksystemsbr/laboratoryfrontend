@@ -54,6 +54,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
+  const [selectedExames, setSelectedExames] = useState<number[]>([]);
+
 // Memoize the discount calculation function
   const calcularTotalComDesconto = useCallback((subtotal: number, desconto: number, isPercentage: boolean) => {
     return isPercentage ? subtotal - ((subtotal * desconto) / 100) : subtotal - desconto;
@@ -68,6 +70,27 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
         try {
           const response = await axios.get(`/api/Orcamento/getOrcamentoCompleto/${orcamentoCabecalhoData.id}`);
           const { orcamentoCabecalho, orcamentoDetalhe, orcamentoPagamento } = response.data;
+
+          // Iterar sobre orcamentoDetalhe para obter prazos
+          const updatedOrcamentoDetalhe = await Promise.all(
+            orcamentoDetalhe.map(async (item: OrcamentoDetalhe) => {
+              try {
+                // Buscar prazo para o exame atual
+                const prazoResponse = await axios.get(`/api/Exame/${item.exameId}`);
+                const prazoDias = prazoResponse.data.prazo || 0;
+
+                // Calcular data final do prazo
+                const dataColeta = typeof item.dataColeta === 'string' ? new Date(item.dataColeta) : new Date();
+                const prazoFinal = new Date(dataColeta);
+                prazoFinal.setDate(prazoFinal.getDate() + prazoDias);
+
+                return { ...item, prazoFinal }; // Adiciona `prazoFinal` ao item
+              } catch (error) {
+                console.error(`Erro ao buscar prazo para o exame ${item.exameId}:`, error);
+                return { ...item, prazoFinal: undefined }; // Retorna item sem alterar se der erro
+              }
+            })
+          );
   
           reset(orcamentoCabecalho); // Preenche o formulário com os dados do cabeçalho
 
@@ -79,11 +102,11 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
           setDesconto(orcamentoCabecalho.desconto);
 
-          setOrcamentoDetalhes(orcamentoDetalhe);
+          setOrcamentoDetalhes(updatedOrcamentoDetalhe);
           setOrcamentoPagamentos(orcamentoPagamento);
   
           // Calcula subtotal e total com base nos detalhes
-          const novoSubtotal = orcamentoDetalhe.reduce((acc: number, item: OrcamentoDetalhe) => acc + (item.valor || 0), 0);
+          const novoSubtotal = updatedOrcamentoDetalhe.reduce((acc: number, item: OrcamentoDetalhe) => acc + (item.valor || 0), 0);
           setSubtotal(novoSubtotal);
           //setTotalComDesconto(novoSubtotal - desconto);
           const totalAtualizado = calcularTotalComDesconto(novoSubtotal, orcamentoCabecalho.desconto,initialIsPercentage );
@@ -121,6 +144,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     }
   }, [subtotal, desconto, isPercentage, loading, calcularTotalComDesconto]);
 
+  
   const onDescontoChange = (novoDesconto: number, percentual: boolean) => {
     setDesconto(novoDesconto);
     setIsPercentage(percentual);
@@ -194,7 +218,13 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     }
   };
 
-  const handleExameSelected = (detalhesOrcamento: OrcamentoDetalhe[],observacoes: string |null, medicamento: string | null) => {
+  const handleExameSelected = (
+    detalhesOrcamento: OrcamentoDetalhe[]
+    ,observacoes: string |null
+    , medicamento: string | null,
+    selectedExamesIds: number[]
+  ) => {
+
 
     // Calcular subtotal com base nos preços dos exames
     const novoSubtotal = detalhesOrcamento.reduce((acc, detalhe) => acc + (detalhe.valor || 0), 0);
@@ -204,7 +234,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     const totalAtualizado = calcularTotalComDesconto(subtotal, desconto, isPercentage);
     setTotalComDesconto(totalAtualizado);
     //setTotalComDesconto(novoSubtotal - desconto);
-
+    
     setValue('observacoes', observacoes || '');
     setValue('medicamento', medicamento || '');
 
@@ -218,6 +248,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     }));
 
     setOrcamentoDetalhes(detalhes);
+    setSelectedExames(selectedExamesIds);
   };
 
   const handlePagamentosSelected = (pagamentos: OrcamentoPagamento[]) => {
@@ -272,8 +303,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
     }
   
     if (isPedido) {
-      const totalPago = orcamentoPagamentos.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0);
-      if (totalPago !== totalComDesconto) {
+      const totalPago =arredondar(orcamentoPagamentos.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0));
+      if (totalPago !== arredondar(totalComDesconto)) {
         setModalMessage('O total pago deve ser igual ao total do orçamento!');
         setIsModalOpen(true);
         return false;
@@ -282,6 +313,8 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   
     return true;
   };
+
+  const arredondar = (valor: number) => parseFloat(valor.toFixed(2));
 
   const onSubmit = async (data: OrcamentoCabecalho) => {
     if (isSubmitting) return;
@@ -322,16 +355,26 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
 
       const orcamentoCompleto = {
         orcamentoCabecalho: orcamentoData,
+        // orcamentoDetalhe:  isPedido
+        // ? orcamentoDetalheData.filter((detalhe) => selectedExames.includes(detalhe.exameId ?? 0)) // Apenas selecionados
+        // : orcamentoDetalheData, // Todos os exames,
         orcamentoDetalhe: orcamentoDetalheData,
         orcamentoPagamento: orcamentoPagamentos,
       };
 
+      const orcamentoCompletoPedido = {
+        orcamentoCabecalho: orcamentoData,
+        orcamentoDetalhe:  orcamentoDetalheData.filter((detalhe) => selectedExames.includes(detalhe.exameId ?? 0)),
+        orcamentoPagamento: orcamentoPagamentos,
+      };
+
       try {
-        setIsSubmitting(true);
-        await axios.put('/api/Orcamento', orcamentoCompleto);
+        setIsSubmitting(true);        
         if(isPedido){
-          await axios.post('/api/Pedido', orcamentoCompleto);
+          await axios.post('/api/Pedido', orcamentoCompletoPedido);
         }
+
+        await axios.put('/api/Orcamento', orcamentoCompleto);
         reset();
         onSave();
       } catch (error) {
@@ -379,15 +422,15 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
         // Atualiza o status para 2 antes de salvar
         const updatedData: OrcamentoCabecalho = {
           ...formData,
-          status: '2', // Atualiza o status para "Pedido"
+          //status: '2', // Atualiza o status para "Pedido"
         };
 
         // Salva o orçamento atualizado
         await submitOrcamento(updatedData,true);
-        setSnackbar(new SnackbarState('Orçamento transformado em pedido com sucesso!', 'success', true));
+        setSnackbar(new SnackbarState('Orçamento transformado em OS com sucesso!', 'success', true));
       } catch (error) {
         console.error(error);
-        setSnackbar(new SnackbarState('Erro ao transformar o orçamento em pedido!', 'error', true));
+        setSnackbar(new SnackbarState('Erro ao transformar o orçamento em OS!', 'error', true));
       } finally {
         setIsSubmitting(false);
       }

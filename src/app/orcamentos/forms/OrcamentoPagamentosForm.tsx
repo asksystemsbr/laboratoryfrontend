@@ -128,11 +128,15 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
       }
 
 
-      const novoTotal = addedFormaPagamento.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0) + valorPagamento;
+      const novoTotal = arredondar(
+        addedFormaPagamento.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0) + valorPagamento
+      );
 
       console.log(total);
       console.log(novoTotal);
-      if (novoTotal > total) {
+
+      const totalArredondado = arredondar(total);
+      if (novoTotal > totalArredondado) {
         setModalMessage("A soma dos valores dos pagamentos excede o total permitido.");
         setIsModalOpen(true);
         return;
@@ -149,6 +153,8 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
     }
   };
 
+  const arredondar = (valor: number) => parseFloat(valor.toFixed(2));
+  
   const removerPagamento = (index: number) => {
     const updatedExames = addedFormaPagamento.filter((_, idx) => idx !== index);
     setaddedFormaPagamento(updatedExames);

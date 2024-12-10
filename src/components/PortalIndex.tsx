@@ -46,16 +46,16 @@ export default function PortalIndexComponente() {
       },         
       {
         permissions: ['orcamento.Read', 'orcamento.Write'],
-        label: 'Orçamentos',
+        label: 'Orçamentos/Agendamentos',
         icon: <FaClipboardList size={24} />,
         route: '/pedidos',
       },  
-      {
-        permissions: ['agendamento.Read', 'agendamento.Write'],
-        label: 'Agendamentos',
-        icon: <FaCalendarAlt size={24} />,
-        route: '/agendamentos',
-      },  
+      // {
+      //   permissions: ['agendamento.Read', 'agendamento.Write'],
+      //   label: 'Agendamentos',
+      //   icon: <FaCalendarAlt size={24} />,
+      //   route: '/agendamentos',
+      // },  
       {
         permissions: ['agendamento.Read', 'agendamento.Write'],
         label: 'Check in',
