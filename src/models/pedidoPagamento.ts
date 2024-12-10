@@ -4,5 +4,6 @@ export interface PedidoPagamento {
     pagamentoId?: number;
     valor?: number;
     PedidoId?: number;
+    dataPagamento?: Date | string;
   }
    

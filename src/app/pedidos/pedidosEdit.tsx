@@ -144,7 +144,8 @@ export const PedidosEditForm = ({pedidoCabecalhoData, onSave, onClose, setSnackb
       pagamentoId: pagamento.pagamentoId,
       valor: pagamento.valor,
       pedidoId: pedidoCabecalhoData.id,
-      id: 0
+      id: 0,
+      dataPagamento: pagamento.dataPagamento
     }));
 
     setPedidoPagamentos(pagamentosData);
@@ -184,7 +185,7 @@ export const PedidosEditForm = ({pedidoCabecalhoData, onSave, onClose, setSnackb
     if (isPedido) {
       const totalPago = pedidoPagamentos.reduce((acc, pagamento) => acc + (pagamento.valor || 0), 0);
       if (totalPago !== totalComDesconto) {
-        setSnackbar(new SnackbarState('O total pago deve ser igual ao total do orçamento!', 'error', true));
+        setSnackbar(new SnackbarState('O total pago deve ser igual ao total da OS!', 'error', true));
         return false;
       }
     }
@@ -346,6 +347,7 @@ export const PedidosEditForm = ({pedidoCabecalhoData, onSave, onClose, setSnackb
             <PedidoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
                 pedidosPagamentos={pedidoPagamentos} 
                 pedidoCabecalhoData={pedidoCabecalhoData}
+                total={totalComDesconto}
                 />
         )}
         {!loading && (
@@ -363,9 +365,9 @@ export const PedidosEditForm = ({pedidoCabecalhoData, onSave, onClose, setSnackb
           <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          {/* <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+          <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
             Salvar
-          </button> */}
+          </button>
           <button 
             type="button" 
             onClick={transformarEmPedido}

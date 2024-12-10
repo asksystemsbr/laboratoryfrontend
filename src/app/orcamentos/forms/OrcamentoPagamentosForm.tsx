@@ -168,23 +168,23 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
     {/* Primeira linha */}
     <div className="flex flex-wrap gap-4 mb-4">
       <div className="basis-4/12">
-      <select
-          value={formaPagamentoData?.id || ''}        
-          onChange={(e) => {
-            const selectedId = Number(e.target.value);
-            const selectedExame = formasPagamentos.find((p) => p.id === selectedId) || null;
-            if(selectedExame){
-              preencherDadosExame(selectedExame);
-            }
-          }}
-          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
-        >
-          <option value="">Selecione um pagamento</option>
-          {formasPagamentos.map((pagamento) => (
-            <option key={pagamento.id} value={pagamento.id}>
-              {pagamento.descricao}
-            </option>
-          ))}
+        <select
+            value={formaPagamentoData?.id || ''}        
+            onChange={(e) => {
+              const selectedId = Number(e.target.value);
+              const selectedExame = formasPagamentos.find((p) => p.id === selectedId) || null;
+              if(selectedExame){
+                preencherDadosExame(selectedExame);
+              }
+            }}
+            className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          >
+            <option value="">Selecione um pagamento</option>
+            {formasPagamentos.map((pagamento) => (
+              <option key={pagamento.id} value={pagamento.id}>
+                {pagamento.descricao}
+              </option>
+            ))}
         </select>
       </div> 
       <div className="basis-2/12">
