@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import InformativeModal from '@/components/InformativeModal';
 import { usePortalAuth  } from '../../../authPortal'; // Importa o hook de autenticação
 import { formatDateForInput } from '@/utils/formatDateForInput';
+import { validateCPF } from '@/utils/cpfValidator';
 
 
 export const ClienteEditForm = () => {
@@ -135,6 +136,27 @@ export const ClienteEditForm = () => {
         {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
       </div>
 
+      {/* CPF */}
+      <div className="mb-4">
+        <label className="block text-gray-700">CPF *</label>
+        <InputMask
+                {...register('cpfCnpj')}
+                mask={'999.999.999-99'}
+                className="border rounded w-full py-1 px-3 mt-1 text-gray-800"
+                placeholder={'CPF'}
+                onBlur={(e) => {
+                  const cpf = e.target.value;
+                    if (!validateCPF(cpf)) {
+                      setError('cpfCnpj', {
+                        type: 'manual',
+                        message: 'CPF inválido',
+                      });
+                      return;
+                    } 
+                }}
+              /> 
+        {errors.cpfCnpj && <p className="text-red-500 text-sm">{errors.cpfCnpj.message}</p>}
+      </div>
 
       {/* Data de Nascimento */}
       <div>
