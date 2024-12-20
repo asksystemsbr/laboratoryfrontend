@@ -13,7 +13,6 @@ import OrcamentoPagamentosForm from './forms/OrcamentoPagamentosForm';
 import { useAuth } from '@/app/auth';
 import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
-import jsPDF from 'jspdf';
 import 'jspdf-autotable'; // Para criar tabelas facilmente
 import InformativeModal from '@/components/InformativeModal';
 
@@ -25,7 +24,7 @@ interface OrcamentoCreateFormProps {
 }
 
 export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setSnackbar }: OrcamentoCreateFormProps) => {
-  const { register,handleSubmit, setValue, reset,getValues  } = useForm<OrcamentoCabecalho>({
+  const { register,handleSubmit, setValue, reset  } = useForm<OrcamentoCabecalho>({
     defaultValues: orcamentoCabecalhoData,
   });
   const auth = useAuth(); // Armazena o contexto inteiro e faz a verificação
@@ -126,11 +125,12 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
   useEffect(() => {
     const checkDescontoPermission = async () => {
       try {
-        const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
-        setIsDescontoEditable(response.data);
-      } catch (error) {
-        console.error('Erro ao verificar permissão para editar desconto:', error);
-      }
+      //   const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
+      //   setIsDescontoEditable(response.data);
+        setIsDescontoEditable(false);
+       } catch (error) {
+         console.error('Erro ao verificar permissão para editar desconto:', error);
+       }      
     };
     checkDescontoPermission();
   }, []);
@@ -383,248 +383,34 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
       } finally {
         setIsSubmitting(false);
       }
-    };
-
-    const transformarEmPedido = async () => {
-      const formData = getValues(); // Obtém os valores atuais do formulário
-
-      // Verificar se todos os exames possuem valores
-      const examesSemValor = orcamentoDetalhes.filter((detalhe) => !detalhe.valor || detalhe.valor <= 0);
-      if (examesSemValor.length > 0) {
-        setModalMessage('Todos os exames devem ter valores atribuídos!');
-        setIsModalOpen(true);
-        return;
-      }
-
-      // Verificar se todos os pagamentos possuem valores
-      const pagamentosSemValor = orcamentoPagamentos.filter((pagamento) => !pagamento.valor || pagamento.valor <= 0);
-      if (pagamentosSemValor.length > 0) {
-        setModalMessage('Todos os pagamentos devem ter valores atribuídos!');
-        setIsModalOpen(true);
-        return;
-      }
-      if (!validateOrcamento(formData, true)) return; // Valida com a regra extra para pedidos
-    
-      try {
-        setIsSubmitting(true);
-        //await submitOrcamento(formData);
-
-        // Chamada à API para validação adicional
-        const response = await axios.get<string>(`/api/Pedido/validateCreatePedido/${formData.id}`);
-        const validationMessage = response.data;
-
-        // Verifica se a mensagem é diferente de vazio
-        if (validationMessage) {
-          setSnackbar(new SnackbarState(validationMessage, 'error', true));
-          return; // Impede que o processo continue
-        }
-
-        // Atualiza o status para 2 antes de salvar
-        const updatedData: OrcamentoCabecalho = {
-          ...formData,
-          //status: '2', // Atualiza o status para "Pedido"
-        };
-
-        // Salva o orçamento atualizado
-        await submitOrcamento(updatedData,true);
-        setSnackbar(new SnackbarState('Orçamento transformado em OS com sucesso!', 'success', true));
-      } catch (error) {
-        console.error(error);
-        setSnackbar(new SnackbarState('Erro ao transformar o orçamento em OS!', 'error', true));
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-
-  
-    const gerarPDF = async () => {
-      const doc = new jsPDF();
-    
-      try {
-        const pageWidth = doc.internal.pageSize.getWidth(); // Largura da página
-        const pageHeight = doc.internal.pageSize.getHeight(); // Altura da página
-
-        // Buscar dados do laboratório com base na recepção
-        const recepcaoId = orcamentoCabecalhoData.recepcaoId;
-        const laboratorioData = await axios.get(`/api/Recepcao/${recepcaoId}`).then(res => res.data);
-        const logoPath = `/imgs/recepcao_${recepcaoId}.jpg`; // Caminho fixo da imagem
-        //const endereco = laboratorioData.endereco || 'Endereço não disponível';
-        const rodape = laboratorioData.rodapeOrcamento || '';
-        const horarios = laboratorioData.cabecalhoOrcamento || ''; // Horários de atendimento das unidades
-    
-        // Carregar imagem diretamente do caminho fixo
-        const logoImg = await fetch(logoPath).then(res => res.blob()).then(blob => {
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string); // Garantir que o resultado seja uma string
-            reader.readAsDataURL(blob);
-          });
-        });
-    
-        // Função para adicionar cabeçalho
-        const addCabecalho = () => {
-          // Adicionar imagem no cabeçalho
-          doc.addImage(logoImg, 'JPEG', 10, 10, 180, 20);
-
-          // Adicionar informações do orçamento
-          const dataHoraOrcamento = new Date(orcamentoCabecalhoData.dataHora || '').toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-          const nomePaciente = orcamentoCabecalhoData.nomePaciente || 'N/A';
-          const numeroOrcamento = orcamentoCabecalhoData.id || 'N/A';
-
-          doc.setFontSize(12);
-          doc.text(`NOME: ${nomePaciente}`, 10, 40);
-          doc.text(`ORÇAMENTO Nº: ${numeroOrcamento} - ${dataHoraOrcamento}`, 10, 45);
-
-          doc.setFontSize(10);
-          doc.text('___________________________________________________________________________________________', 10, 50);
-        };
-
-        // Função para adicionar rodapé
-        const addRodape = () => {
-          doc.text('__________________________________________________________________________________________', 10, pageHeight - 20, { maxWidth: 190 });
-          doc.text(rodape, 10, pageHeight - 15, { maxWidth: 190 });
-        };
-
-        // Adicionar cabeçalho na primeira página
-        addCabecalho();
-  
-        doc.setFont('helvetica', 'bold'); // Fonte em negrito
-        doc.text('GARANTIA DE QUALIDADE',  pageWidth / 2, 55,{ align: 'center' });
-
-        // Resetar fonte para normal após o título
-        doc.setFont('helvetica', 'normal');
-        doc.text(
-          'Garantimos a qualidade dos melhores laboratórios do país para seus exames de Análises Clínicas. Porém, ' +
-          'a falta do preparo correto pode causar falsas dosagens, por interferências. Em caso de dúvidas quanto aos preparos, ' +
-          'entre em contato conosco.',
-          10,
-          60,
-          { maxWidth: 190 }
-        );
-    
-        // Adicionar horários de atendimento
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold'); // Fonte em negrito
-        doc.text('ANÁLISES CLÍNICAS - HORÁRIO DE ATENDIMENTO DAS UNIDADES', pageWidth / 2, 75,{ align: 'center' });
-         // Resetar fonte para normal após o título
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.text(horarios, 10, 80, { maxWidth: 190 });
-    
-        // Adicionar tabela de exames
-        const examesPromises = orcamentoDetalhes.map(detalhe =>
-          axios.get(`/api/Exame/${detalhe.exameId}`).then(res => res.data.nomeExame || 'Exame desconhecido')
-        );
-        const nomesExames = await Promise.all(examesPromises);
-            // Dividir exames em duas colunas
-        const rows = [];
-        for (let i = 0; i < nomesExames.length; i += 2) {
-          rows.push([
-            nomesExames[i] || '', // Primeira coluna
-            nomesExames[i + 1] || '', // Segunda coluna (pode estar vazia)
-          ]);
-        }
-
-        const head = [['Exame a Realizar']];
-        // const body = orcamentoDetalhes.map((detalhe, index) => [
-        //   nomesExames[index]
-        // ]);
-    
-        doc.autoTable({
-          startY: 100,
-          head: head,
-          body: rows,
-          theme: 'grid',
-          styles: { fontSize: 10 }, // Ajuste de tamanho de fonte
-          //headStyles: { fillColor: [230, 230, 230] }, // Cabeçalho com fundo cinza claro
-          didDrawPage: (data) => {
-            if (data.pageNumber > 1) {
-              addCabecalho(); // Adicionar cabeçalho em páginas subsequentes
-            }
-            addRodape(); // Adicionar rodapé em todas as páginas
-          },
-        });
-    
-        // Adicionar resumo
-        const startY = doc.lastAutoTable.finalY + 10;
-
-        doc.text('___________________________________________________________________________________________', 10, startY + 5);
-
-        // const safeSubtotal = subtotal != null ? subtotal : 0; // Default 0 se subtotal for null/undefined
-        // const safeDesconto = desconto != null ? desconto : 0; // Default 0 se desconto for null/undefined
-        const safeTotalComDesconto = totalComDesconto != null ? totalComDesconto : 0; // Default 0 se totalComDesconto for null/undefined
-        // doc.text(`Subtotal: R$ ${safeSubtotal.toFixed(2)}`, 10, startY);
-        // doc.text(
-        //   `Desconto: ${isPercentage ? `${safeDesconto}%` : `R$ ${safeDesconto.toFixed(2)}`}`,
-        //   10,
-        //   startY + 10
-        // );
-        doc.setFont('helvetica', 'bold'); // Fonte em negrito
-        doc.text(`Total : R$ ${safeTotalComDesconto.toFixed(2)} (Cobrimos qualquer orçamento)`, 10, startY + 10);
-        doc.setFont('helvetica', 'normal');
-
-        doc.text('___________________________________________________________________________________________', 10, startY + 15);
-            
-        // Adicionar preparo e orientações
-        const preparo = orcamentoCabecalhoData.medicamento || 'Não informado';
-        const orientacoes = orcamentoCabecalhoData.observacoes || 'Não informado';
-    
-        const startYPreparo = startY + 30;
-        doc.setFont('helvetica', 'bold'); // Fonte em negrito
-        doc.text('PREPARO', 10, startYPreparo);
-        doc.setFont('helvetica', 'normal');
-
-        const preparoHeight = doc.splitTextToSize(preparo, 190); // Dividir texto para caber na página
-        doc.text(preparoHeight, 10, startYPreparo + 5);
-    
-
-        const startYOrientacoes = startYPreparo + 10 + preparoHeight.length * 5; // Avançar com base na altura do texto de preparo
-        doc.setFont('helvetica', 'bold'); // Fonte em negrito
-        doc.text('ORIENTAÇÕES', 10,startYOrientacoes);
-        doc.setFont('helvetica', 'normal');
-
-        const orientacoesHeight = doc.splitTextToSize(orientacoes, 190); // Dividir texto para caber na página
-        doc.text(orientacoesHeight, 10, startYOrientacoes + 5);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        // Adicionar rodapé na última página
-        addRodape();
-    
-        // Abrir ou salvar o PDF
-        doc.save(`orcamento_${orcamentoCabecalhoData.id}.pdf`);
-      } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
-        setSnackbar(new SnackbarState('Erro ao gerar o PDF!', 'error', true));
-      }
-    };
+    };    
     
     
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-      <form onSubmit={handleSubmit(onSubmit)} className="p-4 max-w-7xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-750 bg-opacity-50 z-50">
+      <form onSubmit={handleSubmit(onSubmit)} className="p-4 max-w-6xl w-full bg-white rounded-lg shadow-lg overflow-y-auto max-h-screen">
+      <div className="space-y-6">      
       {!loading && (
-        <OrcamentoClienteForm 
-          onClienteSelected={handleClienteSelected} 
-          nomePaciente={orcamentoCabecalhoData.nomePaciente || ''}
-          pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
+        <div className="border-b pb-4">
+          <OrcamentoClienteForm 
+            onClienteSelected={handleClienteSelected} 
+            nomePaciente={orcamentoCabecalhoData.nomePaciente || ''}
+            pacienteId={`${orcamentoCabecalhoData.pacienteId || ''}`}  /> 
+        </div>
       )}
       {!loading && (     
-        <OrcamentoConvenioForm             
-            onConvenioSelected={handleConvenioSelected} 
-            onPlanoSelected={handlePlanoSelected}         
-            onUnidadeSelected={handleUnidadeSelected}   
-            convenioId= {orcamentoCabecalhoData.convenioId || 0}
-            planoId= {orcamentoCabecalhoData.planoId || 0}
-            />
+        <div className="border-b pb-4">        
+          <OrcamentoConvenioForm             
+              onConvenioSelected={handleConvenioSelected} 
+              onPlanoSelected={handlePlanoSelected}         
+              onUnidadeSelected={handleUnidadeSelected}   
+              convenioId= {orcamentoCabecalhoData.convenioId || 0}
+              planoId= {orcamentoCabecalhoData.planoId || 0}
+              />
+        </div>
       )}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="basis-2/12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
             <input
               type="date"
               {...register('validadeCartao',{
@@ -635,7 +421,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               placeholder="Validade Cartão"
             />
           </div>
-          <div className="basis-2/12">
+          <div>
             <input
               type="text"
               {...register('guia')}
@@ -643,7 +429,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               placeholder="Guia"
             />
           </div>          
-          <div className="basis-5/12">
+          <div >
             <input
               type="text"
               {...register('titular')}
@@ -651,7 +437,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               placeholder="Titular"
             />
           </div>      
-          <div className="basis-2/12 flex-grow">
+          <div >
             <input
               type="text"
               {...register('senhaAutorizacao')}
@@ -661,6 +447,7 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
           </div>                
         </div>
         {!loading && (
+          <div className="border-b pb-4">
           <OrcamentoExameForm 
               onExameSelected={handleExameSelected} 
               onSolicitanteSelected={handleSolicitanteSelected} 
@@ -672,8 +459,9 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
               solicitanteId={orcamentoCabecalhoData.solicitanteId || 0}
               convenioId={convenioId} 
               />   
+          </div>
           )}
-        <div className="grid grid-cols-2 gap-20 mt-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {!loading && (
             <OrcamentoPagamentosForm  onPagamentosSelected={handlePagamentosSelected}  
                 orcamentoPagamentos={orcamentoPagamentos} 
@@ -691,28 +479,15 @@ export const OrcamentoEditForm = ({orcamentoCabecalhoData, onSave, onClose, setS
                 isPercentageRef ={isPercentage}
                 />           
         )}
-          </div>
-        <div className="buttons text-center mt-8">
-          <button type="button" onClick={onClose} className="mr-2 py-2 px-4 rounded bg-gray-500 text-white">
+        </div>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+          <button type="button" onClick={onClose} className="w-full sm:w-auto py-2 px-4 rounded bg-gray-500 text-white">
             Cancelar
           </button>
-          <button type="submit" className="mr-2 py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
+          <button type="submit" className="w-full sm:w-auto py-2 px-4 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-500 hover:to-blue-500 transition-all duration-200">
             Salvar
           </button>
-          <button 
-            type="button" 
-            onClick={transformarEmPedido}
-             className="mr-2 py-2 px-4 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-500 hover:to-purple-500 transition-all duration-200"
-            >
-            Transformar em OS
-          </button>
-          <button 
-              type="button" 
-              onClick={gerarPDF} 
-                className="mr-2 py-2 px-4 bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold rounded-lg shadow-lg hover:from-red-500 hover:to-orange-400 transition-all duration-200"
-            >
-              Imprimir PDF
-            </button>
+        </div>
         </div>
       </form>
 
