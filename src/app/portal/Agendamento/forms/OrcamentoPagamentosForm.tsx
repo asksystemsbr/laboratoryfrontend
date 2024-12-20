@@ -1,7 +1,7 @@
 //src/app/orcamentos/forms/OrcamentoPagamentosForm.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { PlusIcon,TrashIcon } from '@heroicons/react/24/solid';
+import { TrashIcon } from '@heroicons/react/24/solid';
 import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
 import { FormaPagamento } from '@/models/formaPagamento';
 import { OrcamentoPagamento } from '@/models/orcamentoPagamento';
@@ -162,12 +162,12 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
   };
 
   return (
-    <div className="form-section mt-4 border-t border-gray-300 py-1">
-    <h3 className="text-lg font-semibold text-center mb-2">Pagamentos</h3>
+    <div className="form-section mt-4 border-t border-gray-300 py-2">
+    <h3 className="text-lg font-semibold text-center mb-4">Pagamentos</h3>
 
     {/* Primeira linha */}
-    <div className="flex flex-wrap gap-4 mb-4">
-      <div className="basis-4/12">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div className="col-span-1">
         <select
             value={formaPagamentoData?.id || ''}        
             onChange={(e) => {
@@ -177,7 +177,7 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
                 preencherDadosExame(selectedExame);
               }
             }}
-            className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+            className="border rounded w-full py-2 px-3 text-sm text-gray-800"
           >
             <option value="">Selecione um pagamento</option>
             {formasPagamentos.map((pagamento) => (
@@ -187,31 +187,32 @@ const OrcamentoPagamentosForm: React.FC<PagamentosFormProps> = ({ onPagamentosSe
             ))}
         </select>
       </div> 
-      <div className="basis-2/12">
+      <div className="col-span-1">
           <input
             type="number"
             value={formatDecimal(valorPagamento,2)}
             onChange={(e) => setvalorPagamento(formatDecimal(parseFloat(e.target.value), 2))}
-            className="border rounded w-full py-1 px-2 text-sm"
+            className="border rounded w-full py-2 px-3 text-sm"
             placeholder="R$"
           />         
       </div>      
-      <div className="basis-2/12">
+      <div className="col-span-1">
         <input
           type="date"
           value={dataPagamento || ''}
           onChange={(e) => setDataPagamento(e.target.value)}
-          className="border rounded w-full py-1 px-2 text-sm"
+          className="border rounded w-full py-2 px-3 text-sm"
           placeholder="Data de pagamento"
         />
       </div>      
-      <div className="basis-1/12">
-        <button onClick={adicionarFormaPagamento}
-          className="p-2 bg-blue-400 text-white font-semibold rounded-full shadow hover:bg-blue-500 transition duration-150"
-          >
-            <PlusIcon className="h-5 w-5" /> {/* Ícone de adicionar */}
-        </button>          
-      </div>        
+      <div className="col-span-1 flex items-center justify-center">
+        <button
+          onClick={adicionarFormaPagamento}
+          className="w-full sm:w-auto py-2 px-6 bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold rounded-lg shadow-md text-center hover:from-green-500 hover:to-blue-500 transition-all duration-300"
+        >
+          Adicionar
+        </button>
+      </div>     
     </div>
 
     {addedFormaPagamento.length > 0 && (

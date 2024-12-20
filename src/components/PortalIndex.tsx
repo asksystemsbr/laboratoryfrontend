@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   FaUserAlt,
   FaClipboardList,
-  FaCalendarAlt,
   FaCheckCircle,
   FaChartBar,
 } from "react-icons/fa";
@@ -46,16 +45,16 @@ export default function PortalIndexComponente() {
       },         
       {
         permissions: ['orcamento.Read', 'orcamento.Write'],
-        label: 'Orçamentos',
+        label: 'Orçamentos/Agendamentos',
         icon: <FaClipboardList size={24} />,
-        route: '/pedidos',
+        route: './Agendamento',
       },  
-      {
-        permissions: ['agendamento.Read', 'agendamento.Write'],
-        label: 'Agendamentos',
-        icon: <FaCalendarAlt size={24} />,
-        route: '/agendamentos',
-      },  
+      // {
+      //   permissions: ['agendamento.Read', 'agendamento.Write'],
+      //   label: 'Agendamentos',
+      //   icon: <FaCalendarAlt size={24} />,
+      //   route: '/agendamentos',
+      // },  
       {
         permissions: ['agendamento.Read', 'agendamento.Write'],
         label: 'Check in',

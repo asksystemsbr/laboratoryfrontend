@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Exame } from '@/models/exame';
-import { PlusIcon,TrashIcon } from '@heroicons/react/24/solid';
+import { TrashIcon } from '@heroicons/react/24/solid';
 import { formatCurrencyBRL, formatDecimal } from '@/utils/numbers';
 import { formatDateTimeForGrid } from '@/utils/formatDateForInput';
 import { OrcamentoDetalhe } from '@/models/orcamentoDetalhe';
@@ -14,12 +14,17 @@ import { AgendamentoHorarioGerado } from '@/models/agendamentoHorarioGerado';
 
 
 interface ExameFormProps {
+  // onExameSelected: (
+  //     detalhesOrcamento: OrcamentoDetalhe[],
+  //     observacoes: string |null, 
+  //     medicamento: string | null,
+  //     selectedExames: number[] // IDs dos exames selecionados
+  //   ) => void;
   onExameSelected: (
       detalhesOrcamento: OrcamentoDetalhe[],
       observacoes: string |null, 
-      medicamento: string | null,
-      selectedExames: number[] // IDs dos exames selecionados
-    ) => void;
+      medicamento: string | null
+    ) => void;  
   onSolicitanteSelected: (id: number| null) => void;
   planoId: number | null;
   orcamentoDetalhes?: OrcamentoDetalhe[]; 
@@ -72,9 +77,10 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
 
   const [datasDisponiveis, setDatasDisponiveis] = useState<Date[]>([]);
 
-  const [selectedExames, setSelectedExames] = useState<number[]>([]);
+  // const [selectedExames, setSelectedExames] = useState<number[]>([]);
   
-  const previousDataRef = useRef<string>(JSON.stringify({ addedExames, observacoes, medicamentos, selectedExames }));
+  // const previousDataRef = useRef<string>(JSON.stringify({ addedExames, observacoes, medicamentos, selectedExames }));
+  const previousDataRef = useRef<string>(JSON.stringify({ addedExames, observacoes, medicamentos }));
 
   useEffect(() => {
     const term = searchTerm.toLowerCase();
@@ -389,14 +395,23 @@ const OrcamentoExameForm: React.FC<ExameFormProps> = ({
   }, [isLoaded, solicitanteId, solicitantes]);
 
 
+// useEffect(() => {
+//   const currentData = JSON.stringify({ addedExames, observacoes, medicamentos, selectedExames });
+
+//   if (currentData !== previousDataRef.current) {
+//     previousDataRef.current = currentData;
+//     onExameSelected(addedExames, observacoes, medicamentos, selectedExames);
+//   }
+// }, [addedExames, observacoes, medicamentos, selectedExames]);
+
 useEffect(() => {
-  const currentData = JSON.stringify({ addedExames, observacoes, medicamentos, selectedExames });
+  const currentData = JSON.stringify({ addedExames, observacoes, medicamentos });
 
   if (currentData !== previousDataRef.current) {
     previousDataRef.current = currentData;
-    onExameSelected(addedExames, observacoes, medicamentos, selectedExames);
+    onExameSelected(addedExames, observacoes, medicamentos);
   }
-}, [addedExames, observacoes, medicamentos, selectedExames]);
+}, [addedExames, observacoes, medicamentos]);
 
   const preencherDadosExame = async (exame: Exame) => {
     setexameData(exame);
@@ -513,7 +528,8 @@ useEffect(() => {
 
       setAddedExames([...addedExames, exameComDetalhes]);
 
-      onExameSelected([...addedExames, exameComDetalhes],newObservacoes,newMedicamentos,selectedExames);
+      // onExameSelected([...addedExames, exameComDetalhes],newObservacoes,newMedicamentos,selectedExames);
+      onExameSelected([...addedExames, exameComDetalhes],newObservacoes,newMedicamentos);
 
       // setexames([...exames, exameComDetalhes]);
 
@@ -575,7 +591,8 @@ useEffect(() => {
     setMedicamentos(newMedicamentos);
     setObservacoes(newObservacoes);
 
-    onExameSelected(updatedExames,observacoes,medicamentos,selectedExames);
+    // onExameSelected(updatedExames,observacoes,medicamentos,selectedExames);
+    onExameSelected(updatedExames,observacoes,medicamentos);
   };
 
   const handleSelectSolicitanteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -586,35 +603,35 @@ useEffect(() => {
     onSolicitanteSelected(selectedSolicitante?.id ?? null);
   };
 
-  const handleCheckboxChange = (exameId: number) => {
-    setSelectedExames((prevSelected) =>
-      prevSelected.includes(exameId)
-        ? prevSelected.filter((id) => id !== exameId) // Remove da seleção
-        : [...prevSelected, exameId] // Adiciona à seleção
-    );
-  };
+  // const handleCheckboxChange = (exameId: number) => {
+  //   setSelectedExames((prevSelected) =>
+  //     prevSelected.includes(exameId)
+  //       ? prevSelected.filter((id) => id !== exameId) // Remove da seleção
+  //       : [...prevSelected, exameId] // Adiciona à seleção
+  //   );
+  // };
 
   return (
-    <div className="form-section mt-4 border-t border-gray-300 py-1">
-    <h3 className="text-lg font-semibold text-center mb-2">Lista de Exames</h3>
+    <div className="form-section mt-4 border-t border-gray-300 py-2">
+    <h3 className="text-lg font-semibold text-center mb-4">Lista de Exames</h3>
 
     {/* Primeira linha */}
-    <div className="flex flex-wrap gap-4 mb-4">
-    <div className="basis-1/12">
+    <div className="grid grid-cols-1 sm:grid-cols-6 gap-4 mb-4">
+    <div className="col-span-1">
           <input
             type="text"
             value={crm}
             onChange={(e) => setCRM(e.target.value)}
             onBlur={buscarSolicitantePorCRM}
-            className="border rounded w-full py-1 px-2 text-sm"
+            className="border rounded w-full py-2 px-3 text-sm"
             placeholder="CRM"
           />         
       </div>
-      <div className="basis-2/12">
+      <div className="col-span-2">
       <select
           value={solicitanteData?.id || ''}        
           onChange={handleSelectSolicitanteChange}  
-          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          className="border rounded w-full py-2 px-3 text-sm text-gray-800"
         >
           <option value="">Selecione um solicitante</option>
           {solicitantes.map((solicitante) => (
@@ -624,8 +641,7 @@ useEffect(() => {
           ))}
         </select>
       </div>        
-      <div className="basis-4/12">
-        <div className="relative w-full">
+        <div className="col-span-2 relative">
           <input
             type="text"
             ref={inputRef}
@@ -634,11 +650,12 @@ useEffect(() => {
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleKeyDown} 
             placeholder="Buscar exame..."
-            className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+            className="border rounded w-full py-2 px-3 text-sm text-gray-800"
           />
-          {isDropdownOpen && filteredExames.length > 0 && (
-            <ul className="absolute z-10 w-full border bg-white shadow-md max-h-60 overflow-y-auto">
-              {filteredExames.map((exame,index) => (
+        {isDropdownOpen && (
+          <ul className="absolute z-10 w-full border bg-white shadow-md max-h-60 overflow-y-auto">
+            {filteredExames.length > 0 ? (
+              filteredExames.map((exame, index) => (
                 <li
                   key={exame.id}
                   onMouseDown={() => handleSelect(exame)}
@@ -648,22 +665,19 @@ useEffect(() => {
                 >
                   {exame.nomeExame} - {exame.codigoExame}
                 </li>
-              ))}
-            </ul>
-          )}
-          {isDropdownOpen && filteredExames.length === 0 && (
-            <div className="absolute z-10 w-full border bg-white text-gray-500 px-2 py-1">
-              Nenhum exame encontrado
-            </div>
-          )}
-        </div>        
+              ))
+            ) : (
+              <li className="px-2 py-1 text-gray-500">Nenhum exame encontrado</li>
+            )}
+          </ul>
+        )}      
       </div> 
       {/* Campo para data de coleta */}
-      <div className="basis-2/12">
+      <div className="col-span-1">
         <select
           value={dataColeta}
           onChange={(e) => setDataColeta(e.target.value)}
-          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          className="border rounded w-full py-2 px-3 text-sm text-gray-800"
         >
           <option value="" disabled>
             {datasDisponiveis.length === 0 ? 'Carregando...' : 'Selecione uma data'}
@@ -675,11 +689,11 @@ useEffect(() => {
           ))}
         </select>
       </div>    
-      <div className="basis-1/12">
+      <div  className="col-span-2">
         <select
           value={horarioSelecionado || ''}
           onChange={handleHorarioChange}
-          className="border rounded w-full py-1 px-2 text-sm text-gray-800"
+          className="border rounded w-full py-2 px-3 text-sm text-gray-800"
           disabled={isFetchingHorarios || horariosDisponiveis.length === 0}
         >
           <option value="" disabled>
@@ -697,29 +711,30 @@ useEffect(() => {
           ))}
         </select>
       </div>      
-      <div className="basis-1/12">
-        <button onClick={adicionarExameBtn}
-          className="p-2 bg-blue-400 text-white font-semibold rounded-full shadow hover:bg-blue-500 transition duration-150"
-          >
-            <PlusIcon className="h-5 w-5" /> {/* Ícone de adicionar */}
-        </button>          
-      </div>        
+
+      <div className="flex justify-center">
+        <button
+          onClick={adicionarExameBtn}
+          className="w-full max-w-xs sm:max-w-sm lg:max-w-md py-2 px-6 bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold rounded-lg shadow-lg text-center hover:from-green-500 hover:to-blue-500 transition-all duration-300 text-base"
+        >
+          Adicionar
+        </button>
+      </div>
+
     </div>
 
     {addedExames.length > 0 && (
     // {exames.length > 0 && (
-      <div className="overflow-x-auto mt-4">
+      <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300">
           <thead className="bg-blue-100">
             <tr>
-            <th className="px-2 py-1 border-b text-center font-semibold">Selecionar</th>
-              <th className="px-2 py-1 border-b text-left font-semibold">Código</th>
-              <th className="px-2 py-1 border-b text-left font-semibold">Nome do Exame</th>
-              <th className="px-2 py-1 border-b text-left font-semibold">Data Agendamento</th>
-              <th className="px-2 py-1 border-b text-center font-semibold">Prazo</th>
-              <th className="px-2 py-1 border-b text-right font-semibold">Valor</th>
-              <th className="px-2 py-1 border-b text-center font-semibold ">Status</th>
-              <th className="px-2 py-1 border-b text-center font-semibold">Ações</th>
+              <th className="px-2 py-1 border-b">Código</th>
+              <th className="px-2 py-1 border-b">Exame</th>
+              <th className="px-2 py-1 border-b">Data</th>
+              <th className="px-2 py-1 border-b">Prazo</th>
+              <th className="px-2 py-1 border-b">Valor</th>
+              <th className="px-2 py-1 border-b">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -728,15 +743,7 @@ useEffect(() => {
             <tr key={
               typeof exame.exameId === 'number' || typeof exame.exameId === 'string' 
               ? exame.exameId : String(exame.exameId) 
-              } className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>
-            <td className="px-2 py-1 border-b text-center">
-              <input
-                type="checkbox"
-                checked={selectedExames.includes(typeof exame.exameId === 'number'? exame.exameId ?? 0: 0)}
-                disabled={!['agendado', 'Agendado'].includes(typeof exame.status === 'string' ? exame.status : '')}
-                onChange={() => handleCheckboxChange(typeof exame.exameId === 'number'? exame.exameId ?? 0:0)}
-              />
-            </td>
+              } className={`hover:bg-gray-100 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}`}>            
             <td className="px-2 py-1 border-b">{exame.codigoExame}</td>
             <td className="px-2 py-1 border-b">{exame.nomeExame}</td>
             <td className="px-2 py-1 border-b">
@@ -746,17 +753,16 @@ useEffect(() => {
                 : `${exame.dataColeta}T${new Date().toLocaleTimeString('pt-BR', { hour12: false })}` // Adiciona hora atual se só houver data
               )}
             </td>
-            <td className="px-2 py-1 border-bt text-center">
+            <td className="px-2 py-1 border-b">
             {exame.prazoFinal && (typeof exame.prazoFinal === 'string' || exame.prazoFinal instanceof Date)
               ? formatDateTimeForGrid(new Date(exame.prazoFinal))
               : 'Data inválida'}
               </td>     
             <td className="px-2 py-1 border-b text-right">{formatCurrencyBRL(formatDecimal(exame.preco || 0, 2))}</td>
-            <td className="px-2 py-1 border-b text-center">{ typeof exame.status === 'string' ? exame.status : 'Indisponível'}</td>
             <td className="px-2 py-1 border-b text-center">
               <button
                 onClick={() => removerExame(index)}
-                hidden={!['agendado', 'Agendado'].includes(typeof exame.status === 'string' ? exame.status : '')}
+                // hidden={!['agendado', 'Agendado'].includes(typeof exame.status === 'string' ? exame.status : '')}
                 className="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all duration-200"
               >
                 <TrashIcon className="h-5 w-5" />
@@ -769,9 +775,9 @@ useEffect(() => {
       </div>        
     )}
 
-    <div className="grid grid-cols-2 gap-4 mt-4">
-        <div className="flex flex-col mt-4">
-          <label className="font-semibold">Medicamentos:</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div>
+        <label className="font-semibold">Medicamentos:</label>
           <textarea
             value={medicamentos}
             readOnly
@@ -780,7 +786,7 @@ useEffect(() => {
           />
         </div>
 
-        <div className="flex flex-col mt-4">
+        <div >
           <label className="font-semibold">Observações:</label>
           <textarea
             value={observacoes}

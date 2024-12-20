@@ -5,5 +5,7 @@ export interface PedidoDetalhe {
     exameId?: number;
     valor?: number;
     dataColeta?: Date |string;
+    horarioId?: number;
+    status?: string;
   }
   
