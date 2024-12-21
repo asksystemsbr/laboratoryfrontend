@@ -65,7 +65,7 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     const fetchClienteData = async () => {
       if (pacienteIdData) {
         try {
-          const response = await axios.get(`/api/cliente/${pacienteIdData}`);
+          const response = await axios.get(`/api/clientePortal/${pacienteIdData}`);
           const cliente = response.data;
           preencherDadosCliente(cliente,cliente.nome);
         } catch (error) {
@@ -88,52 +88,11 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     fetchClienteIdData();
   }, [user]);
 
-  const buscarClientePorNome = async () => {
-    try {      
-      if(!nome) return;
-      const response = await axios.get(`/api/Cliente/clienteByNome/${nome}`);
-      const cliente = response.data;
-      preencherDadosCliente(cliente,'');
-    } catch (error) {
-      console.error('Cliente não encontrado', error);
-      setClienteData(null);
-      onClienteSelected(null,null);
-      openConfirmationModal(); // Open confirmation modal if no client is found
-    }
-  };
-
-  const buscarClientePorTelefone = async () => {
-    try {      
-      if(!telefone) return;
-      const response = await axios.get(`/api/Cliente/clienteByTelefone/${telefone}`);
-      const cliente = response.data;
-      preencherDadosCliente(cliente,'');
-    } catch (error) {
-      console.error('Cliente não encontrado', error);
-      setClienteData(null);
-      onClienteSelected(null,null);
-      openConfirmationModal(); // Open confirmation modal if no client is found
-    }
-  };
-
-  const buscarClientePorCpf = async () => {
-    try {
-      if (!cpf || cpf.length < 11 || cpf=='___.___.___-__') return;
-      const response = await axios.get(`/api/Cliente/clienteByCPF/${cpf}`);
-      const cliente = response.data;
-      preencherDadosCliente(cliente,'');
-    } catch (error) {
-      console.error('Cliente não encontrado', error);
-      setClienteData(null);
-      onClienteSelected(null,null);
-      openConfirmationModal(); // Open confirmation modal if no client is found
-    }
-  };
 
   const buscarClientePorId = async () => {
     try {
       if (!user) return;
-      const response = await axios.get(`/api/Cliente/${user.id}`);
+      const response = await axios.get(`/api/ClientePortal/${user.id}`);
       const cliente = response.data;
       preencherDadosCliente(cliente,'');
     } catch (error) {
@@ -144,19 +103,6 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
     }
   };
   
-  const buscarClientePorRg = async () => {
-    try {
-      if (!rg || rg.length < 9 || rg=='__.___.___-_') return;
-      const response = await axios.get(`/api/Cliente/clienteByRG/${rg}`);
-      const cliente = response.data;
-      preencherDadosCliente(cliente,'');
-    } catch (error) {
-      console.error('Cliente não encontrado', error);
-      setClienteData(null);
-      onClienteSelected(null,null);
-      openConfirmationModal(); // Open confirmation modal if no client is found
-    }
-  };
 
   const fetchEndereco = async (enderecoId: number) => {
     try {
@@ -205,7 +151,6 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
             mask='999.999.999-99'
             className="border rounded w-full py-2 px-3 text-sm bg-gray-100"
             placeholder= 'CPF'
-            onBlur= {buscarClientePorCpf}
             disabled
           />          
       </div>
@@ -213,7 +158,6 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
         <InputMask
           value={rg }
           onChange={(e) => setRg(e.target.value)}
-          onBlur={buscarClientePorRg}
           mask="99.999.999-9"
           className="border rounded w-full py-2 px-3 text-sm bg-gray-100"
           placeholder="RG"
@@ -227,7 +171,6 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           onChange={(e) => setNome(e.target.value)} 
           className="border rounded w-full py-2 px-3 text-sm bg-gray-100"
           placeholder="Nome"
-          onBlur= {buscarClientePorNome}
           disabled
         />
       </div>
@@ -309,7 +252,6 @@ const OrcamentoClienteForm: React.FC<ClienteFormProps> = ({
           className="border rounded w-full py-2 px-3 text-sm bg-gray-100"
           placeholder="Celular"
           onChange={(e) => setTelefone(e.target.value)} 
-          onBlur= {buscarClientePorTelefone}
           disabled
         />
       </div>

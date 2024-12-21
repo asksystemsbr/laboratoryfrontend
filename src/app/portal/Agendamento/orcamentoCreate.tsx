@@ -46,12 +46,13 @@ export const OrcamentoCreateForm = ({ onSave, onClose, setSnackbar }: OrcamentoC
 
   useEffect(() => {
     const checkDescontoPermission = async () => {
-      try {
-        const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
-        setIsDescontoEditable(response.data);
-      } catch (error) {
-        console.error('Erro ao verificar permissão para editar desconto:', error);
-      }
+      // try {
+      //   const response = await axios.get(`/api/Orcamento/checkDescontoPermission/${user?.id}`);
+      //   setIsDescontoEditable(response.data);
+      // } catch (error) {
+      //   console.error('Erro ao verificar permissão para editar desconto:', error);
+      // }
+      setIsDescontoEditable(false);
     };
     checkDescontoPermission();
   }, []);
