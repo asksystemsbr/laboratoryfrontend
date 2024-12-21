@@ -56,10 +56,10 @@ export default function PortalIndexComponente() {
       //   route: '/agendamentos',
       // },  
       {
-        permissions: ['agendamento.Read', 'agendamento.Write'],
-        label: 'Check in',
-        icon: <FaCheckCircle size={24} />,
-        route: '/agendamentos',
+        permissions: ["checkin.Read", "checkin.Write"], // Atualizar permissões conforme necessário
+        label: "Check-in",
+        icon: <FaCheckCircle size={24} />, // Ícone apropriado
+        route: "/checkin", // Caminho da nova rota
       },    
       {
         permissions: ['agendamento.Read', 'agendamento.Write'],
